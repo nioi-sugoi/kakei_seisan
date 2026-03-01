@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh search:*)",
+      "Bash(gh api:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(npm run codegen:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx biome check:*)",
+      "Bash(npm run biome:check:*)",
+      "Bash(docker compose:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(which:*)",
+      "Bash(pwd:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(mkdir:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(xargs:*)",
+      "Bash(* --version)",
+      "Skill(code-review:code-review)"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "./.claude/statusline.sh",
+    "padding": 0
+  }
+}
