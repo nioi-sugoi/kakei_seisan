@@ -1,2 +1,1 @@
-export { sendEmail } from "./send";
-export type { EmailMessage, SendResult } from "./types";
+export { createResendClient } from "./client";
