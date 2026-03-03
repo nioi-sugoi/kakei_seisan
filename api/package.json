@@ -9,15 +9,16 @@
 		"db:migrate:local": "wrangler d1 migrations apply kakei-seisan-db --local"
 	},
 	"dependencies": {
-		"hono": "^4.7.0",
-		"valibot": "^1.0.0",
 		"@hono/valibot-validator": "^0.6.0",
-		"drizzle-orm": "^0.45.0"
+		"drizzle-orm": "^0.45.0",
+		"hono": "^4.7.0",
+		"resend": "^6.9.3",
+		"valibot": "^1.0.0"
 	},
 	"devDependencies": {
-		"wrangler": "^4.0.0",
-		"drizzle-kit": "^0.31.0",
 		"@cloudflare/workers-types": "^4.20250214.0",
-		"typescript": "~5.9.2"
+		"drizzle-kit": "^0.31.0",
+		"typescript": "~5.9.2",
+		"wrangler": "^4.0.0"
 	}
 }
