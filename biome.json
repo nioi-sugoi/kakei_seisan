@@ -1,14 +1,22 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
 	"files": {
-		"includes": ["**", "!docs", "!.claude"]
+		"includes": ["**", "!docs", "!.claude", "!dist", "!.expo"]
 	},
 	"linter": {
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"suspicious": {
+				"noUnknownAtRules": "off"
+			}
 		}
 	},
 	"formatter": {
 		"indentStyle": "tab"
+	},
+	"css": {
+		"formatter": {
+			"indentStyle": "tab"
+		}
 	}
 }
