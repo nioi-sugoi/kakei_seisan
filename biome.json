@@ -8,6 +8,7 @@
 			"!dist",
 			"!.expo",
 			"!**/.wrangler",
+			"!**/drizzle/meta",
 			"!**/expo-env.d.ts"
 		]
 	},
