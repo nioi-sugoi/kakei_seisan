@@ -1,10 +1,8 @@
 import { Image } from "expo-image";
 import { Link } from "expo-router";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 
 export default function HomeScreen() {
 	return (
@@ -17,30 +15,38 @@ export default function HomeScreen() {
 				/>
 			}
 		>
-			<ThemedView style={styles.titleContainer}>
-				<ThemedText type="title">Welcome!</ThemedText>
+			<View className="flex-row items-center gap-2">
+				<Text className="text-foreground text-[32px] font-bold leading-[32px]">
+					Welcome!
+				</Text>
 				<HelloWave />
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<ThemedText type="subtitle">Step 1: Try it</ThemedText>
-				<ThemedText>
+			</View>
+			<View className="gap-2 mb-2">
+				<Text className="text-foreground text-xl font-bold">
+					Step 1: Try it
+				</Text>
+				<Text className="text-foreground text-base leading-6">
 					Edit{" "}
-					<ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
+					<Text className="text-foreground text-base font-semibold leading-6">
+						app/(tabs)/index.tsx
+					</Text>{" "}
 					to see changes. Press{" "}
-					<ThemedText type="defaultSemiBold">
+					<Text className="text-foreground text-base font-semibold leading-6">
 						{Platform.select({
 							ios: "cmd + d",
 							android: "cmd + m",
 							web: "F12",
 						})}
-					</ThemedText>{" "}
+					</Text>{" "}
 					to open developer tools.
-				</ThemedText>
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
+				</Text>
+			</View>
+			<View className="gap-2 mb-2">
 				<Link href="/modal">
 					<Link.Trigger>
-						<ThemedText type="subtitle">Step 2: Explore</ThemedText>
+						<Text className="text-foreground text-xl font-bold">
+							Step 2: Explore
+						</Text>
 					</Link.Trigger>
 					<Link.Preview />
 					<Link.Menu>
@@ -65,31 +71,24 @@ export default function HomeScreen() {
 					</Link.Menu>
 				</Link>
 
-				<ThemedText>
+				<Text className="text-foreground text-base leading-6">
 					{`Tap the Explore tab to learn more about what's included in this starter app.`}
-				</ThemedText>
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<ThemedText type="subtitle">Step 3: Build your app</ThemedText>
-				<ThemedText>
+				</Text>
+			</View>
+			<View className="gap-2 mb-2">
+				<Text className="text-foreground text-xl font-bold">
+					Step 3: Build your app
+				</Text>
+				<Text className="text-foreground text-base leading-6">
 					Replace this sample screen with the features for your household
 					settlement flow.
-				</ThemedText>
-			</ThemedView>
+				</Text>
+			</View>
 		</ParallaxScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
-	titleContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 8,
-	},
-	stepContainer: {
-		gap: 8,
-		marginBottom: 8,
-	},
 	reactLogo: {
 		height: 178,
 		width: 290,
