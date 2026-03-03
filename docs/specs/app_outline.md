@@ -32,10 +32,5 @@
 - 新規登録時のチュートリアル（将来対応）
 
 ## 技術スタック
-- **プラットフォーム**: スマホアプリ（React Native / Expo）
-- **言語**: TypeScript
-- **バックエンド**: Supabase
-- **認証**: Supabase Auth（マジックリンク、Google / Apple ソーシャルログイン）
-- **画像ストレージ**: Supabase Storage
-- **プッシュ通知**: 実装しない（初期リリース）
-- **スタイリング**: NativeWind
+
+詳細は [tech_stack.md](../tech_stack.md) を参照。

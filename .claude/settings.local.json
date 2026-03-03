@@ -41,12 +41,27 @@
       "Bash(mkdir -p:*)",
       "Bash(xargs:*)",
       "Bash(* --version)",
-      "Skill(code-review:code-review)"
+      "Skill(code-review:code-review)",
+      "Bash(gh repo view --json nameWithOwner,url)",
+      "Bash(bash scripts/create_issues.sh)",
+      "WebFetch(domain:registry.npmjs.org)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm install:*)",
+      "WebFetch(domain:api.github.com)"
     ]
   },
   "statusLine": {
     "type": "command",
     "command": "./.claude/statusline.sh",
     "padding": 0
+  },
+  "outputStyle": "Explanatory",
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": true,
+    "network": {
+      "allowLocalBinding": true
+    }
   }
 }
