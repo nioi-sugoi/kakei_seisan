@@ -1,0 +1,12 @@
+name = "kakei-seisan-api"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kakei-seisan-db"
+database_id = "placeholder-id"
+
+[[r2_buckets]]
+binding = "RECEIPTS"
+bucket_name = "kakei-seisan-receipts"
