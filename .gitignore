@@ -7,7 +7,7 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
+expo/expo-env.d.ts
 
 # Native
 .kotlin/
@@ -40,8 +40,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
-
 # generated native folders
-/ios
-/android
+/expo/ios
+/expo/android
