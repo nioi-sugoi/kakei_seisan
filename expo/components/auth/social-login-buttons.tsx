@@ -2,8 +2,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
-
 function GoogleIcon({ size = 20 }: { size?: number }) {
 	return (
 		<Svg width={size} height={size} viewBox="0 0 24 24">
@@ -28,9 +26,6 @@ function GoogleIcon({ size = 20 }: { size?: number }) {
 }
 
 export function SocialLoginButtons() {
-	const colorScheme = useColorScheme();
-	const appleIconColor = colorScheme === "dark" ? "#fff" : "#000";
-
 	return (
 		<View className="gap-3">
 			<Pressable
@@ -51,7 +46,7 @@ export function SocialLoginButtons() {
 					// Apple ログインは後続イシューで実装
 				}}
 			>
-				<MaterialIcons name="apple" size={22} color={appleIconColor} />
+				<MaterialIcons name="apple" size={22} color="#000" />
 				<Text className="text-foreground font-semibold text-base">
 					Apple でログイン
 				</Text>

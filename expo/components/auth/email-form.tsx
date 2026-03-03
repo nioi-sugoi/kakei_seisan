@@ -6,8 +6,6 @@ import {
 	View,
 } from "react-native";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
-
 type EmailFormProps = {
 	email: string;
 	onChangeEmail: (text: string) => void;
@@ -23,16 +21,12 @@ export function EmailForm({
 	loading,
 	onSubmit,
 }: EmailFormProps) {
-	const colorScheme = useColorScheme();
-	const placeholderColor =
-		colorScheme === "dark" ? "rgb(161,161,161)" : "rgb(93,100,111)";
-
 	return (
 		<View className="gap-3">
 			<TextInput
 				className="border border-border rounded-xl px-4 py-3.5 text-base text-foreground bg-card"
 				placeholder="メールアドレスを入力"
-				placeholderTextColor={placeholderColor}
+				placeholderTextColor="rgb(93,100,111)"
 				value={email}
 				onChangeText={(text) => {
 					onChangeEmail(text);
