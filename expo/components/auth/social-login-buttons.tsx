@@ -6,7 +6,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export function SocialLoginButtons() {
 	const colorScheme = useColorScheme();
-	const iconColor = colorScheme === "dark" ? "#fff" : "#000";
+	const appleIconColor = colorScheme === "dark" ? "#fff" : "#000";
 
 	return (
 		<View className="gap-3">
@@ -16,7 +16,7 @@ export function SocialLoginButtons() {
 					// Google ログインは後続イシューで実装
 				}}
 			>
-				<MaterialCommunityIcons name="google" size={20} color={iconColor} />
+				<MaterialCommunityIcons name="google" size={20} color="#4285F4" />
 				<Text className="text-foreground font-semibold text-base">
 					Google でログイン
 				</Text>
@@ -28,7 +28,7 @@ export function SocialLoginButtons() {
 					// Apple ログインは後続イシューで実装
 				}}
 			>
-				<MaterialIcons name="apple" size={22} color={iconColor} />
+				<MaterialIcons name="apple" size={22} color={appleIconColor} />
 				<Text className="text-foreground font-semibold text-base">
 					Apple でログイン
 				</Text>

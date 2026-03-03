@@ -31,7 +31,7 @@ export function EmailForm({
 		<View className="gap-3">
 			<TextInput
 				className="border border-border rounded-xl px-4 py-3.5 text-base text-foreground bg-card"
-				placeholder="メールアドレス"
+				placeholder="メールアドレスを入力"
 				placeholderTextColor={placeholderColor}
 				value={email}
 				onChangeText={(text) => {

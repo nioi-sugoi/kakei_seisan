@@ -1,3 +1,4 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
 	KeyboardAvoidingView,
 	Platform,
@@ -30,13 +31,19 @@ export default function LoginScreen() {
 						<SentMessage email={email} onReset={reset} />
 					) : (
 						<View className="gap-8">
-							<View className="items-center gap-2">
+							<View className="items-center gap-3">
+								<View className="w-16 h-16 rounded-2xl bg-primary items-center justify-center">
+									<MaterialIcons
+										name="account-balance-wallet"
+										size={32}
+										color="rgb(252,252,252)"
+									/>
+								</View>
 								<Text className="text-foreground text-2xl font-bold">
-									ログイン
+									かんたん家計精算
 								</Text>
 								<Text className="text-muted-foreground text-sm text-center">
-									メールアドレスまたはソーシャルアカウントで{"\n"}
-									ログインしてください
+									家計の立替・預りをかんたんに精算
 								</Text>
 							</View>
 
