@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--color-background: 247 249 250;
+		--color-foreground: 10 16 24;
+		--color-card: 255 255 255;
+		--color-card-foreground: 10 16 24;
+		--color-primary: 0 126 183;
+		--color-primary-foreground: 252 252 252;
+		--color-secondary: 233 240 245;
+		--color-secondary-foreground: 28 34 43;
+		--color-muted: 236 239 241;
+		--color-muted-foreground: 93 100 111;
+		--color-accent: 0 169 121;
+		--color-accent-foreground: 252 252 252;
+		--color-destructive: 231 0 11;
+		--color-destructive-foreground: 252 252 252;
+		--color-border: 222 226 228;
+		--color-input: 222 226 228;
+		--color-ring: 0 126 183;
+		--color-warning: 223 161 26;
+		--color-warning-foreground: 88 47 2;
+		--color-success: 0 169 121;
+		--color-success-foreground: 252 252 252;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--color-background: 10 10 10;
+			--color-foreground: 250 250 250;
+			--color-card: 10 10 10;
+			--color-card-foreground: 250 250 250;
+			--color-primary: 250 250 250;
+			--color-primary-foreground: 23 23 23;
+			--color-secondary: 38 38 38;
+			--color-secondary-foreground: 250 250 250;
+			--color-muted: 38 38 38;
+			--color-muted-foreground: 161 161 161;
+			--color-accent: 38 38 38;
+			--color-accent-foreground: 250 250 250;
+			--color-destructive: 130 24 26;
+			--color-destructive-foreground: 251 44 54;
+			--color-border: 38 38 38;
+			--color-input: 38 38 38;
+			--color-ring: 82 82 82;
+			--color-warning: 223 161 26;
+			--color-warning-foreground: 88 47 2;
+			--color-success: 0 169 121;
+			--color-success-foreground: 252 252 252;
+		}
+	}
+}
