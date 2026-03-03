@@ -21,7 +21,7 @@ export function SentMessage({ email, onReset }: SentMessageProps) {
 					メールを送信しました
 				</Text>
 				<Text className="text-muted-foreground text-sm text-center leading-5">
-					{email} にログインリンクを送信しました。{"\n"}
+					{email} にログイン用リンクを送信しました。{"\n"}
 					メール内のリンクをタップしてログインしてください。
 				</Text>
 			</View>
