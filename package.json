@@ -8,7 +8,8 @@
 		"ios": "expo start --ios",
 		"web": "expo start --web",
 		"lint": "biome check .",
-		"format": "biome check --write ."
+		"format": "biome check --write .",
+		"dev:api": "pnpm --filter api dev"
 	},
 	"dependencies": {
 		"@expo/vector-icons": "^15.0.3",
@@ -44,5 +45,12 @@
 		"tailwindcss": "^3.4.19",
 		"typescript": "~5.9.2"
 	},
-	"private": true
+	"private": true,
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"sharp",
+			"workerd"
+		]
+	}
 }
