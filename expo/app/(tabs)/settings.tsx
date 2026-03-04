@@ -1,9 +1,8 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { useSession, useSignOut } from "@/hooks/use-auth";
+import { Pressable, Text, View } from "react-native";
+import { authClient } from "@/lib/auth-client";
 
 export default function SettingsScreen() {
-	const { data: session } = useSession();
-	const { signOut, isPending } = useSignOut();
+	const { data: session } = authClient.useSession();
 
 	return (
 		<View className="flex-1 bg-background px-6 pt-12">
@@ -19,17 +18,12 @@ export default function SettingsScreen() {
 			</View>
 
 			<Pressable
-				onPress={signOut}
-				disabled={isPending}
+				onPress={() => authClient.signOut()}
 				className="mt-6 items-center rounded-xl bg-destructive py-4"
 			>
-				{isPending ? (
-					<ActivityIndicator color="#fff" />
-				) : (
-					<Text className="text-destructive-foreground text-base font-semibold">
-						サインアウト
-					</Text>
-				)}
+				<Text className="text-destructive-foreground text-base font-semibold">
+					サインアウト
+				</Text>
 			</Pressable>
 		</View>
 	);
