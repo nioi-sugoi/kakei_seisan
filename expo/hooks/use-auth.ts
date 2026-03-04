@@ -1,9 +1,24 @@
 import { useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 export function useSession() {
 	return authClient.useSession();
+}
+
+export function useSignOut() {
+	const [isPending, setIsPending] = useState(false);
+
+	const signOut = useCallback(async () => {
+		setIsPending(true);
+		try {
+			await authClient.signOut();
+		} finally {
+			setIsPending(false);
+		}
+	}, []);
+
+	return { signOut, isPending };
 }
 
 export function useProtectedRoute() {

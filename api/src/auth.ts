@@ -29,8 +29,8 @@ export function createAuth(env: Env) {
 					await resend.emails.send({
 						from: env.EMAIL_FROM,
 						to: email,
-						subject: "ログインリンク - かんたん家計精算",
-						html: `<p>以下のリンクをクリックしてログインしてください:</p><a href="${url}">ログインする</a>`,
+						subject: "認証リンク - かんたん家計精算",
+						html: `<p>以下のリンクをクリックして続けてください:</p><a href="${url}">認証する</a>`,
 					});
 				},
 			}),
