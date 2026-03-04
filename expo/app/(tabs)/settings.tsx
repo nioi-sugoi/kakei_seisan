@@ -1,12 +1,30 @@
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { authClient } from "@/lib/auth-client";
 
 export default function SettingsScreen() {
+	const { data: session } = authClient.useSession();
+
 	return (
-		<View className="flex-1 items-center justify-center bg-background">
+		<View className="flex-1 bg-background px-6 pt-12">
 			<Text className="text-foreground text-2xl font-bold">設定</Text>
-			<Text className="text-muted-foreground text-base mt-2">
-				アプリの設定がここに表示されます
-			</Text>
+
+			<View className="mt-8 rounded-xl bg-card p-4">
+				<Text className="text-muted-foreground text-sm">
+					ログイン中のアカウント
+				</Text>
+				<Text className="text-foreground text-base mt-1">
+					{session?.user?.email ?? "—"}
+				</Text>
+			</View>
+
+			<Pressable
+				onPress={() => authClient.signOut()}
+				className="mt-6 items-center rounded-xl bg-destructive py-4"
+			>
+				<Text className="text-destructive-foreground text-base font-semibold">
+					サインアウト
+				</Text>
+			</Pressable>
 		</View>
 	);
 }
