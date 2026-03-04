@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,7 +19,7 @@ export function useLoginForm() {
 		return "";
 	}, []);
 
-	const submit = useCallback(() => {
+	const submit = useCallback(async () => {
 		const validationError = validate(email);
 		if (validationError) {
 			setError(validationError);
@@ -28,11 +29,24 @@ export function useLoginForm() {
 		setError("");
 		setLoading(true);
 
-		// 送信シミュレーション（認証ロジックは後続イシューで実装）
-		setTimeout(() => {
+		try {
+			const { error: apiError } = await authClient.signIn.magicLink({
+				email: email.trim(),
+				callbackURL: "/",
+			});
+
+			if (apiError) {
+				setError(apiError.message ?? "送信に失敗しました");
+				setLoading(false);
+				return;
+			}
+
 			setLoading(false);
 			setSent(true);
-		}, 1500);
+		} catch {
+			setError("ネットワークエラーが発生しました");
+			setLoading(false);
+		}
 	}, [email, validate]);
 
 	const reset = useCallback(() => {

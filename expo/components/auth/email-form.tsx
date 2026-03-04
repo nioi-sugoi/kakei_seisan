@@ -48,7 +48,7 @@ export function EmailForm({
 					<ActivityIndicator color="rgb(252,252,252)" />
 				) : (
 					<Text className="text-primary-foreground font-semibold text-base">
-						ログイン用リンクを送信
+						メールで登録 / ログイン
 					</Text>
 				)}
 			</Pressable>

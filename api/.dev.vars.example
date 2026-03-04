@@ -1,2 +1,4 @@
 RESEND_API_KEY=re_xxxxxxxxxx
 EMAIL_FROM=onboarding@resend.dev
+BETTER_AUTH_SECRET=generate-with-openssl-rand-base64-32
+BETTER_AUTH_URL=http://localhost:8787
