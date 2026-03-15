@@ -3,8 +3,9 @@
 	"version": "1.0.0",
 	"private": true,
 	"scripts": {
-		"dev:expo": "pnpm --filter expo-app start",
-		"dev:api": "pnpm --filter api dev",
+		"dev:expo": "[ -f .env.worktree ] && . .env.worktree; pnpm --filter expo-app start",
+		"dev:api": "[ -f .env.worktree ] && . .env.worktree; pnpm --filter api dev",
+		"setup": "bash scripts/setup-worktree.sh",
 		"lint": "biome check .",
 		"format": "biome check --write ."
 	},
