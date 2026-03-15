@@ -1,3 +1,4 @@
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
@@ -23,6 +24,7 @@ export function createAuth(env: Env) {
 		baseURL: env.BETTER_AUTH_URL,
 		trustedOrigins: ["kakei-seisan://", "exp://**", "http://localhost:*"],
 		plugins: [
+			expo({ overrideOrigin: true }),
 			magicLink({
 				sendMagicLink: async ({ email, url }) => {
 					const resend = createResendClient(env.RESEND_API_KEY);
