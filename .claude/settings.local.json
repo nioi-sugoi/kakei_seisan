@@ -56,6 +56,18 @@
     "command": "./.claude/statusline.sh",
     "padding": 0
   },
+  "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/setup-worktree.sh"
+          }
+        ]
+      }
+    ]
+  },
   "outputStyle": "Explanatory",
   "sandbox": {
     "enabled": false,
