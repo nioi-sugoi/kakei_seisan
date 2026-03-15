@@ -21,17 +21,21 @@ export function createAuth(env: Env) {
 		}),
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
-		trustedOrigins: ["kakei-seisan://", "exp://", "http://localhost:*"],
+		trustedOrigins: ["kakei-seisan://", "exp://**", "http://localhost:*"],
 		plugins: [
 			magicLink({
 				sendMagicLink: async ({ email, url }) => {
 					const resend = createResendClient(env.RESEND_API_KEY);
-					await resend.emails.send({
+					const { error } = await resend.emails.send({
 						from: env.EMAIL_FROM,
 						to: email,
 						subject: "認証リンク - かんたん家計精算",
 						html: `<p>以下のリンクをクリックして続けてください:</p><a href="${url}">認証する</a>`,
 					});
+					if (error) {
+						console.error("Failed to send magic link email:", error);
+						throw new Error(`メール送信に失敗しました: ${error.message}`);
+					}
 				},
 			}),
 		],

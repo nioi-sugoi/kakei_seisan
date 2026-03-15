@@ -13,6 +13,7 @@ import "react-native-reanimated";
 
 import { useProtectedRoute } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useDeepLinkAuth } from "@/hooks/use-deep-link-auth";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +24,7 @@ export const unstable_settings = {
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
 	const { isPending } = useProtectedRoute();
+	useDeepLinkAuth();
 
 	useEffect(() => {
 		if (!isPending) {
