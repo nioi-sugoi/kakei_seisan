@@ -24,3 +24,6 @@ yarn-error.*
 
 # wrangler shared local state
 .wrangler-shared/
+
+# worktree-local env
+.env.worktree
