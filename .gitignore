@@ -21,3 +21,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# wrangler shared local state
+.wrangler-shared/
