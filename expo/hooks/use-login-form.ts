@@ -1,3 +1,4 @@
+import * as Linking from "expo-linking";
 import { useCallback, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
@@ -32,7 +33,7 @@ export function useLoginForm() {
 		try {
 			const { error: apiError } = await authClient.signIn.magicLink({
 				email: email.trim(),
-				callbackURL: "/",
+				callbackURL: Linking.createURL("/"),
 			});
 
 			if (apiError) {
