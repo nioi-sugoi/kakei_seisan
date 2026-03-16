@@ -13,7 +13,7 @@ echo ""
 # --------------------------------------------------
 # 1. Install dependencies
 # --------------------------------------------------
-echo "[1/4] Installing dependencies..."
+echo "[1/3] Installing dependencies..."
 pnpm install
 
 # --------------------------------------------------
@@ -28,7 +28,7 @@ else
   EXPO_PORT=$(( API_PORT + 1000 ))
 fi
 
-echo "[2/4] Port assignment: API=${API_PORT}, Expo=${EXPO_PORT}"
+echo "[2/3] Port assignment: API=${API_PORT}, Expo=${EXPO_PORT}"
 
 # .env.worktree (root)
 cat > .env.worktree <<EOF
@@ -40,7 +40,7 @@ EOF
 # --------------------------------------------------
 # 3. Create env files
 # --------------------------------------------------
-echo "[3/4] Creating env files..."
+echo "[3/3] Creating env files..."
 
 # Copy env files from main worktree
 if [ "$WORKTREE_ROOT" != "$MAIN_ROOT" ]; then
@@ -54,12 +54,6 @@ if [ "$WORKTREE_ROOT" != "$MAIN_ROOT" ]; then
   sed -i '' "s|EXPO_PUBLIC_API_URL=http://localhost:[0-9]*|EXPO_PUBLIC_API_URL=http://localhost:${API_PORT}|" expo/.env
   echo "  Ports updated to ${API_PORT}"
 fi
-
-# --------------------------------------------------
-# 4. Apply D1 migrations
-# --------------------------------------------------
-echo "[4/4] Applying D1 migrations..."
-pnpm --filter api db:migrate:local
 
 echo ""
 echo "=== Setup complete ==="
