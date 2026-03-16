@@ -9,13 +9,23 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { EmailForm } from "@/components/auth/email-form";
-import { SentMessage } from "@/components/auth/sent-message";
+import { OtpForm } from "@/components/auth/otp-form";
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { useLoginForm } from "@/hooks/use-login-form";
 
 export default function LoginScreen() {
-	const { email, setEmail, error, sent, loading, submit, reset } =
-		useLoginForm();
+	const {
+		email,
+		setEmail,
+		otp,
+		setOtp,
+		error,
+		otpSent,
+		loading,
+		sendOtp,
+		verifyOtp,
+		reset,
+	} = useLoginForm();
 
 	return (
 		<SafeAreaView className="flex-1 bg-background">
@@ -27,8 +37,17 @@ export default function LoginScreen() {
 					contentContainerClassName="flex-grow justify-center px-6 py-8"
 					keyboardShouldPersistTaps="handled"
 				>
-					{sent ? (
-						<SentMessage email={email} onReset={reset} />
+					{otpSent ? (
+						<OtpForm
+							email={email}
+							otp={otp}
+							onChangeOtp={setOtp}
+							error={error}
+							loading={loading}
+							onSubmit={verifyOtp}
+							onResend={sendOtp}
+							onReset={reset}
+						/>
 					) : (
 						<View className="gap-8">
 							<View className="items-center gap-3">
@@ -52,7 +71,7 @@ export default function LoginScreen() {
 								onChangeEmail={setEmail}
 								error={error}
 								loading={loading}
-								onSubmit={submit}
+								onSubmit={sendOtp}
 							/>
 
 							<View className="flex-row items-center gap-4">

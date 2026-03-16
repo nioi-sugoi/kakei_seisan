@@ -1,7 +1,7 @@
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink } from "better-auth/plugins";
+import { emailOTP } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import type { Env } from "./bindings";
 import * as schema from "./db/schema";
@@ -24,18 +24,18 @@ export function createAuth(env: Env) {
 		baseURL: env.BETTER_AUTH_URL,
 		trustedOrigins: ["kakei-seisan://", "exp://", "http://localhost:*"],
 		plugins: [
-			expo({ overrideOrigin: true }),
-			magicLink({
-				sendMagicLink: async ({ email, url }) => {
+			expo(),
+			emailOTP({
+				sendVerificationOTP: async ({ email, otp }) => {
 					const resend = createResendClient(env.RESEND_API_KEY);
 					const { error } = await resend.emails.send({
 						from: env.EMAIL_FROM,
 						to: email,
-						subject: "認証リンク - かんたん家計精算",
-						html: `<p>以下のリンクをクリックして続けてください:</p><a href="${url}">認証する</a>`,
+						subject: "認証コード - かんたん家計精算",
+						html: `<p>認証コード: <strong>${otp}</strong></p><p>このコードは5分間有効です。</p>`,
 					});
 					if (error) {
-						console.error("Failed to send magic link email:", error);
+						console.error("Failed to send OTP email:", error);
 						throw new Error(`メール送信に失敗しました: ${error.message}`);
 					}
 				},

@@ -26,34 +26,10 @@ app.use(
 );
 
 // ── Better Auth handler ──────────────────────────────────────────────
-// ディープリンクへのリダイレクト時に Set-Cookie を URL パラメータに付加する。
-// ブラウザ経由のマジックリンク検証ではアプリが HTTP cookie を受け取れないため、
-// セッション cookie を deep link URL の query に含めて渡す。
 app.on(["POST", "GET"], "/auth/**", async (c) => {
 	const auth = createAuth(c.env);
-	const response = await auth.handler(c.req.raw);
-
-	if (response.status === 302 || response.status === 303) {
-		const location = response.headers.get("location");
-		if (location && isDeepLink(location)) {
-			const setCookie = response.headers.get("set-cookie");
-			if (setCookie) {
-				const separator = location.includes("?") ? "&" : "?";
-				const redirectUrl = `${location}${separator}cookie=${encodeURIComponent(setCookie)}`;
-				return new Response(null, {
-					status: response.status,
-					headers: { location: redirectUrl },
-				});
-			}
-		}
-	}
-
-	return response;
+	return auth.handler(c.req.raw);
 });
-
-function isDeepLink(url: string): boolean {
-	return url.startsWith("kakei-seisan://") || url.startsWith("exp://");
-}
 
 // ── Session middleware (non-auth routes) ─────────────────────────────
 app.use("*", async (c, next) => {
