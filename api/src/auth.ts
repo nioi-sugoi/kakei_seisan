@@ -22,7 +22,7 @@ export function createAuth(env: Env) {
 		}),
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
-		trustedOrigins: ["kakei-seisan://", "exp://**", "http://localhost:*"],
+		trustedOrigins: ["kakei-seisan://", "exp://", "http://localhost:*"],
 		plugins: [
 			expo({ overrideOrigin: true }),
 			magicLink({
