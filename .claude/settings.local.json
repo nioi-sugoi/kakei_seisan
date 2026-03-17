@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/setup-worktree-if-needed.sh"
+            "command": "bash scripts/setup-worktree.sh"
           }
         ]
       }
