@@ -1,26 +1,28 @@
+import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function validateEmail(email: string): string {
+	if (!email) {
+		return "メールアドレスを入力してください";
+	}
+	if (!EMAIL_REGEX.test(email)) {
+		return "正しいメールアドレスの形式で入力してください";
+	}
+	return "";
+}
+
 export function useLoginForm() {
+	const router = useRouter();
 	const [email, setEmail] = useState("");
 	const [error, setError] = useState("");
-	const [sent, setSent] = useState(false);
 	const [loading, setLoading] = useState(false);
 
-	const validate = useCallback((value: string): string => {
-		if (!value.trim()) {
-			return "メールアドレスを入力してください";
-		}
-		if (!EMAIL_REGEX.test(value.trim())) {
-			return "正しいメールアドレスの形式で入力してください";
-		}
-		return "";
-	}, []);
-
-	const submit = useCallback(async () => {
-		const validationError = validate(email);
+	const sendOtp = useCallback(async () => {
+		const trimmedEmail = email.trim();
+		const validationError = validateEmail(trimmedEmail);
 		if (validationError) {
 			setError(validationError);
 			return;
@@ -30,31 +32,33 @@ export function useLoginForm() {
 		setLoading(true);
 
 		try {
-			const { error: apiError } = await authClient.signIn.magicLink({
-				email: email.trim(),
-				callbackURL: "/",
-			});
+			const { error: apiError } =
+				await authClient.emailOtp.sendVerificationOtp({
+					email: trimmedEmail,
+					type: "sign-in",
+				});
 
 			if (apiError) {
 				setError(apiError.message ?? "送信に失敗しました");
-				setLoading(false);
 				return;
 			}
 
-			setLoading(false);
-			setSent(true);
+			router.push({
+				pathname: "/(auth)/verify-otp",
+				params: { email: trimmedEmail },
+			});
 		} catch {
 			setError("ネットワークエラーが発生しました");
+		} finally {
 			setLoading(false);
 		}
-	}, [email, validate]);
+	}, [email, router]);
 
-	const reset = useCallback(() => {
-		setEmail("");
-		setError("");
-		setSent(false);
-		setLoading(false);
-	}, []);
-
-	return { email, setEmail, error, setError, sent, loading, submit, reset };
+	return {
+		email,
+		setEmail,
+		error,
+		loading,
+		sendOtp,
+	};
 }

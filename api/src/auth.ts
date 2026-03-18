@@ -1,10 +1,14 @@
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink } from "better-auth/plugins";
+import { emailOTP } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import type { Env } from "./bindings";
 import * as schema from "./db/schema";
 import { createResendClient } from "./email";
+
+const OTP_EXPIRES_IN_SEC = 300;
+const OTP_EXPIRES_IN_MIN = OTP_EXPIRES_IN_SEC / 60;
 
 export function createAuth(env: Env) {
 	const db = drizzle(env.DB, { schema });
@@ -23,15 +27,21 @@ export function createAuth(env: Env) {
 		baseURL: env.BETTER_AUTH_URL,
 		trustedOrigins: ["kakei-seisan://", "exp://", "http://localhost:*"],
 		plugins: [
-			magicLink({
-				sendMagicLink: async ({ email, url }) => {
+			expo(),
+			emailOTP({
+				expiresIn: OTP_EXPIRES_IN_SEC,
+				sendVerificationOTP: async ({ email, otp }) => {
 					const resend = createResendClient(env.RESEND_API_KEY);
-					await resend.emails.send({
+					const { error } = await resend.emails.send({
 						from: env.EMAIL_FROM,
 						to: email,
-						subject: "認証リンク - かんたん家計精算",
-						html: `<p>以下のリンクをクリックして続けてください:</p><a href="${url}">認証する</a>`,
+						subject: "認証コード - かんたん家計精算",
+						html: `<p>認証コード: <strong>${otp}</strong></p><p>このコードは${OTP_EXPIRES_IN_MIN}分間有効です。</p>`,
 					});
+					if (error) {
+						console.error("Failed to send OTP email:", error);
+						throw new Error(`メール送信に失敗しました: ${error.message}`);
+					}
 				},
 			}),
 		],

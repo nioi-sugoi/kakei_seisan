@@ -26,7 +26,7 @@ app.use(
 );
 
 // ── Better Auth handler ──────────────────────────────────────────────
-app.on(["POST", "GET"], "/auth/**", (c) => {
+app.on(["POST", "GET"], "/auth/**", async (c) => {
 	const auth = createAuth(c.env);
 	return auth.handler(c.req.raw);
 });
