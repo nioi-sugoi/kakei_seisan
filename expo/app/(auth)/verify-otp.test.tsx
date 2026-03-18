@@ -58,7 +58,24 @@ describe("VerifyOtpScreen", () => {
 
 	// --- 入力 → 認証の一連フロー ---
 
-	it("6桁入力して認証するとAPIが正しい値で呼ばれる", async () => {
+	it("1文字ずつ入力して認証するとAPIが正しい値で呼ばれる", async () => {
+		render(<VerifyOtpScreen />);
+
+		// フォーカス移動はRNTLでは動作しないため、各桁に個別入力
+		for (let i = 0; i < 6; i++) {
+			await user.type(screen.getByTestId(`otp-input-${i}`), String(i + 1));
+		}
+		await user.press(screen.getByText("認証する"));
+
+		await waitFor(() => {
+			expect(mockSignInEmailOtp).toHaveBeenCalledWith({
+				email: "test@example.com",
+				otp: "123456",
+			});
+		});
+	});
+
+	it("6桁ペーストして認証するとAPIが正しい値で呼ばれる", async () => {
 		render(<VerifyOtpScreen />);
 
 		await fillOtpAt(0, "123456");
