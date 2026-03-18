@@ -7,8 +7,8 @@ import {
 } from "@testing-library/react-native";
 
 jest.mock("expo-router", () => ({
-	useLocalSearchParams: () => ({ email: "test@example.com" }),
-	useRouter: () => ({ replace: jest.fn(), back: jest.fn() }),
+	useLocalSearchParams: jest.fn(() => ({ email: "test@example.com" })),
+	useRouter: jest.fn(() => ({ replace: jest.fn(), back: jest.fn() })),
 }));
 
 jest.mock("@/lib/auth-client", () => ({
@@ -20,42 +20,44 @@ jest.mock("@/lib/auth-client", () => ({
 
 import VerifyOtpScreen from "./verify-otp";
 import { authClient } from "@/lib/auth-client";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 const mockSignInEmailOtp = authClient.signIn.emailOtp as jest.Mock;
 const mockSendVerificationOtp = authClient.emailOtp
 	.sendVerificationOtp as jest.Mock;
-
-const user = userEvent.setup();
-
-function getOtpInput(index: number) {
-	return screen.getByTestId(`otp-input-${index}`);
-}
+const mockUseLocalSearchParams = useLocalSearchParams as jest.Mock;
 
 async function fillOtp(code: string) {
-	fireEvent.changeText(getOtpInput(0), code);
+	fireEvent.changeText(screen.getByTestId("otp-input-0"), code);
 	await waitFor(() => {
-		expect(getOtpInput(0)).toHaveProp("value", code[0]);
+		expect(screen.getByTestId("otp-input-0")).toHaveProp(
+			"value",
+			code.replace(/\D/g, "")[0],
+		);
 	});
-}
-
-async function submitOtp() {
-	await user.press(screen.getByText("認証する"));
 }
 
 beforeEach(() => {
 	jest.clearAllMocks();
+	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });
 
 describe("VerifyOtpScreen", () => {
+	let user: ReturnType<typeof userEvent.setup>;
+
+	beforeEach(() => {
+		user = userEvent.setup();
+	});
+
 	// --- 入力 → 認証の一連フロー ---
 
 	it("6桁入力して認証するとAPIが正しい値で呼ばれる", async () => {
 		render(<VerifyOtpScreen />);
 
 		await fillOtp("123456");
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(mockSignInEmailOtp).toHaveBeenCalledWith({
@@ -68,17 +70,16 @@ describe("VerifyOtpScreen", () => {
 	it("途中の桁にペーストしても正しい値がAPIに渡る", async () => {
 		render(<VerifyOtpScreen />);
 
-		// 先頭3桁 + 後半3桁を別々に入力
-		fireEvent.changeText(getOtpInput(0), "123");
+		fireEvent.changeText(screen.getByTestId("otp-input-0"), "123");
 		await waitFor(() => {
-			expect(getOtpInput(0)).toHaveProp("value", "1");
+			expect(screen.getByTestId("otp-input-0")).toHaveProp("value", "1");
 		});
-		fireEvent.changeText(getOtpInput(3), "456");
+		fireEvent.changeText(screen.getByTestId("otp-input-3"), "456");
 		await waitFor(() => {
-			expect(getOtpInput(3)).toHaveProp("value", "4");
+			expect(screen.getByTestId("otp-input-3")).toHaveProp("value", "4");
 		});
 
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(mockSignInEmailOtp).toHaveBeenCalledWith({
@@ -91,18 +92,16 @@ describe("VerifyOtpScreen", () => {
 	it("非数字を含む入力は数字のみがAPIに渡る", async () => {
 		render(<VerifyOtpScreen />);
 
-		// "a1b2c3" → cleaned="123" → 3桁しか入らない
-		fireEvent.changeText(getOtpInput(0), "a1b2c3");
+		fireEvent.changeText(screen.getByTestId("otp-input-0"), "a1b2c3");
 		await waitFor(() => {
-			expect(getOtpInput(0)).toHaveProp("value", "1");
+			expect(screen.getByTestId("otp-input-0")).toHaveProp("value", "1");
 		});
-		// 残り3桁を追加
-		fireEvent.changeText(getOtpInput(3), "456");
+		fireEvent.changeText(screen.getByTestId("otp-input-3"), "456");
 		await waitFor(() => {
-			expect(getOtpInput(3)).toHaveProp("value", "4");
+			expect(screen.getByTestId("otp-input-3")).toHaveProp("value", "4");
 		});
 
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(mockSignInEmailOtp).toHaveBeenCalledWith({
@@ -117,7 +116,7 @@ describe("VerifyOtpScreen", () => {
 	it("未入力で認証ボタンを押すとエラーが表示されAPIは呼ばれない", async () => {
 		render(<VerifyOtpScreen />);
 
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(
@@ -136,7 +135,7 @@ describe("VerifyOtpScreen", () => {
 		render(<VerifyOtpScreen />);
 
 		await fillOtp("111111");
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(
@@ -152,7 +151,7 @@ describe("VerifyOtpScreen", () => {
 		render(<VerifyOtpScreen />);
 
 		await fillOtp("000000");
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(
@@ -166,7 +165,7 @@ describe("VerifyOtpScreen", () => {
 		render(<VerifyOtpScreen />);
 
 		await fillOtp("123456");
-		await submitOtp();
+		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
 			expect(
@@ -188,5 +187,39 @@ describe("VerifyOtpScreen", () => {
 				type: "sign-in",
 			});
 		});
+	});
+
+	it("再送信APIエラー時にエラーメッセージが表示される", async () => {
+		mockSendVerificationOtp.mockResolvedValue({
+			error: { message: "送信制限に達しました" },
+		});
+		render(<VerifyOtpScreen />);
+
+		await user.press(screen.getByText("コードを再送信"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("送信制限に達しました"),
+			).toBeOnTheScreen();
+		});
+	});
+
+	// --- ナビゲーション ---
+
+	it("emailパラメータがない場合ログイン画面にリダイレクトする", () => {
+		mockUseLocalSearchParams.mockReturnValue({});
+		render(<VerifyOtpScreen />);
+
+		const router = (useRouter as jest.Mock).mock.results[0].value;
+		expect(router.replace).toHaveBeenCalledWith("/(auth)/login");
+	});
+
+	it("「別のメールアドレスで試す」で前の画面に戻る", async () => {
+		render(<VerifyOtpScreen />);
+
+		await user.press(screen.getByText("別のメールアドレスで試す"));
+
+		const router = (useRouter as jest.Mock).mock.results[0].value;
+		expect(router.back).toHaveBeenCalled();
 	});
 });
