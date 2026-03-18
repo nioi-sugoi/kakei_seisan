@@ -2,8 +2,8 @@ import { vValidator } from "@hono/valibot-validator";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import * as v from "valibot";
-import type { AppVariables, Env } from "../../bindings";
-import { validateCreateEntry } from "./domain";
+import type { Env } from "../../bindings";
+import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
 const entriesApp = new Hono<{
@@ -11,10 +11,24 @@ const entriesApp = new Hono<{
 	Variables: AppVariables;
 }>();
 
+function isValidCalendarDate(dateStr: string): boolean {
+	const [y, m, d] = dateStr.split("-").map(Number);
+	const date = new Date(y, m - 1, d);
+	return (
+		date.getFullYear() === y &&
+		date.getMonth() === m - 1 &&
+		date.getDate() === d
+	);
+}
+
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
 	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
-	date: v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/)),
+	date: v.pipe(
+		v.string(),
+		v.regex(/^\d{4}-\d{2}-\d{2}$/),
+		v.check(isValidCalendarDate, "実在する日付を指定してください"),
+	),
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
 });
@@ -42,15 +56,6 @@ entriesApp.post(
 		}
 
 		const input = c.req.valid("json");
-
-		const domainErrors = validateCreateEntry(input);
-		if (domainErrors.length > 0) {
-			return c.json(
-				{ error: "バリデーションエラー", issues: domainErrors },
-				400,
-			);
-		}
-
 		const db = drizzle(c.env.DB);
 		const entry = await entriesRepository.createEntry(db, user.id, input);
 

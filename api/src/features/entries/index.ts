@@ -1,2 +1,2 @@
 export { entriesApp } from "./route";
-export type { CreateEntryInput, Category, Operation, Status } from "./types";
+export type { Category, CreateEntryInput, Operation, Status } from "./types";

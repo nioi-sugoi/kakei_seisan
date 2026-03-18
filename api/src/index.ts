@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { Session, SessionUser } from "./auth";
 import { createAuth } from "./auth";
-import type { AppVariables, Env } from "./bindings";
+import type { Env } from "./bindings";
 import { entriesApp } from "./features/entries";
+import type { AppVariables } from "./types";
 
 const app = new Hono<{
 	Bindings: Env;
@@ -11,21 +11,12 @@ const app = new Hono<{
 }>().basePath("/api");
 
 // ── CORS ─────────────────────────────────────────────────────────────
-const ALLOWED_ORIGIN_PATTERNS = [
-	/^http:\/\/localhost(:\d+)?$/,
-	/^http:\/\/127\.0\.0\.1(:\d+)?$/,
-	/^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/, // LAN (Expo dev on mobile)
-];
-
+// 開発環境は全開放。本番環境ではCloudflare WorkersのカスタムドメインでSame-Originとなるため
+// CORSは不要（ネイティブアプリはCORS制約を受けない）。
 app.use(
 	"*",
 	cors({
-		origin: (origin) => {
-			if (ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin))) {
-				return origin;
-			}
-			return null;
-		},
+		origin: (origin) => origin,
 		allowMethods: ["GET", "POST", "PUT", "DELETE"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
