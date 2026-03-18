@@ -8,7 +8,7 @@ import {
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import "react-native-reanimated";
 
 import { useProtectedRoute } from "@/hooks/use-auth";
@@ -23,14 +23,18 @@ export const unstable_settings = {
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
 	const { isPending } = useProtectedRoute();
+	const hasLoaded = useRef(false);
 
 	useEffect(() => {
 		if (!isPending) {
+			hasLoaded.current = true;
 			SplashScreen.hideAsync();
 		}
 	}, [isPending]);
 
-	if (isPending) {
+	// 初回ロード中のみ null を返す。
+	// セッション再フェッチ時は Stack を維持してナビゲーション履歴を保持する。
+	if (isPending && !hasLoaded.current) {
 		return null;
 	}
 

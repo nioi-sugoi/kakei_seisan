@@ -9,23 +9,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { EmailForm } from "@/components/auth/email-form";
-import { OtpForm } from "@/components/auth/otp-form";
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { useLoginForm } from "@/hooks/use-login-form";
 
 export default function LoginScreen() {
-	const {
-		email,
-		setEmail,
-		otp,
-		setOtp,
-		error,
-		otpSent,
-		loading,
-		sendOtp,
-		verifyOtp,
-		reset,
-	} = useLoginForm();
+	const { email, setEmail, error, loading, sendOtp } = useLoginForm();
 
 	return (
 		<SafeAreaView className="flex-1 bg-background">
@@ -37,52 +25,39 @@ export default function LoginScreen() {
 					contentContainerClassName="flex-grow justify-center px-6 py-8"
 					keyboardShouldPersistTaps="handled"
 				>
-					{otpSent ? (
-						<OtpForm
+					<View className="gap-8">
+						<View className="items-center gap-3">
+							<View className="w-16 h-16 rounded-2xl bg-primary items-center justify-center">
+								<MaterialIcons
+									name="account-balance-wallet"
+									size={32}
+									color="rgb(252,252,252)"
+								/>
+							</View>
+							<Text className="text-foreground text-2xl font-bold">
+								かんたん家計精算
+							</Text>
+							<Text className="text-muted-foreground text-sm text-center">
+								家計の立替・預りをかんたんに精算
+							</Text>
+						</View>
+
+						<EmailForm
 							email={email}
-							otp={otp}
-							onChangeOtp={setOtp}
+							onChangeEmail={setEmail}
 							error={error}
 							loading={loading}
-							onSubmit={verifyOtp}
-							onResend={sendOtp}
-							onReset={reset}
+							onSubmit={sendOtp}
 						/>
-					) : (
-						<View className="gap-8">
-							<View className="items-center gap-3">
-								<View className="w-16 h-16 rounded-2xl bg-primary items-center justify-center">
-									<MaterialIcons
-										name="account-balance-wallet"
-										size={32}
-										color="rgb(252,252,252)"
-									/>
-								</View>
-								<Text className="text-foreground text-2xl font-bold">
-									かんたん家計精算
-								</Text>
-								<Text className="text-muted-foreground text-sm text-center">
-									家計の立替・預りをかんたんに精算
-								</Text>
-							</View>
 
-							<EmailForm
-								email={email}
-								onChangeEmail={setEmail}
-								error={error}
-								loading={loading}
-								onSubmit={sendOtp}
-							/>
-
-							<View className="flex-row items-center gap-4">
-								<View className="flex-1 h-px bg-border" />
-								<Text className="text-muted-foreground text-xs">または</Text>
-								<View className="flex-1 h-px bg-border" />
-							</View>
-
-							<SocialLoginButtons />
+						<View className="flex-row items-center gap-4">
+							<View className="flex-1 h-px bg-border" />
+							<Text className="text-muted-foreground text-xs">または</Text>
+							<View className="flex-1 h-px bg-border" />
 						</View>
-					)}
+
+						<SocialLoginButtons />
+					</View>
 				</ScrollView>
 			</KeyboardAvoidingView>
 		</SafeAreaView>

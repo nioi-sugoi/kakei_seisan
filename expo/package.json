@@ -4,18 +4,18 @@
 	"version": "1.0.0",
 	"private": true,
 	"scripts": {
-		"start": "expo start --port ${EXPO_PORT:-8081}",
+		"start": "[ -f ../.env.worktree ] && . ../.env.worktree; expo start --port ${EXPO_PORT:-8081}",
 		"android": "expo run:android",
 		"ios": "expo run:ios",
 		"web": "expo start --web"
 	},
 	"dependencies": {
-		"@better-auth/expo": "^1.5.5",
+		"@better-auth/expo": "^1.5.2",
 		"@expo/vector-icons": "^15.0.3",
 		"@react-navigation/bottom-tabs": "^7.4.0",
 		"@react-navigation/elements": "^2.6.3",
 		"@react-navigation/native": "^7.1.8",
-		"better-auth": "^1.5.5",
+		"better-auth": "^1.5.2",
 		"expo": "~54.0.33",
 		"expo-constants": "~18.0.13",
 		"expo-dev-client": "~6.0.20",

@@ -3,15 +3,15 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"dev": "wrangler dev --ip 0.0.0.0 --port ${API_PORT:-8787} --persist-to $(git rev-parse --path-format=absolute --git-common-dir | xargs dirname)/.wrangler-shared",
+		"dev": "[ -f ../.env.worktree ] && . ../.env.worktree; wrangler dev --ip 0.0.0.0 --port ${API_PORT:-8787} --persist-to $(git rev-parse --path-format=absolute --git-common-dir | xargs dirname)/.wrangler-shared",
 		"typecheck": "tsc --noEmit",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate:local": "wrangler d1 migrations apply kakei-seisan-db --local --persist-to $(git rev-parse --path-format=absolute --git-common-dir | xargs dirname)/.wrangler-shared"
 	},
 	"dependencies": {
-		"@better-auth/expo": "^1.5.5",
+		"@better-auth/expo": "^1.5.2",
 		"@hono/valibot-validator": "^0.6.0",
-		"better-auth": "^1.5.5",
+		"better-auth": "^1.5.2",
 		"drizzle-orm": "^0.45.0",
 		"hono": "^4.7.0",
 		"resend": "^6.9.3",

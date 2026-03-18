@@ -28,9 +28,7 @@ export function EmailForm({
 				placeholder="メールアドレスを入力"
 				placeholderTextColor="rgb(93,100,111)"
 				value={email}
-				onChangeText={(text) => {
-					onChangeEmail(text);
-				}}
+				onChangeText={onChangeEmail}
 				keyboardType="email-address"
 				autoCapitalize="none"
 				autoComplete="email"
