@@ -1,4 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import {
+	fireEvent,
+	render,
+	screen,
+	userEvent,
+} from "@testing-library/react-native";
 import { OtpForm } from "../otp-form";
 
 function renderOtpForm(overrides: Partial<Parameters<typeof OtpForm>[0]> = {}) {
@@ -24,6 +29,8 @@ function getOtpInputs() {
 }
 
 describe("OtpForm", () => {
+	const user = userEvent.setup();
+
 	// --- レンダリング ---
 
 	it("6つの TextInput がレンダリングされる", () => {
@@ -63,54 +70,54 @@ describe("OtpForm", () => {
 
 	// --- onChangeText 経由の入力 ---
 
-	it("1文字入力で onChangeOtp が正しい値で呼ばれる", () => {
+	it("1文字入力で onChangeOtp が正しい値で呼ばれる", async () => {
 		const { props } = renderOtpForm();
 		const inputs = getOtpInputs();
 
-		fireEvent.changeText(inputs[0], "5");
+		await user.type(inputs[0], "5");
 
-		// digitsToOtp: ["5"," "," "," "," "," "] → "5     "
 		expect(props.onChangeOtp).toHaveBeenCalledWith("5     ");
 	});
 
-	it("3桁目に入力した場合、正しい位置に値がセットされる", () => {
+	it("3桁目に入力した場合、正しい位置に値がセットされる", async () => {
 		const { props } = renderOtpForm();
 		const inputs = getOtpInputs();
 
-		fireEvent.changeText(inputs[2], "7");
+		await user.type(inputs[2], "7");
 
 		expect(props.onChangeOtp).toHaveBeenCalledWith("  7   ");
 	});
 
-	it("非数字（アルファベット）は除去される", () => {
+	it("非数字（アルファベット）は除去される", async () => {
 		const { props } = renderOtpForm();
 		const inputs = getOtpInputs();
 
-		fireEvent.changeText(inputs[0], "a");
+		await user.type(inputs[0], "a");
 
 		// cleaned = "" → newDigits[0] = ""
 		expect(props.onChangeOtp).toHaveBeenCalledWith("      ");
 	});
 
-	it("複数文字のペーストで各桁に分配される", () => {
+	it("複数文字のペーストで各桁に分配される", async () => {
 		const { props } = renderOtpForm();
 		const inputs = getOtpInputs();
 
-		fireEvent.changeText(inputs[0], "123456");
+		await user.paste(inputs[0], "123456");
 
 		expect(props.onChangeOtp).toHaveBeenCalledWith("123456");
 	});
 
-	it("途中の桁からペーストすると残り桁だけ埋まる", () => {
+	it("途中の桁からペーストすると残り桁だけ埋まる", async () => {
 		const { props } = renderOtpForm();
 		const inputs = getOtpInputs();
 
-		fireEvent.changeText(inputs[3], "789");
+		await user.paste(inputs[3], "789");
 
 		expect(props.onChangeOtp).toHaveBeenCalledWith("   789");
 	});
 
 	// --- Backspace (onKeyPress) ---
+	// userEvent には onKeyPress のシミュレーションがないため fireEvent を使用
 
 	it("空の桁で Backspace を押すと前桁が消去される", () => {
 		const { props } = renderOtpForm({ otp: "1     " });
@@ -120,7 +127,6 @@ describe("OtpForm", () => {
 			nativeEvent: { key: "Backspace" },
 		});
 
-		// slot0 が消去される
 		expect(props.onChangeOtp).toHaveBeenCalledWith("      ");
 	});
 
@@ -137,21 +143,21 @@ describe("OtpForm", () => {
 
 	// --- ボタン押下 ---
 
-	it("認証するボタン押下で onSubmit が呼ばれる", () => {
+	it("認証するボタン押下で onSubmit が呼ばれる", async () => {
 		const { props } = renderOtpForm();
-		fireEvent.press(screen.getByText("認証する"));
+		await user.press(screen.getByText("認証する"));
 		expect(props.onSubmit).toHaveBeenCalledTimes(1);
 	});
 
-	it("コードを再送信ボタン押下で onResend が呼ばれる", () => {
+	it("コードを再送信ボタン押下で onResend が呼ばれる", async () => {
 		const { props } = renderOtpForm();
-		fireEvent.press(screen.getByText("コードを再送信"));
+		await user.press(screen.getByText("コードを再送信"));
 		expect(props.onResend).toHaveBeenCalledTimes(1);
 	});
 
-	it("別のメールアドレスで試すボタン押下で onReset が呼ばれる", () => {
+	it("別のメールアドレスで試すボタン押下で onReset が呼ばれる", async () => {
 		const { props } = renderOtpForm();
-		fireEvent.press(screen.getByText("別のメールアドレスで試す"));
+		await user.press(screen.getByText("別のメールアドレスで試す"));
 		expect(props.onReset).toHaveBeenCalledTimes(1);
 	});
 });
