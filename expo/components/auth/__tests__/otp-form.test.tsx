@@ -1,17 +1,16 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { describe, expect, it, vi } from "vitest";
 import { OtpForm } from "../otp-form";
 
 function renderOtpForm(overrides: Partial<Parameters<typeof OtpForm>[0]> = {}) {
 	const props = {
 		email: "test@example.com",
 		otp: "      ", // 6文字のスペース（空スロット）
-		onChangeOtp: vi.fn(),
+		onChangeOtp: jest.fn(),
 		error: "",
 		loading: false,
-		onSubmit: vi.fn(),
-		onResend: vi.fn(),
-		onReset: vi.fn(),
+		onSubmit: jest.fn(),
+		onResend: jest.fn(),
+		onReset: jest.fn(),
 		...overrides,
 	};
 	render(<OtpForm {...props} />);
@@ -56,7 +55,6 @@ describe("OtpForm", () => {
 
 	it("loading=true のとき認証ボタンに ActivityIndicator が表示される", () => {
 		renderOtpForm({ loading: true });
-		// loading=true のとき「認証する」テキストは非表示
 		expect(screen.queryByText("認証する")).toBeNull();
 	});
 
