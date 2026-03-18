@@ -7,6 +7,9 @@ import type { Env } from "./bindings";
 import * as schema from "./db/schema";
 import { createResendClient } from "./email";
 
+const OTP_EXPIRES_IN_SEC = 300;
+const OTP_EXPIRES_IN_MIN = OTP_EXPIRES_IN_SEC / 60;
+
 export function createAuth(env: Env) {
 	const db = drizzle(env.DB, { schema });
 
@@ -26,13 +29,14 @@ export function createAuth(env: Env) {
 		plugins: [
 			expo(),
 			emailOTP({
+				expiresIn: OTP_EXPIRES_IN_SEC,
 				sendVerificationOTP: async ({ email, otp }) => {
 					const resend = createResendClient(env.RESEND_API_KEY);
 					const { error } = await resend.emails.send({
 						from: env.EMAIL_FROM,
 						to: email,
 						subject: "認証コード - かんたん家計精算",
-						html: `<p>認証コード: <strong>${otp}</strong></p><p>このコードは5分間有効です。</p>`,
+						html: `<p>認証コード: <strong>${otp}</strong></p><p>このコードは${OTP_EXPIRES_IN_MIN}分間有効です。</p>`,
 					});
 					if (error) {
 						console.error("Failed to send OTP email:", error);
