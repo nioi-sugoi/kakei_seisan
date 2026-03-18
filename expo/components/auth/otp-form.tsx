@@ -59,21 +59,32 @@ export function OtpForm({
 	const digits = digitsFromOtp(otp);
 
 	function handleChange(index: number, value: string) {
-		// 複数文字のペースト対応
-		if (value.length > 1) {
-			const pasted = value.replace(/\D/g, "").slice(0, OTP_LENGTH);
-			onChangeOtp(pasted.padEnd(OTP_LENGTH, " "));
-			const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+		const cleaned = value.replace(/\D/g, "");
+
+		// 複数文字のペースト対応（既存の1文字を超える入力）
+		if (cleaned.length > 1) {
+			// 既存の桁が先頭に含まれている場合は除去してペースト部分だけ取り出す
+			const existing = digits[index];
+			const pasted =
+				existing && cleaned.startsWith(existing)
+					? cleaned.slice(existing.length)
+					: cleaned;
+			const pastedDigits = pasted.slice(0, OTP_LENGTH).split("");
+			const newDigits = [...digits];
+			for (let i = 0; i < pastedDigits.length && index + i < OTP_LENGTH; i++) {
+				newDigits[index + i] = pastedDigits[i];
+			}
+			onChangeOtp(digitsToOtp(newDigits));
+			const focusIndex = Math.min(index + pastedDigits.length, OTP_LENGTH - 1);
 			inputRefs.current[focusIndex]?.focus();
 			return;
 		}
 
-		const filtered = value.replace(/\D/g, "");
 		const newDigits = [...digits];
-		newDigits[index] = filtered;
+		newDigits[index] = cleaned;
 		onChangeOtp(digitsToOtp(newDigits));
 
-		if (filtered && index < OTP_LENGTH - 1) {
+		if (cleaned && index < OTP_LENGTH - 1) {
 			inputRefs.current[index + 1]?.focus();
 		}
 	}
