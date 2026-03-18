@@ -9,6 +9,9 @@ const config = getDefaultConfig(__dirname);
 config.projectRoot = __dirname;
 config.watchFolders = [path.resolve(__dirname, "..")];
 
+// テストファイルをバンドル対象外にする
+config.resolver.blockList = [/\.test\.[jt]sx?$/];
+
 // pnpm ワークスペースで node_modules が分散し、同一パッケージの
 // 重複インスタンスが生じる問題を解決する。
 // expo/node_modules を最優先で解決するよう nodeModulesPaths を設定する。
