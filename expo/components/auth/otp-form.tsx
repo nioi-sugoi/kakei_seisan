@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 const OTP_LENGTH = 6;
+const EMPTY_DIGITS = Array<string>(OTP_LENGTH).fill("");
 
 type OtpFormProps = {
 	email: string;
@@ -21,6 +22,29 @@ type OtpFormProps = {
 	onReset: () => void;
 };
 
+/**
+ * otp は固定長6文字のスロット文字列として管理する。
+ * 空スロットはスペースで保持し、位置がずれないようにする。
+ * 例: "1 3   " = slot0='1', slot1=' ', slot2='3', slot3-5=' '
+ *
+ * 外部に渡す際はスペースを除去してcompact stringにする。
+ */
+function digitsFromOtp(otp: string): string[] {
+	const padded = otp.padEnd(OTP_LENGTH, " ");
+	return Array.from({ length: OTP_LENGTH }, (_, i) =>
+		padded[i] === " " ? "" : padded[i],
+	);
+}
+
+function digitsToOtp(digits: string[]): string {
+	return digits.map((d) => d || " ").join("");
+}
+
+/** 送信用にスペースを除去した値を返す */
+function compactOtp(otp: string): string {
+	return otp.replace(/\s/g, "");
+}
+
 export function OtpForm({
 	email,
 	otp,
@@ -32,13 +56,13 @@ export function OtpForm({
 	onReset,
 }: OtpFormProps) {
 	const inputRefs = useRef<(TextInputType | null)[]>([]);
-	const digits = otp.split("").concat(Array(OTP_LENGTH).fill("")).slice(0, OTP_LENGTH);
+	const digits = digitsFromOtp(otp);
 
 	function handleChange(index: number, value: string) {
 		// 複数文字のペースト対応
 		if (value.length > 1) {
 			const pasted = value.replace(/\D/g, "").slice(0, OTP_LENGTH);
-			onChangeOtp(pasted);
+			onChangeOtp(pasted.padEnd(OTP_LENGTH, " "));
 			const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
 			inputRefs.current[focusIndex]?.focus();
 			return;
@@ -47,7 +71,7 @@ export function OtpForm({
 		const filtered = value.replace(/\D/g, "");
 		const newDigits = [...digits];
 		newDigits[index] = filtered;
-		onChangeOtp(newDigits.join(""));
+		onChangeOtp(digitsToOtp(newDigits));
 
 		if (filtered && index < OTP_LENGTH - 1) {
 			inputRefs.current[index + 1]?.focus();
@@ -59,7 +83,7 @@ export function OtpForm({
 			inputRefs.current[index - 1]?.focus();
 			const newDigits = [...digits];
 			newDigits[index - 1] = "";
-			onChangeOtp(newDigits.join(""));
+			onChangeOtp(digitsToOtp(newDigits));
 		}
 	}
 
@@ -124,3 +148,5 @@ export function OtpForm({
 		</View>
 	);
 }
+
+export { compactOtp };
