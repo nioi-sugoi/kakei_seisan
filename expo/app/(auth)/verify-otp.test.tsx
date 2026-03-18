@@ -43,13 +43,11 @@ async function fillOtpAt(index: number, code: string) {
 	}
 }
 
-let mockReplace: jest.Mock;
-let mockBack: jest.Mock;
+const mockReplace = jest.fn();
+const mockBack = jest.fn();
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	mockReplace = jest.fn();
-	mockBack = jest.fn();
 	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
 	mockUseRouter.mockReturnValue({ replace: mockReplace, back: mockBack } as ReturnType<typeof useRouter>);
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
