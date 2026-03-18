@@ -9,7 +9,6 @@ import {
 } from "react-native";
 
 const OTP_LENGTH = 6;
-const EMPTY_DIGITS = Array<string>(OTP_LENGTH).fill("");
 
 type OtpFormProps = {
 	email: string;
@@ -59,7 +58,10 @@ export function OtpForm({
 	const digits = digitsFromOtp(otp);
 
 	function handleChange(index: number, value: string) {
-		const cleaned = value.replace(/\D/g, "");
+		// 空白を除去し、数字以外が含まれていたら何もしない
+		const stripped = value.replace(/\s/g, "");
+		if (/\D/.test(stripped)) return;
+		const cleaned = stripped;
 
 		// 複数文字のペースト対応（既存の1文字を超える入力）
 		if (cleaned.length > 1) {
@@ -115,6 +117,7 @@ export function OtpForm({
 						<TextInput
 							key={index}
 							ref={(ref) => { inputRefs.current[index] = ref; }}
+							testID={`otp-input-${index}`}
 							className="border border-border rounded-xl w-12 h-14 text-center text-2xl text-foreground bg-card"
 							value={digit}
 							onChangeText={(value) => handleChange(index, value)}
