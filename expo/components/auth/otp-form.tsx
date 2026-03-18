@@ -58,7 +58,10 @@ export function OtpForm({
 	const digits = digitsFromOtp(otp);
 
 	function handleChange(index: number, value: string) {
-		const cleaned = value.replace(/\D/g, "");
+		// 空白を除去し、数字以外が含まれていたら何もしない
+		const stripped = value.replace(/\s/g, "");
+		if (/\D/.test(stripped)) return;
+		const cleaned = stripped;
 
 		// 複数文字のペースト対応（既存の1文字を超える入力）
 		if (cleaned.length > 1) {

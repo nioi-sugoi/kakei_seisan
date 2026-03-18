@@ -29,15 +29,15 @@ const mockSendVerificationOtp = jest.mocked(
 const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockUseRouter = jest.mocked(useRouter);
 
-/** 指定桁にOTPを入力し、状態反映を待つ */
+/** 指定桁に数字のみのOTPを入力し、状態反映を待つ */
 async function fillOtpAt(index: number, code: string) {
 	fireEvent.changeText(screen.getByTestId(`otp-input-${index}`), code);
-	const firstDigit = code.replace(/\D/g, "")[0];
-	if (firstDigit) {
+	const stripped = code.replace(/\s/g, "");
+	if (stripped && !/\D/.test(stripped)) {
 		await waitFor(() => {
 			expect(screen.getByTestId(`otp-input-${index}`)).toHaveProp(
 				"value",
-				firstDigit,
+				stripped[0],
 			);
 		});
 	}
@@ -109,11 +109,25 @@ describe("VerifyOtpScreen", () => {
 		});
 	});
 
-	it("非数字を含む入力は数字のみがAPIに渡る", async () => {
+	it("非数字を含むペーストは無視される", async () => {
 		render(<VerifyOtpScreen />);
 
-		await fillOtpAt(0, "a1b2c3");
-		await fillOtpAt(3, "456");
+		// "a1b2c3" は数字以外を含むのでペーストされない
+		fireEvent.changeText(screen.getByTestId("otp-input-0"), "a1b2c3");
+		await user.press(screen.getByText("認証する"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("認証コードを入力してください"),
+			).toBeOnTheScreen();
+		});
+		expect(mockSignInEmailOtp).not.toHaveBeenCalled();
+	});
+
+	it("空白を含む数字のペーストは空白が除去されてAPIに渡る", async () => {
+		render(<VerifyOtpScreen />);
+
+		await fillOtpAt(0, "1 2 3 4 5 6");
 		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
