@@ -89,26 +89,35 @@ describe("VerifyOtpScreen", () => {
 		});
 	});
 
-	it.each([
-		{ label: "途中の桁にペースト", firstInput: "123" },
-		{ label: "非数字を含む入力", firstInput: "a1b2c3" },
-	])(
-		"$label しても正しい値がAPIに渡る",
-		async ({ firstInput }) => {
-			render(<VerifyOtpScreen />);
+	it("途中の桁にペーストしても正しい値がAPIに渡る", async () => {
+		render(<VerifyOtpScreen />);
 
-			await fillOtpAt(0, firstInput);
-			await fillOtpAt(3, "456");
-			await user.press(screen.getByText("認証する"));
+		await fillOtpAt(0, "123");
+		await fillOtpAt(3, "456");
+		await user.press(screen.getByText("認証する"));
 
-			await waitFor(() => {
-				expect(mockSignInEmailOtp).toHaveBeenCalledWith({
-					email: "test@example.com",
-					otp: "123456",
-				});
+		await waitFor(() => {
+			expect(mockSignInEmailOtp).toHaveBeenCalledWith({
+				email: "test@example.com",
+				otp: "123456",
 			});
-		},
-	);
+		});
+	});
+
+	it("非数字を含む入力は数字のみがAPIに渡る", async () => {
+		render(<VerifyOtpScreen />);
+
+		await fillOtpAt(0, "a1b2c3");
+		await fillOtpAt(3, "456");
+		await user.press(screen.getByText("認証する"));
+
+		await waitFor(() => {
+			expect(mockSignInEmailOtp).toHaveBeenCalledWith({
+				email: "test@example.com",
+				otp: "123456",
+			});
+		});
+	});
 
 	// --- バリデーション ---
 
