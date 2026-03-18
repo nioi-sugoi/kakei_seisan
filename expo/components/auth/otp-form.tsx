@@ -9,7 +9,6 @@ import {
 } from "react-native";
 
 const OTP_LENGTH = 6;
-const EMPTY_DIGITS = Array<string>(OTP_LENGTH).fill("");
 
 type OtpFormProps = {
 	email: string;
