@@ -22,10 +22,11 @@ import VerifyOtpScreen from "./verify-otp";
 import { authClient } from "@/lib/auth-client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-const mockSignInEmailOtp = authClient.signIn.emailOtp as jest.Mock;
-const mockSendVerificationOtp = authClient.emailOtp
-	.sendVerificationOtp as jest.Mock;
-const mockUseLocalSearchParams = useLocalSearchParams as jest.Mock;
+const mockSignInEmailOtp = jest.mocked(authClient.signIn.emailOtp);
+const mockSendVerificationOtp = jest.mocked(
+	authClient.emailOtp.sendVerificationOtp,
+);
+const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 
 /** 指定桁にOTPを入力し、状態反映を待つ */
 async function fillOtpAt(index: number, code: string) {
