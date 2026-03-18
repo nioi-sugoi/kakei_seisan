@@ -1,3 +1,4 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import {
 	ActivityIndicator,
@@ -10,7 +11,7 @@ import {
 	View,
 } from "react-native";
 import { useRecordForm } from "@/hooks/use-record-form";
-import { formatDisplayDate } from "@/lib/date";
+import { formatDisplayDate, formatDate, parseDate } from "@/lib/date";
 
 export default function RecordFormScreen() {
 	const {
@@ -31,7 +32,7 @@ export default function RecordFormScreen() {
 		goBack,
 	} = useRecordForm();
 
-	const [showDateInput, setShowDateInput] = useState(false);
+	const [showDatePicker, setShowDatePicker] = useState(false);
 
 	return (
 		<KeyboardAvoidingView
@@ -79,9 +80,7 @@ export default function RecordFormScreen() {
 					>
 						<Text
 							className={`text-sm font-semibold ${
-								category === "deposit"
-									? "text-white"
-									: "text-muted-foreground"
+								category === "deposit" ? "text-white" : "text-muted-foreground"
 							}`}
 						>
 							預り
@@ -113,31 +112,38 @@ export default function RecordFormScreen() {
 				{/* Date */}
 				<View className="gap-2">
 					<Text className="text-sm font-medium text-foreground">日付</Text>
-					{showDateInput ? (
-						<TextInput
-							value={date}
-							onChangeText={setDate}
-							placeholder="YYYY-MM-DD"
-							keyboardType="numbers-and-punctuation"
-							className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
-							placeholderTextColor="#9ca3af"
-							autoFocus
-							onBlur={() => setShowDateInput(false)}
+					<Pressable
+						onPress={() => setShowDatePicker(true)}
+						className="rounded-xl border border-border bg-card px-4 py-3.5"
+					>
+						<Text className="text-base text-foreground">
+							{formatDisplayDate(date)}
+						</Text>
+					</Pressable>
+					{showDatePicker && (
+						<DateTimePicker
+							value={parseDate(date)}
+							mode="date"
+							display="spinner"
+							locale="ja"
+							onChange={(_, selectedDate) => {
+								setShowDatePicker(Platform.OS === "ios");
+								if (selectedDate) {
+									setDate(formatDate(selectedDate));
+								}
+							}}
 						/>
-					) : (
+					)}
+					{Platform.OS === "ios" && showDatePicker && (
 						<Pressable
-							onPress={() => setShowDateInput(true)}
-							className="rounded-xl border border-border bg-card px-4 py-3.5"
+							onPress={() => setShowDatePicker(false)}
+							className="items-center py-2"
 						>
-							<Text className="text-base text-foreground">
-								{formatDisplayDate(date)}
-							</Text>
+							<Text className="text-sm font-medium text-primary">完了</Text>
 						</Pressable>
 					)}
 					{fieldErrors.date && (
-						<Text className="text-sm text-destructive">
-							{fieldErrors.date}
-						</Text>
+						<Text className="text-sm text-destructive">{fieldErrors.date}</Text>
 					)}
 				</View>
 
