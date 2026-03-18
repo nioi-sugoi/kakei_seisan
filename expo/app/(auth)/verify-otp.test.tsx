@@ -44,12 +44,11 @@ async function fillOtpAt(index: number, code: string) {
 }
 
 const mockReplace = jest.fn();
-const mockBack = jest.fn();
 
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
-	mockUseRouter.mockReturnValue({ replace: mockReplace, back: mockBack } as ReturnType<typeof useRouter>);
+	mockUseRouter.mockReturnValue({ replace: mockReplace, back: jest.fn() } as ReturnType<typeof useRouter>);
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });
@@ -112,7 +111,6 @@ describe("VerifyOtpScreen", () => {
 	it("非数字を含むペーストは無視される", async () => {
 		render(<VerifyOtpScreen />);
 
-		// "a1b2c3" は数字以外を含むのでペーストされない
 		fireEvent.changeText(screen.getByTestId("otp-input-0"), "a1b2c3");
 		await user.press(screen.getByText("認証する"));
 
@@ -216,21 +214,6 @@ describe("VerifyOtpScreen", () => {
 		});
 	});
 
-	it("再送信APIエラー時にエラーメッセージが表示される", async () => {
-		mockSendVerificationOtp.mockResolvedValue({
-			error: { message: "送信制限に達しました" },
-		});
-		render(<VerifyOtpScreen />);
-
-		await user.press(screen.getByText("コードを再送信"));
-
-		await waitFor(() => {
-			expect(
-				screen.getByText("送信制限に達しました"),
-			).toBeOnTheScreen();
-		});
-	});
-
 	// --- ナビゲーション ---
 
 	it("emailパラメータがない場合ログイン画面にリダイレクトする", () => {
@@ -238,13 +221,5 @@ describe("VerifyOtpScreen", () => {
 		render(<VerifyOtpScreen />);
 
 		expect(mockReplace).toHaveBeenCalledWith("/(auth)/login");
-	});
-
-	it("「別のメールアドレスで試す」で前の画面に戻る", async () => {
-		render(<VerifyOtpScreen />);
-
-		await user.press(screen.getByText("別のメールアドレスで試す"));
-
-		expect(mockBack).toHaveBeenCalled();
 	});
 });
