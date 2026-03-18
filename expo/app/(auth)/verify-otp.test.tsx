@@ -27,6 +27,7 @@ const mockSendVerificationOtp = jest.mocked(
 	authClient.emailOtp.sendVerificationOtp,
 );
 const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockUseRouter = jest.mocked(useRouter);
 
 /** 指定桁にOTPを入力し、状態反映を待つ */
 async function fillOtpAt(index: number, code: string) {
@@ -42,9 +43,13 @@ async function fillOtpAt(index: number, code: string) {
 	}
 }
 
+const mockReplace = jest.fn();
+const mockBack = jest.fn();
+
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
+	mockUseRouter.mockReturnValue({ replace: mockReplace, back: mockBack } as ReturnType<typeof useRouter>);
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });
@@ -218,8 +223,7 @@ describe("VerifyOtpScreen", () => {
 		mockUseLocalSearchParams.mockReturnValue({});
 		render(<VerifyOtpScreen />);
 
-		const router = (useRouter as jest.Mock).mock.results[0].value;
-		expect(router.replace).toHaveBeenCalledWith("/(auth)/login");
+		expect(mockReplace).toHaveBeenCalledWith("/(auth)/login");
 	});
 
 	it("「別のメールアドレスで試す」で前の画面に戻る", async () => {
@@ -227,7 +231,6 @@ describe("VerifyOtpScreen", () => {
 
 		await user.press(screen.getByText("別のメールアドレスで試す"));
 
-		const router = (useRouter as jest.Mock).mock.results[0].value;
-		expect(router.back).toHaveBeenCalled();
+		expect(mockBack).toHaveBeenCalled();
 	});
 });
