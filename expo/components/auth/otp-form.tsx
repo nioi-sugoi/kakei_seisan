@@ -115,6 +115,7 @@ export function OtpForm({
 						<TextInput
 							key={index}
 							ref={(ref) => { inputRefs.current[index] = ref; }}
+							testID={`otp-input-${index}`}
 							className="border border-border rounded-xl w-12 h-14 text-center text-2xl text-foreground bg-card"
 							value={digit}
 							onChangeText={(value) => handleChange(index, value)}
