@@ -4,7 +4,10 @@
 	"private": true,
 	"scripts": {
 		"dev": "[ -f ../.env.worktree ] && . ../.env.worktree; wrangler dev --ip 0.0.0.0 --port ${API_PORT:-8787} --persist-to $(git rev-parse --path-format=absolute --git-common-dir | xargs dirname)/.wrangler-shared",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"typecheck": "tsc --noEmit",
+		"check": "tsc --noEmit && vitest run",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate:local": "wrangler d1 migrations apply kakei-seisan-db --local --persist-to $(git rev-parse --path-format=absolute --git-common-dir | xargs dirname)/.wrangler-shared"
 	},
@@ -22,6 +25,7 @@
 		"better-sqlite3": "^12.6.2",
 		"drizzle-kit": "^0.31.0",
 		"typescript": "~5.9.2",
+		"vitest": "^4.1.0",
 		"wrangler": "^4.0.0"
 	}
 }
