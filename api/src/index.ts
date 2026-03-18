@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import type { Session, SessionUser } from "./auth";
 import { createAuth } from "./auth";
 import type { Env } from "./bindings";
+import { entriesApp } from "./features/entries";
 
 type Variables = {
 	user: SessionUser | null;
@@ -14,12 +15,23 @@ const app = new Hono<{
 	Variables: Variables;
 }>().basePath("/api");
 
-// ── CORS for auth endpoints ──────────────────────────────────────────
+// ── CORS ─────────────────────────────────────────────────────────────
+const ALLOWED_ORIGIN_PATTERNS = [
+	/^http:\/\/localhost(:\d+)?$/,
+	/^http:\/\/127\.0\.0\.1(:\d+)?$/,
+	/^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/, // LAN (Expo dev on mobile)
+];
+
 app.use(
-	"/auth/*",
+	"*",
 	cors({
-		origin: (origin) => origin,
-		allowMethods: ["GET", "POST"],
+		origin: (origin) => {
+			if (ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin))) {
+				return origin;
+			}
+			return null;
+		},
+		allowMethods: ["GET", "POST", "PUT", "DELETE"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
 	}),
@@ -53,5 +65,8 @@ app.get("/", (c) => {
 app.get("/health", (c) => {
 	return c.json({ status: "ok" });
 });
+
+// ── Feature routes ──────────────────────────────────────────────────
+app.route("/entries", entriesApp);
 
 export default app;
