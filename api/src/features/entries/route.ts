@@ -2,19 +2,13 @@ import { vValidator } from "@hono/valibot-validator";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import * as v from "valibot";
-import type { Env } from "../../bindings";
-import type { Session, SessionUser } from "../../auth";
+import type { AppVariables, Env } from "../../bindings";
 import { validateCreateEntry } from "./domain";
 import * as entriesRepository from "./repository";
 
-type Variables = {
-	user: SessionUser | null;
-	session: Session | null;
-};
-
 const entriesApp = new Hono<{
 	Bindings: Env;
-	Variables: Variables;
+	Variables: AppVariables;
 }>();
 
 const createEntrySchema = v.object({

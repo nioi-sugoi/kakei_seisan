@@ -1,16 +1,9 @@
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { apiPost } from "@/lib/api-client";
+import { formatToday } from "@/lib/date";
 
 type Category = "advance" | "deposit";
-
-function formatToday(): string {
-	const d = new Date();
-	const y = d.getFullYear();
-	const m = String(d.getMonth() + 1).padStart(2, "0");
-	const day = String(d.getDate()).padStart(2, "0");
-	return `${y}-${m}-${day}`;
-}
 
 export function useRecordForm() {
 	const router = useRouter();
@@ -42,6 +35,10 @@ export function useRecordForm() {
 		setFieldErrors(errors);
 		return Object.keys(errors).length === 0;
 	}, [amount, label, date]);
+
+	const goBack = useCallback(() => {
+		router.back();
+	}, [router]);
 
 	const submit = useCallback(async () => {
 		if (!validate()) return;
@@ -93,5 +90,6 @@ export function useRecordForm() {
 		fieldErrors,
 		loading,
 		submit,
+		goBack,
 	};
 }

@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
 	ActivityIndicator,
@@ -11,14 +10,9 @@ import {
 	View,
 } from "react-native";
 import { useRecordForm } from "@/hooks/use-record-form";
-
-function formatDisplayDate(dateStr: string): string {
-	const [y, m, d] = dateStr.split("-");
-	return `${y}年${Number(m)}月${Number(d)}日`;
-}
+import { formatDisplayDate } from "@/lib/date";
 
 export default function RecordFormScreen() {
-	const router = useRouter();
 	const {
 		category,
 		setCategory,
@@ -34,6 +28,7 @@ export default function RecordFormScreen() {
 		fieldErrors,
 		loading,
 		submit,
+		goBack,
 	} = useRecordForm();
 
 	const [showDateInput, setShowDateInput] = useState(false);
@@ -45,7 +40,7 @@ export default function RecordFormScreen() {
 		>
 			{/* Header */}
 			<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
-				<Pressable onPress={() => router.back()} className="active:opacity-60">
+				<Pressable onPress={goBack} className="active:opacity-60">
 					<Text className="text-base text-primary">戻る</Text>
 				</Pressable>
 				<Text className="flex-1 text-lg font-bold text-foreground">

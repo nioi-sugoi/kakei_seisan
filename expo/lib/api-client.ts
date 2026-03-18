@@ -38,14 +38,22 @@ export async function apiPost<T>(
 			body: JSON.stringify(body),
 		});
 
-		const json = await res.json();
+		let json: Record<string, unknown>;
+		try {
+			json = await res.json();
+		} catch {
+			return {
+				data: null,
+				error: { message: "サーバーから不正なレスポンスが返されました" },
+			};
+		}
 
 		if (!res.ok) {
 			return {
 				data: null,
 				error: {
-					message: json.error ?? "リクエストに失敗しました",
-					issues: json.issues,
+					message: (json.error as string) ?? "リクエストに失敗しました",
+					issues: json.issues as { field: string; message: string }[] | undefined,
 				},
 			};
 		}

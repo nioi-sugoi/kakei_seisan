@@ -2,17 +2,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Session, SessionUser } from "./auth";
 import { createAuth } from "./auth";
-import type { Env } from "./bindings";
+import type { AppVariables, Env } from "./bindings";
 import { entriesApp } from "./features/entries";
-
-type Variables = {
-	user: SessionUser | null;
-	session: Session | null;
-};
 
 const app = new Hono<{
 	Bindings: Env;
-	Variables: Variables;
+	Variables: AppVariables;
 }>().basePath("/api");
 
 // ── CORS ─────────────────────────────────────────────────────────────
