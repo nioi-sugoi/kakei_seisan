@@ -4,7 +4,7 @@ import {
 	screen,
 	userEvent,
 } from "@testing-library/react-native";
-import { OtpForm } from "../otp-form";
+import { OtpForm } from "./otp-form";
 
 function renderOtpForm(overrides: Partial<Parameters<typeof OtpForm>[0]> = {}) {
 	const props = {
