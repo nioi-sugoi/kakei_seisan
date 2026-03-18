@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react-native";
 
 jest.mock("expo-router", () => ({
-	useLocalSearchParams: jest.fn(() => ({ email: "test@example.com" })),
+	useLocalSearchParams: jest.fn(),
 	useRouter: jest.fn(() => ({ replace: jest.fn(), back: jest.fn() })),
 }));
 
