@@ -66,7 +66,7 @@ export default function RecordFormScreen() {
 					<Pressable
 						onPress={() => setCategory("advance")}
 						className={`flex-1 items-center rounded-lg py-2.5 ${
-							category === "advance" ? "bg-primary shadow-sm" : ""
+							category === "advance" ? "bg-primary" : ""
 						}`}
 					>
 						<Text
@@ -82,7 +82,7 @@ export default function RecordFormScreen() {
 					<Pressable
 						onPress={() => setCategory("deposit")}
 						className={`flex-1 items-center rounded-lg py-2.5 ${
-							category === "deposit" ? "bg-orange-500 shadow-sm" : ""
+							category === "deposit" ? "bg-orange-500" : ""
 						}`}
 					>
 						<Text
@@ -171,10 +171,10 @@ export default function RecordFormScreen() {
 
 				{/* Label */}
 				<View className="gap-2">
-					<View className="flex-row items-baseline">
-						<Text className="text-sm font-medium text-foreground">ラベル</Text>
-						<Text className="text-xs text-destructive ml-1">*必須</Text>
-					</View>
+					<Text className="text-sm font-medium text-foreground">
+						ラベル
+						<Text className="text-xs text-destructive"> *必須</Text>
+					</Text>
 					<TextInput
 						value={label}
 						onChangeText={setLabel}
@@ -191,10 +191,10 @@ export default function RecordFormScreen() {
 
 				{/* Memo */}
 				<View className="gap-2">
-					<View className="flex-row items-baseline">
-						<Text className="text-sm font-medium text-foreground">メモ</Text>
-						<Text className="text-xs text-muted-foreground ml-1">任意</Text>
-					</View>
+					<Text className="text-sm font-medium text-foreground">
+						メモ
+						<Text className="text-xs text-muted-foreground"> 任意</Text>
+					</Text>
 					<TextInput
 						value={memo}
 						onChangeText={setMemo}
@@ -218,8 +218,8 @@ export default function RecordFormScreen() {
 				<Pressable
 					onPress={submit}
 					disabled={loading}
-					className={`mt-2 items-center rounded-xl py-3.5 ${
-						loading ? "bg-primary/60" : "bg-primary active:opacity-80"
+					className={`mt-2 items-center rounded-xl py-3.5 bg-primary ${
+						loading ? "opacity-60" : "active:opacity-80"
 					}`}
 				>
 					{loading ? (
