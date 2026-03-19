@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { DetailedError, parseResponse } from "hono/client";
 import { useState } from "react";
 import * as v from "valibot";
 import { format } from "date-fns";
@@ -23,11 +24,6 @@ const createEntrySchema = v.object({
 	memo: v.optional(v.string()),
 });
 
-type ApiError = {
-	message: string;
-	issues?: { field: string; message: string }[];
-};
-
 export function useEntryForm() {
 	const router = useRouter();
 	const [category, setCategory] = useState<"advance" | "deposit">("advance");
@@ -38,32 +34,24 @@ export function useEntryForm() {
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
 	const mutation = useMutation({
-		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
-			let res;
-			try {
-				res = await client.api.entries.$post({ json: input });
-			} catch {
-				throw { message: "ネットワークエラーが発生しました" };
-			}
-			if (!res.ok) {
-				const body = (await res.json()) as {
-					error: string;
-					issues?: { field: string; message: string }[];
-				};
-				throw { message: body.error, issues: body.issues };
-			}
-			return await res.json();
-		},
+		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
+			parseResponse(client.api.entries.$post({ json: input })),
 		onSuccess: () => {
 			router.replace("/(tabs)");
 		},
-		onError: (err: ApiError) => {
-			if (err.issues) {
-				const errs: Record<string, string> = {};
-				for (const issue of err.issues) {
-					errs[issue.field] = issue.message;
+		onError: (err) => {
+			if (err instanceof DetailedError) {
+				const detail = err.detail as {
+					error: string;
+					issues?: { field: string; message: string }[];
+				};
+				if (detail.issues) {
+					const errs: Record<string, string> = {};
+					for (const issue of detail.issues) {
+						errs[issue.field] = issue.message;
+					}
+					setFieldErrors(errs);
 				}
-				setFieldErrors(errs);
 			}
 		},
 	});
@@ -97,7 +85,10 @@ export function useEntryForm() {
 		mutation.mutate(result.output);
 	};
 
-	const error = mutation.error?.message ?? "";
+	const error =
+		mutation.error instanceof DetailedError
+			? (mutation.error.detail as { error: string }).error
+			: (mutation.error?.message ?? "");
 
 	return {
 		category,
