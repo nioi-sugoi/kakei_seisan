@@ -15,8 +15,8 @@ export function createEntry(
 			category: input.category,
 			amount: input.amount,
 			date: input.date,
-			label: input.label.trim(),
-			memo: input.memo?.trim() || null,
+			label: input.label,
+			memo: input.memo || null,
 		})
 		.returning()
 		.get();
