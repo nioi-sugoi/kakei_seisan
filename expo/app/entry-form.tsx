@@ -96,7 +96,7 @@ export default function EntryFormScreen() {
 				</View>
 
 				{/* Amount */}
-				<View className="gap-2">
+				<View className="gap-2" testID="amount-field">
 					<Text className="text-sm font-medium text-foreground">金額</Text>
 					<View className="flex-row items-center rounded-xl border border-border bg-card px-4">
 						<Text className="text-xl font-bold text-muted-foreground">¥</Text>
@@ -171,7 +171,7 @@ export default function EntryFormScreen() {
 				</View>
 
 				{/* Label */}
-				<View className="gap-2">
+				<View className="gap-2" testID="label-field">
 					<Text className="text-sm font-medium text-foreground">
 						ラベル
 						<Text className="text-xs text-destructive"> *必須</Text>

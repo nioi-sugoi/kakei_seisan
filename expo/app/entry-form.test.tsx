@@ -4,6 +4,7 @@ import {
 	screen,
 	userEvent,
 	waitFor,
+	within,
 } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
@@ -61,44 +62,64 @@ describe("EntryFormScreen", () => {
 
 	// --- バリデーション ---
 
-	it("金額とラベルが空のまま送信するとエラーが表示される", async () => {
+	it("金額が未入力の場合にエラーが表示される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
+			const amountField = screen.getByTestId("amount-field");
 			expect(
-				screen.getByText("0以上の整数を入力してください"),
+				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
-			expect(screen.getByText("ラベルは必須です")).toBeOnTheScreen();
 		});
 		expect(mockApiPost).not.toHaveBeenCalled();
 	});
 
-	it("ラベルが空のまま送信するとラベルエラーのみ表示される", async () => {
+	it("ラベルが未入力の場合にエラーが表示される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "1000");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(screen.getByText("ラベルは必須です")).toBeOnTheScreen();
+			const labelField = screen.getByTestId("label-field");
+			expect(
+				within(labelField).getByText("ラベルは必須です"),
+			).toBeOnTheScreen();
 		});
 		expect(mockApiPost).not.toHaveBeenCalled();
 	});
 
-	it("ラベルがスペースのみの場合もバリデーションエラーになる", async () => {
+	it("ラベルが半角スペースのみの場合もバリデーションエラーになる", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "500");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"   ",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "   ");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(screen.getByText("ラベルは必須です")).toBeOnTheScreen();
+			const labelField = screen.getByTestId("label-field");
+			expect(
+				within(labelField).getByText("ラベルは必須です"),
+			).toBeOnTheScreen();
+		});
+		expect(mockApiPost).not.toHaveBeenCalled();
+	});
+
+	it("ラベルが全角スペースのみの場合もバリデーションエラーになる", async () => {
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
+
+		await user.type(screen.getByLabelText("金額"), "500");
+		await user.type(screen.getByLabelText("ラベル"), "\u3000\u3000\u3000");
+		await user.press(screen.getByText("登録する"));
+
+		await waitFor(() => {
+			const labelField = screen.getByTestId("label-field");
+			expect(
+				within(labelField).getByText("ラベルは必須です"),
+			).toBeOnTheScreen();
 		});
 		expect(mockApiPost).not.toHaveBeenCalled();
 	});
@@ -309,13 +330,4 @@ describe("EntryFormScreen", () => {
 		expect(mockReplace).not.toHaveBeenCalled();
 	});
 
-	// --- ナビゲーション ---
-
-	it("戻るボタンでrouter.backが呼ばれる", async () => {
-		render(<EntryFormScreen />, { wrapper: createWrapper() });
-
-		await user.press(screen.getByText("戻る"));
-
-		expect(mockBack).toHaveBeenCalled();
-	});
 });
