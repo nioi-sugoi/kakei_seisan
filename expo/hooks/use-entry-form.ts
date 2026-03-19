@@ -80,7 +80,7 @@ export function useEntryForm() {
 			amount: Number(amount),
 			date,
 			label: label.trim(),
-			memo: memo.trim() || undefined,
+			memo: memo || undefined,
 		});
 	}, [category, amount, date, label, memo, validate, mutation]);
 

@@ -105,6 +105,7 @@ export default function EntryFormScreen() {
 							onChangeText={setAmount}
 							placeholder="0"
 							keyboardType="number-pad"
+							accessibilityLabel="金額"
 							className="flex-1 py-3.5 text-right text-2xl font-bold text-foreground"
 							placeholderTextColor="#9ca3af"
 						/>
@@ -179,6 +180,7 @@ export default function EntryFormScreen() {
 						value={label}
 						onChangeText={setLabel}
 						placeholder="例: スーパー買い物"
+						accessibilityLabel="ラベル"
 						className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
 						placeholderTextColor="#9ca3af"
 					/>
@@ -199,6 +201,7 @@ export default function EntryFormScreen() {
 						value={memo}
 						onChangeText={setMemo}
 						placeholder="メモを入力..."
+						accessibilityLabel="メモ"
 						multiline
 						numberOfLines={3}
 						className="min-h-20 rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"

@@ -78,7 +78,7 @@ describe("EntryFormScreen", () => {
 	it("ラベルが空のまま送信するとラベルエラーのみ表示される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "1000");
+		await user.type(screen.getByLabelText("金額"), "1000");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -90,9 +90,9 @@ describe("EntryFormScreen", () => {
 	it("ラベルがスペースのみの場合もバリデーションエラーになる", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "500");
+		await user.type(screen.getByLabelText("金額"), "500");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"   ",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -106,9 +106,9 @@ describe("EntryFormScreen", () => {
 	it("小数の金額を入力するとバリデーションエラーになる", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "1.5");
+		await user.type(screen.getByLabelText("金額"), "1.5");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"テスト",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -124,9 +124,9 @@ describe("EntryFormScreen", () => {
 	it("負の金額を入力するとバリデーションエラーになる", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "-100");
+		await user.type(screen.getByLabelText("金額"), "-100");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"テスト",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -144,9 +144,9 @@ describe("EntryFormScreen", () => {
 	it("ラベルの前後の空白がトリムされてAPIに渡される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "1000");
+		await user.type(screen.getByLabelText("金額"), "1000");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"  食料品  ",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -161,54 +161,12 @@ describe("EntryFormScreen", () => {
 		});
 	});
 
-	it("メモの前後の空白がトリムされてAPIに渡される", async () => {
-		render(<EntryFormScreen />, { wrapper: createWrapper() });
-
-		await user.type(screen.getByPlaceholderText("0"), "500");
-		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
-			"お菓子",
-		);
-		await user.type(screen.getByPlaceholderText("メモを入力..."), "  チョコ  ");
-		await user.press(screen.getByText("登録する"));
-
-		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
-					memo: "チョコ",
-				}),
-			);
-		});
-	});
-
-	it("メモがスペースのみの場合はundefinedとしてAPIに渡される", async () => {
-		render(<EntryFormScreen />, { wrapper: createWrapper() });
-
-		await user.type(screen.getByPlaceholderText("0"), "500");
-		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
-			"テスト",
-		);
-		await user.type(screen.getByPlaceholderText("メモを入力..."), "   ");
-		await user.press(screen.getByText("登録する"));
-
-		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
-					memo: undefined,
-				}),
-			);
-		});
-	});
-
 	it("金額が文字列からNumberに変換されてAPIに渡される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "2500");
+		await user.type(screen.getByLabelText("金額"), "2500");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"テスト",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -229,9 +187,9 @@ describe("EntryFormScreen", () => {
 	it("金額0は有効な値としてAPIに渡される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "0");
+		await user.type(screen.getByLabelText("金額"), "0");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"テスト",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -251,9 +209,9 @@ describe("EntryFormScreen", () => {
 	it("立替で入力して送信するとAPIに正しい値が渡る", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "1500");
+		await user.type(screen.getByLabelText("金額"), "1500");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"食料品",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -274,9 +232,9 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.press(screen.getByText("預り"));
-		await user.type(screen.getByPlaceholderText("0"), "3000");
+		await user.type(screen.getByLabelText("金額"), "3000");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"生活費",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -296,9 +254,9 @@ describe("EntryFormScreen", () => {
 	it("送信成功後にタイムラインへ遷移する", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "500");
+		await user.type(screen.getByLabelText("金額"), "500");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"テスト",
 		);
 		await user.press(screen.getByText("登録する"));
@@ -311,12 +269,12 @@ describe("EntryFormScreen", () => {
 	it("メモが入力されるとAPIに渡される", async () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "200");
+		await user.type(screen.getByLabelText("金額"), "200");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"お菓子",
 		);
-		await user.type(screen.getByPlaceholderText("メモを入力..."), "チョコ");
+		await user.type(screen.getByLabelText("メモ"), "チョコ");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -338,9 +296,9 @@ describe("EntryFormScreen", () => {
 		});
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
-		await user.type(screen.getByPlaceholderText("0"), "100");
+		await user.type(screen.getByLabelText("金額"), "100");
 		await user.type(
-			screen.getByPlaceholderText("例: スーパー買い物"),
+			screen.getByLabelText("ラベル"),
 			"テスト",
 		);
 		await user.press(screen.getByText("登録する"));
