@@ -97,7 +97,10 @@ export default function EntryFormScreen() {
 
 				{/* Amount */}
 				<View className="gap-2" testID="amount-field">
-					<Text className="text-sm font-medium text-foreground">金額</Text>
+					<Text className="text-sm font-medium text-foreground">
+						金額
+						<Text className="text-xs text-destructive"> *必須</Text>
+					</Text>
 					<View className="flex-row items-center rounded-xl border border-border bg-card px-4">
 						<Text className="text-xl font-bold text-muted-foreground">¥</Text>
 						<TextInput
@@ -119,7 +122,10 @@ export default function EntryFormScreen() {
 
 				{/* Date */}
 				<View className="gap-2">
-					<Text className="text-sm font-medium text-foreground">日付</Text>
+					<Text className="text-sm font-medium text-foreground">
+						日付
+						<Text className="text-xs text-destructive"> *必須</Text>
+					</Text>
 					{DateTimePicker ? (
 						<>
 							<Pressable
