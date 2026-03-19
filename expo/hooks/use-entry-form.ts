@@ -1,9 +1,15 @@
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { apiPost } from "@/lib/api-client";
 import { formatToday } from "@/lib/date";
 
 type Category = "advance" | "deposit";
+
+type ApiError = {
+	message: string;
+	issues?: { field: string; message: string }[];
+};
 
 export function useEntryForm() {
 	const router = useRouter();
@@ -12,9 +18,35 @@ export function useEntryForm() {
 	const [date, setDate] = useState(formatToday);
 	const [label, setLabel] = useState("");
 	const [memo, setMemo] = useState("");
-	const [error, setError] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-	const [loading, setLoading] = useState(false);
+
+	const mutation = useMutation({
+		mutationFn: async (input: {
+			category: Category;
+			amount: number;
+			date: string;
+			label: string;
+			memo?: string;
+		}) => {
+			const { data, error } = await apiPost("/entries", input);
+			if (error) {
+				throw error;
+			}
+			return data;
+		},
+		onSuccess: () => {
+			router.replace("/(tabs)");
+		},
+		onError: (err: ApiError) => {
+			if (err.issues) {
+				const errs: Record<string, string> = {};
+				for (const issue of err.issues) {
+					errs[issue.field] = issue.message;
+				}
+				setFieldErrors(errs);
+			}
+		},
+	});
 
 	const validate = useCallback((): boolean => {
 		const errors: Record<string, string> = {};
@@ -40,40 +72,19 @@ export function useEntryForm() {
 		router.back();
 	}, [router]);
 
-	const submit = useCallback(async () => {
+	const submit = useCallback(() => {
 		if (!validate()) return;
 
-		setError("");
-		setLoading(true);
+		mutation.mutate({
+			category,
+			amount: Number(amount),
+			date,
+			label: label.trim(),
+			memo: memo.trim() || undefined,
+		});
+	}, [category, amount, date, label, memo, validate, mutation]);
 
-		try {
-			const { error: apiError } = await apiPost("/entries", {
-				category,
-				amount: Number(amount),
-				date,
-				label: label.trim(),
-				memo: memo.trim() || undefined,
-			});
-
-			if (apiError) {
-				setError(apiError.message);
-				if (apiError.issues) {
-					const errs: Record<string, string> = {};
-					for (const issue of apiError.issues) {
-						errs[issue.field] = issue.message;
-					}
-					setFieldErrors(errs);
-				}
-				return;
-			}
-
-			router.replace("/(tabs)");
-		} catch {
-			setError("ネットワークエラーが発生しました");
-		} finally {
-			setLoading(false);
-		}
-	}, [category, amount, date, label, memo, validate, router]);
+	const error = mutation.error?.message ?? "";
 
 	return {
 		category,
@@ -88,7 +99,7 @@ export function useEntryForm() {
 		setMemo,
 		error,
 		fieldErrors,
-		loading,
+		loading: mutation.isPending,
 		submit,
 		goBack,
 	};

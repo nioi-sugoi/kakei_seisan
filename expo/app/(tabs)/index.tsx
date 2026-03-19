@@ -16,9 +16,9 @@ export default function TimelineScreen() {
 			{/* FAB */}
 			<Pressable
 				onPress={() => router.push("/entry-form")}
-				className="absolute bottom-6 right-5 h-28 w-28 items-center justify-center rounded-full bg-primary shadow-lg active:opacity-80"
+				className="absolute bottom-6 right-5 h-20 w-20 items-center justify-center rounded-full bg-primary shadow-lg active:opacity-80"
 			>
-				<Text className="text-5xl font-bold text-primary-foreground">＋</Text>
+				<Text className="text-4xl font-bold text-primary-foreground">＋</Text>
 			</Pressable>
 		</View>
 	);

@@ -1,9 +1,11 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	render,
 	screen,
 	userEvent,
 	waitFor,
 } from "@testing-library/react-native";
+import type { ReactNode } from "react";
 
 jest.mock("expo-router", () => ({
 	useRouter: jest.fn(() => ({ replace: jest.fn(), back: jest.fn() })),
@@ -16,6 +18,20 @@ jest.mock("@/lib/api-client", () => ({
 import { useRouter } from "expo-router";
 import { apiPost } from "@/lib/api-client";
 import EntryFormScreen from "./entry-form";
+
+let queryClient: QueryClient;
+
+function createWrapper() {
+	queryClient = new QueryClient({
+		defaultOptions: {
+			queries: { gcTime: 0 },
+			mutations: { retry: false, gcTime: 0 },
+		},
+	});
+	return ({ children }: { children: ReactNode }) => (
+		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+	);
+}
 
 const mockApiPost = jest.mocked(apiPost);
 const mockUseRouter = jest.mocked(useRouter);
@@ -32,6 +48,10 @@ beforeEach(() => {
 	mockApiPost.mockResolvedValue({ data: {}, error: null });
 });
 
+afterEach(() => {
+	queryClient?.clear();
+});
+
 describe("EntryFormScreen", () => {
 	let user: ReturnType<typeof userEvent.setup>;
 
@@ -42,7 +62,7 @@ describe("EntryFormScreen", () => {
 	// --- バリデーション ---
 
 	it("金額とラベルが空のまま送信するとエラーが表示される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.press(screen.getByText("登録する"));
 
@@ -56,7 +76,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("ラベルが空のまま送信するとラベルエラーのみ表示される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "1000");
 		await user.press(screen.getByText("登録する"));
@@ -68,7 +88,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("ラベルがスペースのみの場合もバリデーションエラーになる", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "500");
 		await user.type(
@@ -84,7 +104,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("小数の金額を入力するとバリデーションエラーになる", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "1.5");
 		await user.type(
@@ -102,7 +122,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("負の金額を入力するとバリデーションエラーになる", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "-100");
 		await user.type(
@@ -122,7 +142,7 @@ describe("EntryFormScreen", () => {
 	// --- 送信時のトリム・値変換 ---
 
 	it("ラベルの前後の空白がトリムされてAPIに渡される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "1000");
 		await user.type(
@@ -142,7 +162,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("メモの前後の空白がトリムされてAPIに渡される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "500");
 		await user.type(
@@ -163,7 +183,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("メモがスペースのみの場合はundefinedとしてAPIに渡される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "500");
 		await user.type(
@@ -184,7 +204,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("金額が文字列からNumberに変換されてAPIに渡される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "2500");
 		await user.type(
@@ -207,7 +227,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("金額0は有効な値としてAPIに渡される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "0");
 		await user.type(
@@ -229,7 +249,7 @@ describe("EntryFormScreen", () => {
 	// --- 正常送信 ---
 
 	it("立替で入力して送信するとAPIに正しい値が渡る", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "1500");
 		await user.type(
@@ -251,7 +271,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("預りに切り替えて送信するとcategoryがdepositになる", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.press(screen.getByText("預り"));
 		await user.type(screen.getByPlaceholderText("0"), "3000");
@@ -274,7 +294,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("送信成功後にタイムラインへ遷移する", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "500");
 		await user.type(
@@ -289,7 +309,7 @@ describe("EntryFormScreen", () => {
 	});
 
 	it("メモが入力されるとAPIに渡される", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "200");
 		await user.type(
@@ -316,7 +336,7 @@ describe("EntryFormScreen", () => {
 			data: null,
 			error: { message: "サーバーエラー" },
 		});
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByPlaceholderText("0"), "100");
 		await user.type(
@@ -334,7 +354,7 @@ describe("EntryFormScreen", () => {
 	// --- ナビゲーション ---
 
 	it("戻るボタンでrouter.backが呼ばれる", async () => {
-		render(<EntryFormScreen />);
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.press(screen.getByText("戻る"));
 
