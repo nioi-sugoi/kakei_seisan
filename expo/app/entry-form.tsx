@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
 	ActivityIndicator,
 	KeyboardAvoidingView,
@@ -9,16 +8,8 @@ import {
 	TextInput,
 	View,
 } from "react-native";
-import { format, parse } from "date-fns";
+import { DateInput } from "@/components/DateInput";
 import { useEntryForm } from "@/hooks/use-entry-form";
-
-// ネイティブモジュールが含まれないビルド（Expo Go等）ではフォールバック
-let DateTimePicker: typeof import("@react-native-community/datetimepicker").default | null = null;
-try {
-	DateTimePicker = require("@react-native-community/datetimepicker").default;
-} catch {
-	// native module unavailable
-}
 
 export default function EntryFormScreen() {
 	const {
@@ -38,8 +29,6 @@ export default function EntryFormScreen() {
 		submit,
 		goBack,
 	} = useEntryForm();
-
-	const [showDatePicker, setShowDatePicker] = useState(false);
 
 	return (
 		<KeyboardAvoidingView
@@ -96,7 +85,7 @@ export default function EntryFormScreen() {
 				</View>
 
 				{/* Amount */}
-				<View className="gap-2" testID="amount-field">
+				<View className="gap-2" accessibilityLabel="金額フィールド">
 					<Text className="text-sm font-medium text-foreground">
 						金額
 						<Text className="text-xs text-destructive"> *必須</Text>
@@ -126,58 +115,14 @@ export default function EntryFormScreen() {
 						日付
 						<Text className="text-xs text-destructive"> *必須</Text>
 					</Text>
-					{DateTimePicker ? (
-						<>
-							<Pressable
-								onPress={() => setShowDatePicker(true)}
-								className="rounded-xl border border-border bg-card px-4 py-3.5"
-							>
-								<Text className="text-base text-foreground">
-									{format(parse(date, "yyyy-MM-dd", new Date()), "yyyy年M月d日")}
-								</Text>
-							</Pressable>
-							{showDatePicker && (
-								<DateTimePicker
-									value={parse(date, "yyyy-MM-dd", new Date())}
-									mode="date"
-									display="spinner"
-									locale="ja"
-									onChange={(_, selectedDate) => {
-										setShowDatePicker(Platform.OS === "ios");
-										if (selectedDate) {
-											setDate(format(selectedDate, "yyyy-MM-dd"));
-										}
-									}}
-								/>
-							)}
-							{Platform.OS === "ios" && showDatePicker && (
-								<Pressable
-									onPress={() => setShowDatePicker(false)}
-									className="items-center py-2"
-								>
-									<Text className="text-sm font-medium text-primary">
-										完了
-									</Text>
-								</Pressable>
-							)}
-						</>
-					) : (
-						<TextInput
-							value={date}
-							onChangeText={setDate}
-							placeholder="YYYY-MM-DD"
-							keyboardType="numbers-and-punctuation"
-							className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
-							placeholderTextColor="#9ca3af"
-						/>
-					)}
+					<DateInput value={date} onChange={setDate} />
 					{fieldErrors.date ? (
 						<Text className="text-sm text-destructive">{fieldErrors.date}</Text>
 					): null}
 				</View>
 
 				{/* Label */}
-				<View className="gap-2" testID="label-field">
+				<View className="gap-2" accessibilityLabel="ラベルフィールド">
 					<Text className="text-sm font-medium text-foreground">
 						ラベル
 						<Text className="text-xs text-destructive"> *必須</Text>

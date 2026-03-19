@@ -8,17 +8,25 @@ import {
 } from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
+const mockReplace = jest.fn();
+const mockBack = jest.fn();
+
 jest.mock("expo-router", () => ({
-	useRouter: jest.fn(() => ({ replace: jest.fn(), back: jest.fn() })),
+	useRouter: () => ({ replace: mockReplace, back: mockBack }),
+}));
+
+jest.mock("expo-constants", () => ({
+	default: { appOwnership: null },
 }));
 
 jest.mock("@/lib/api-client", () => ({
 	apiPost: jest.fn(),
 }));
 
-import { useRouter } from "expo-router";
 import { apiPost } from "@/lib/api-client";
 import EntryFormScreen from "./entry-form";
+
+const mockApiPost = jest.mocked(apiPost);
 
 let queryClient: QueryClient;
 
@@ -34,18 +42,8 @@ function createWrapper() {
 	);
 }
 
-const mockApiPost = jest.mocked(apiPost);
-const mockUseRouter = jest.mocked(useRouter);
-
-const mockReplace = jest.fn();
-const mockBack = jest.fn();
-
 beforeEach(() => {
 	jest.clearAllMocks();
-	mockUseRouter.mockReturnValue({
-		replace: mockReplace,
-		back: mockBack,
-	} as ReturnType<typeof useRouter>);
 	mockApiPost.mockResolvedValue({ data: {}, error: null });
 });
 
@@ -69,7 +67,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const amountField = screen.getByTestId("amount-field");
+			const amountField = screen.getByLabelText("金額フィールド");
 			expect(
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
@@ -84,7 +82,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const labelField = screen.getByTestId("label-field");
+			const labelField = screen.getByLabelText("ラベルフィールド");
 			expect(
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
@@ -100,7 +98,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const labelField = screen.getByTestId("label-field");
+			const labelField = screen.getByLabelText("ラベルフィールド");
 			expect(
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
@@ -116,7 +114,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const labelField = screen.getByTestId("label-field");
+			const labelField = screen.getByLabelText("ラベルフィールド");
 			expect(
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
@@ -128,15 +126,13 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "1.5");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"テスト",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
+			const amountField = screen.getByLabelText("金額フィールド");
 			expect(
-				screen.getByText("0以上の整数を入力してください"),
+				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
 		});
 		expect(mockApiPost).not.toHaveBeenCalled();
@@ -146,15 +142,13 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "-100");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"テスト",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
+			const amountField = screen.getByLabelText("金額フィールド");
 			expect(
-				screen.getByText("0以上の整数を入力してください"),
+				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
 		});
 		expect(mockApiPost).not.toHaveBeenCalled();
@@ -168,7 +162,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const amountField = screen.getByTestId("amount-field");
+			const amountField = screen.getByLabelText("金額フィールド");
 			expect(
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
@@ -182,10 +176,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "1000");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"  食料品  ",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "  食料品  ");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -202,10 +193,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "2500");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"テスト",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -225,10 +213,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "0");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"テスト",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -247,10 +232,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "1500");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"食料品",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "食料品");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -270,10 +252,7 @@ describe("EntryFormScreen", () => {
 
 		await user.press(screen.getByText("預り"));
 		await user.type(screen.getByLabelText("金額"), "3000");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"生活費",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "生活費");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -292,10 +271,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "500");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"テスト",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -307,10 +283,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "200");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"お菓子",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "お菓子");
 		await user.type(screen.getByLabelText("メモ"), "チョコ");
 		await user.press(screen.getByText("登録する"));
 
@@ -334,10 +307,7 @@ describe("EntryFormScreen", () => {
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "100");
-		await user.type(
-			screen.getByLabelText("ラベル"),
-			"テスト",
-		);
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
@@ -345,5 +315,4 @@ describe("EntryFormScreen", () => {
 		});
 		expect(mockReplace).not.toHaveBeenCalled();
 	});
-
 });
