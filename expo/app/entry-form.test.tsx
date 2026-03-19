@@ -160,6 +160,22 @@ describe("EntryFormScreen", () => {
 		expect(mockApiPost).not.toHaveBeenCalled();
 	});
 
+	it("数字以外の文字列を入力するとバリデーションエラーになる", async () => {
+		render(<EntryFormScreen />, { wrapper: createWrapper() });
+
+		await user.type(screen.getByLabelText("金額"), "abc");
+		await user.type(screen.getByLabelText("ラベル"), "テスト");
+		await user.press(screen.getByText("登録する"));
+
+		await waitFor(() => {
+			const amountField = screen.getByTestId("amount-field");
+			expect(
+				within(amountField).getByText("0以上の整数を入力してください"),
+			).toBeOnTheScreen();
+		});
+		expect(mockApiPost).not.toHaveBeenCalled();
+	});
+
 	// --- 送信時のトリム・値変換 ---
 
 	it("ラベルの前後の空白がトリムされてAPIに渡される", async () => {
