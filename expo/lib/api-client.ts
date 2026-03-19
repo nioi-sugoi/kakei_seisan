@@ -1,16 +1,44 @@
-import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 import { config } from "./config";
 
+const COOKIE_STORAGE_KEY = "kakei-seisan_cookie";
+
+/**
+ * SecureStore に保存された Better Auth の cookie JSON を
+ * Cookie ヘッダー文字列に変換する。
+ *
+ * 保存形式: {"better-auth.session_token": {"value": "xxx", "expires": "..."}}
+ * 出力形式: "better-auth.session_token=xxx"
+ */
+function parseCookieJson(raw: string): string {
+	try {
+		const parsed = JSON.parse(raw) as Record<
+			string,
+			{ value: string; expires: string | null }
+		>;
+		return Object.entries(parsed)
+			.filter(
+				([, v]) => !v.expires || new Date(v.expires) > new Date(),
+			)
+			.map(([key, v]) => `${key}=${v.value}`)
+			.join("; ");
+	} catch {
+		return "";
+	}
+}
+
 async function getAuthHeaders(): Promise<Record<string, string>> {
-	// Web版ではブラウザの標準Cookie機構を使うためヘッダー付与不要
 	if (Platform.OS === "web") {
 		return {};
 	}
 	try {
-		const cookieStr = await SecureStore.getItemAsync("kakei-seisan.cookie");
-		if (cookieStr) {
-			return { Cookie: cookieStr };
+		const raw = await SecureStore.getItemAsync(COOKIE_STORAGE_KEY);
+		if (raw) {
+			const cookie = parseCookieJson(raw);
+			if (cookie) {
+				return { Cookie: cookie };
+			}
 		}
 	} catch {
 		// SecureStore が使えない環境ではスキップ
@@ -20,7 +48,13 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 type ApiResponse<T> =
 	| { data: T; error: null }
-	| { data: null; error: { message: string; issues?: { field: string; message: string }[] } };
+	| {
+			data: null;
+			error: {
+				message: string;
+				issues?: { field: string; message: string }[];
+			};
+	  };
 
 export async function apiPost<T>(
 	path: string,
@@ -44,7 +78,9 @@ export async function apiPost<T>(
 		} catch {
 			return {
 				data: null,
-				error: { message: "サーバーから不正なレスポンスが返されました" },
+				error: {
+					message: "サーバーから不正なレスポンスが返されました",
+				},
 			};
 		}
 
@@ -52,8 +88,11 @@ export async function apiPost<T>(
 			return {
 				data: null,
 				error: {
-					message: (json.error as string) ?? "リクエストに失敗しました",
-					issues: json.issues as { field: string; message: string }[] | undefined,
+					message:
+						(json.error as string) ?? "リクエストに失敗しました",
+					issues: json.issues as
+						| { field: string; message: string }[]
+						| undefined,
 				},
 			};
 		}
