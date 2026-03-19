@@ -2,8 +2,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import * as v from "valibot";
+import { format } from "date-fns";
 import { apiPost } from "@/lib/api-client";
-import { formatToday } from "@/lib/date";
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -32,7 +32,7 @@ export function useEntryForm() {
 	const router = useRouter();
 	const [category, setCategory] = useState<"advance" | "deposit">("advance");
 	const [amount, setAmount] = useState("");
-	const [date, setDate] = useState(formatToday);
+	const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 	const [label, setLabel] = useState("");
 	const [memo, setMemo] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

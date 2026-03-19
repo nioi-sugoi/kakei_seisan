@@ -9,8 +9,8 @@ import {
 	TextInput,
 	View,
 } from "react-native";
+import { format, parse } from "date-fns";
 import { useEntryForm } from "@/hooks/use-entry-form";
-import { formatDisplayDate, formatDate, parseDate } from "@/lib/date";
 
 // ネイティブモジュールが含まれないビルド（Expo Go等）ではフォールバック
 let DateTimePicker: typeof import("@react-native-community/datetimepicker").default | null = null;
@@ -133,19 +133,19 @@ export default function EntryFormScreen() {
 								className="rounded-xl border border-border bg-card px-4 py-3.5"
 							>
 								<Text className="text-base text-foreground">
-									{formatDisplayDate(date)}
+									{format(parse(date, "yyyy-MM-dd", new Date()), "yyyy年M月d日")}
 								</Text>
 							</Pressable>
 							{showDatePicker && (
 								<DateTimePicker
-									value={parseDate(date)}
+									value={parse(date, "yyyy-MM-dd", new Date())}
 									mode="date"
 									display="spinner"
 									locale="ja"
 									onChange={(_, selectedDate) => {
 										setShowDatePicker(Platform.OS === "ios");
 										if (selectedDate) {
-											setDate(formatDate(selectedDate));
+											setDate(format(selectedDate, "yyyy-MM-dd"));
 										}
 									}}
 								/>
