@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { DetailedError, parseResponse } from "hono/client";
+import { parseResponse } from "hono/client";
 import { useState } from "react";
 import * as v from "valibot";
 import { format } from "date-fns";
@@ -39,21 +39,6 @@ export function useEntryForm() {
 		onSuccess: () => {
 			router.replace("/(tabs)");
 		},
-		onError: (err) => {
-			if (err instanceof DetailedError) {
-				const detail = err.detail as {
-					error: string;
-					issues?: { field: string; message: string }[];
-				};
-				if (detail.issues) {
-					const errs: Record<string, string> = {};
-					for (const issue of detail.issues) {
-						errs[issue.field] = issue.message;
-					}
-					setFieldErrors(errs);
-				}
-			}
-		},
 	});
 
 	const goBack = () => {
@@ -85,10 +70,7 @@ export function useEntryForm() {
 		mutation.mutate(result.output);
 	};
 
-	const error =
-		mutation.error instanceof DetailedError
-			? (mutation.error.detail as { error: string }).error
-			: (mutation.error?.message ?? "");
+	const error = mutation.error?.message ?? "";
 
 	return {
 		category,
