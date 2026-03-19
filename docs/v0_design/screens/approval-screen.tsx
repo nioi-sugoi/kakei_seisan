@@ -1,6 +1,6 @@
 "use client"
 
-import { HouseholdRecord } from "@/lib/types"
+import { HouseholdEntry } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,11 +19,11 @@ function formatDateFull(dateStr: string) {
 }
 
 interface ApprovalScreenProps {
-  record: HouseholdRecord
+  entry: HouseholdEntry
   onBack?: () => void
 }
 
-export function ApprovalScreen({ record, onBack }: ApprovalScreenProps) {
+export function ApprovalScreen({ entry, onBack }: ApprovalScreenProps) {
   const [showRejectInput, setShowRejectInput] = useState(false)
   const typeLabels = { advance: "立替", deposit: "預り", settlement: "精算" }
   const typeColors = {
@@ -44,24 +44,24 @@ export function ApprovalScreen({ record, onBack }: ApprovalScreenProps) {
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-4 py-5">
-        {/* Record Detail */}
+        {/* Entry Detail */}
         <Card className="border-0 shadow-sm">
           <CardContent className="flex flex-col gap-4 px-5 py-5">
             <Badge
               variant="outline"
-              className={`w-fit rounded-md text-xs font-medium ${typeColors[record.type]}`}
+              className={`w-fit rounded-md text-xs font-medium ${typeColors[entry.type]}`}
             >
-              {typeLabels[record.type]}
+              {typeLabels[entry.type]}
             </Badge>
 
             <div className="text-center">
               <span
                 className={`text-3xl font-bold tabular-nums ${
-                  record.type === "deposit" ? "text-orange-600" : "text-foreground"
+                  entry.type === "deposit" ? "text-orange-600" : "text-foreground"
                 }`}
               >
-                {record.type === "deposit" ? "-" : ""}
-                {formatAmount(record.amount)}
+                {entry.type === "deposit" ? "-" : ""}
+                {formatAmount(entry.amount)}
               </span>
             </div>
 
@@ -71,17 +71,17 @@ export function ApprovalScreen({ record, onBack }: ApprovalScreenProps) {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{"日付"}</span>
                 <span className="text-sm font-medium text-foreground">
-                  {formatDateFull(record.date)}
+                  {formatDateFull(entry.date)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{"ラベル"}</span>
-                <span className="text-sm font-medium text-foreground">{record.label}</span>
+                <span className="text-sm font-medium text-foreground">{entry.label}</span>
               </div>
-              {record.memo && (
+              {entry.memo && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">{"メモ"}</span>
-                  <span className="text-sm text-foreground">{record.memo}</span>
+                  <span className="text-sm text-foreground">{entry.memo}</span>
                 </div>
               )}
             </div>
@@ -89,12 +89,12 @@ export function ApprovalScreen({ record, onBack }: ApprovalScreenProps) {
         </Card>
 
         {/* Receipt Images */}
-        {record.hasReceipt && (
+        {entry.hasReceipt && (
           <Card className="border-0 shadow-sm">
             <CardContent className="flex flex-col gap-3 px-5 py-4">
               <span className="text-sm font-medium text-foreground">{"レシート画像"}</span>
               <div className="flex gap-3">
-                {Array.from({ length: record.receiptCount || 1 }).map((_, i) => (
+                {Array.from({ length: entry.receiptCount || 1 }).map((_, i) => (
                   <div
                     key={i}
                     className="flex h-24 w-24 items-center justify-center rounded-lg bg-secondary"

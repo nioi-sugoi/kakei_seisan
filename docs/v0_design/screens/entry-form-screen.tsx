@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Camera, Image as ImageIcon, X, ArrowLeft } from "lucide-react"
 
-interface RecordFormProps {
+interface EntryFormProps {
   onBack?: () => void
 }
 
-export function RecordFormScreen({ onBack }: RecordFormProps) {
+export function EntryFormScreen({ onBack }: EntryFormProps) {
   const [type, setType] = useState<"advance" | "deposit">("advance")
   const [images, setImages] = useState<string[]>([])
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { HouseholdRecord } from "@/lib/types"
+import { HouseholdEntry } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,13 +21,13 @@ function formatDateFull(dateStr: string) {
   return `${d.getFullYear()}\u5E74${d.getMonth() + 1}\u6708${d.getDate()}\u65E5`
 }
 
-interface RecordDetailProps {
-  record: HouseholdRecord
+interface EntryDetailProps {
+  entry: HouseholdEntry
   managed?: boolean
   onBack?: () => void
 }
 
-export function RecordDetailScreen({ record, managed = false, onBack }: RecordDetailProps) {
+export function EntryDetailScreen({ entry, managed = false, onBack }: EntryDetailProps) {
   const typeLabels = { advance: "立替", deposit: "預り", settlement: "精算" }
   const typeColors = {
     advance: "bg-primary/10 text-primary border-primary/20",
@@ -59,26 +59,26 @@ export function RecordDetailScreen({ record, managed = false, onBack }: RecordDe
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className={`rounded-md text-xs font-medium ${typeColors[record.type]}`}
+                className={`rounded-md text-xs font-medium ${typeColors[entry.type]}`}
               >
-                {typeLabels[record.type]}
+                {typeLabels[entry.type]}
               </Badge>
-              {record.status === "modified" && (
+              {entry.status === "modified" && (
                 <Badge variant="outline" className="rounded-md text-xs bg-amber-50 text-amber-600 border-amber-200">
                   {"修正"}
                 </Badge>
               )}
-              {record.status === "cancelled" && (
+              {entry.status === "cancelled" && (
                 <Badge variant="outline" className="rounded-md text-xs bg-red-50 text-red-500 border-red-200">
                   {"取消"}
                 </Badge>
               )}
-              {managed && record.approvalStatus && (
+              {managed && entry.approvalStatus && (
                 <Badge
                   variant="outline"
-                  className={`rounded-md text-xs ${approvalConfig[record.approvalStatus].className}`}
+                  className={`rounded-md text-xs ${approvalConfig[entry.approvalStatus].className}`}
                 >
-                  {approvalConfig[record.approvalStatus].label}
+                  {approvalConfig[entry.approvalStatus].label}
                 </Badge>
               )}
             </div>
@@ -86,11 +86,11 @@ export function RecordDetailScreen({ record, managed = false, onBack }: RecordDe
             <div className="text-center">
               <span
                 className={`text-3xl font-bold tabular-nums ${
-                  record.status === "cancelled" ? "line-through opacity-50" : ""
-                } ${record.type === "deposit" ? "text-orange-600" : record.type === "settlement" ? "text-emerald-600" : "text-foreground"}`}
+                  entry.status === "cancelled" ? "line-through opacity-50" : ""
+                } ${entry.type === "deposit" ? "text-orange-600" : entry.type === "settlement" ? "text-emerald-600" : "text-foreground"}`}
               >
-                {record.type === "deposit" ? "-" : ""}
-                {formatAmount(record.amount)}
+                {entry.type === "deposit" ? "-" : ""}
+                {formatAmount(entry.amount)}
               </span>
             </div>
 
@@ -100,17 +100,17 @@ export function RecordDetailScreen({ record, managed = false, onBack }: RecordDe
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{"日付"}</span>
                 <span className="text-sm font-medium text-foreground">
-                  {formatDateFull(record.date)}
+                  {formatDateFull(entry.date)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{"ラベル"}</span>
-                <span className="text-sm font-medium text-foreground">{record.label}</span>
+                <span className="text-sm font-medium text-foreground">{entry.label}</span>
               </div>
-              {record.memo && (
+              {entry.memo && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">{"メモ"}</span>
-                  <span className="text-sm text-foreground">{record.memo}</span>
+                  <span className="text-sm text-foreground">{entry.memo}</span>
                 </div>
               )}
             </div>
@@ -118,12 +118,12 @@ export function RecordDetailScreen({ record, managed = false, onBack }: RecordDe
         </Card>
 
         {/* Receipt Images */}
-        {record.hasReceipt && (
+        {entry.hasReceipt && (
           <Card className="border-0 shadow-sm">
             <CardContent className="flex flex-col gap-3 px-5 py-4">
               <span className="text-sm font-medium text-foreground">{"レシート画像"}</span>
               <div className="flex gap-3">
-                {Array.from({ length: record.receiptCount || 1 }).map((_, i) => (
+                {Array.from({ length: entry.receiptCount || 1 }).map((_, i) => (
                   <div
                     key={i}
                     className="flex h-24 w-24 items-center justify-center rounded-lg bg-secondary"
@@ -137,24 +137,24 @@ export function RecordDetailScreen({ record, managed = false, onBack }: RecordDe
         )}
 
         {/* Rejection Comment */}
-        {managed && record.approvalStatus === "rejected" && record.rejectionComment && (
+        {managed && entry.approvalStatus === "rejected" && entry.rejectionComment && (
           <Card className="border-0 border-l-4 border-l-red-400 shadow-sm">
             <CardContent className="flex items-start gap-3 px-4 py-4">
               <MessageCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-red-500">{"差し戻しコメント"}</span>
-                <p className="text-sm leading-relaxed text-foreground">{record.rejectionComment}</p>
+                <p className="text-sm leading-relaxed text-foreground">{entry.rejectionComment}</p>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Related Record Link */}
-        {record.relatedRecordId && (
+        {/* Related Entry Link */}
+        {entry.relatedEntryId && (
           <button className="flex items-center justify-center gap-2 text-sm text-primary">
-            {record.status === "modified"
+            {entry.status === "modified"
               ? "修正後の記録を見る"
-              : record.status === "cancelled"
+              : entry.status === "cancelled"
                 ? "取消記録を見る"
                 : "元の記録を見る"}
             <ArrowRight className="h-4 w-4" />
@@ -162,7 +162,7 @@ export function RecordDetailScreen({ record, managed = false, onBack }: RecordDe
         )}
 
         {/* Action Buttons */}
-        {record.status === "active" && record.type !== "settlement" && (
+        {entry.status === "active" && entry.type !== "settlement" && (
           <div className="mt-auto flex gap-3 pb-4 pt-4">
             <Button variant="outline" className="flex-1 h-12 rounded-xl text-base font-medium">
               {"修正する"}

@@ -5,7 +5,7 @@ import { formatToday } from "@/lib/date";
 
 type Category = "advance" | "deposit";
 
-export function useRecordForm() {
+export function useEntryForm() {
 	const router = useRouter();
 	const [category, setCategory] = useState<Category>("advance");
 	const [amount, setAmount] = useState("");

@@ -2,26 +2,26 @@
 
 import { useState } from "react"
 import { BalanceSummary } from "./balance-summary"
-import { RecordCard } from "./record-card"
-import { HouseholdRecord } from "@/lib/types"
+import { EntryCard } from "./entry-card"
+import { HouseholdEntry } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 
 type Filter = "all" | "advance" | "deposit" | "settlement" | "pending" | "rejected"
 
 interface PartnerScreenProps {
-  records: HouseholdRecord[]
+  entries: HouseholdEntry[]
   balance: number
   partnerName: string
   managed?: boolean
-  onRecordTap?: (record: HouseholdRecord) => void
+  onEntryTap?: (entry: HouseholdEntry) => void
 }
 
 export function PartnerScreen({
-  records,
+  entries,
   balance,
   partnerName,
   managed = false,
-  onRecordTap,
+  onEntryTap,
 }: PartnerScreenProps) {
   const [filter, setFilter] = useState<Filter>("all")
 
@@ -92,10 +92,10 @@ export function PartnerScreen({
       <div className="flex flex-col gap-2 px-4">
         {filtered.map((r) => (
           <div key={r.id} className="flex flex-col gap-2">
-            <RecordCard
+            <EntryCard
               record={r}
               showApproval={managed}
-              onTap={onRecordTap}
+              onTap={onEntryTap}
             />
             {managed && r.approvalStatus === "pending" && (
               <div className="flex gap-2 px-2">

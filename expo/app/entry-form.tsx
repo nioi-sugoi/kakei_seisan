@@ -9,7 +9,7 @@ import {
 	TextInput,
 	View,
 } from "react-native";
-import { useRecordForm } from "@/hooks/use-record-form";
+import { useEntryForm } from "@/hooks/use-entry-form";
 import { formatDisplayDate, formatDate, parseDate } from "@/lib/date";
 
 // ネイティブモジュールが含まれないビルド（Expo Go等）ではフォールバック
@@ -20,7 +20,7 @@ try {
 	// native module unavailable
 }
 
-export default function RecordFormScreen() {
+export default function EntryFormScreen() {
 	const {
 		category,
 		setCategory,
@@ -37,7 +37,7 @@ export default function RecordFormScreen() {
 		loading,
 		submit,
 		goBack,
-	} = useRecordForm();
+	} = useEntryForm();
 
 	const [showDatePicker, setShowDatePicker] = useState(false);
 

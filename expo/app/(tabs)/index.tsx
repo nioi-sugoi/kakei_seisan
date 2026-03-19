@@ -7,9 +7,7 @@ export default function TimelineScreen() {
 	return (
 		<View className="flex-1 bg-background">
 			<View className="flex-1 items-center justify-center">
-				<Text className="text-foreground text-2xl font-bold">
-					タイムライン
-				</Text>
+				<Text className="text-foreground text-2xl font-bold">タイムライン</Text>
 				<Text className="text-muted-foreground text-base mt-2">
 					支出の履歴がここに表示されます
 				</Text>
@@ -17,10 +15,10 @@ export default function TimelineScreen() {
 
 			{/* FAB */}
 			<Pressable
-				onPress={() => router.push("/record-form")}
-				className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg active:opacity-80"
+				onPress={() => router.push("/entry-form")}
+				className="absolute bottom-6 right-5 h-28 w-28 items-center justify-center rounded-full bg-primary shadow-lg active:opacity-80"
 			>
-				<Text className="text-2xl font-bold text-primary-foreground">＋</Text>
+				<Text className="text-5xl font-bold text-primary-foreground">＋</Text>
 			</Pressable>
 		</View>
 	);
