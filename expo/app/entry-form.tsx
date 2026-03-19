@@ -5,10 +5,13 @@ import {
 	Pressable,
 	ScrollView,
 	Text,
-	TextInput,
 	View,
 } from "react-native";
-import { DateInput } from "@/components/DateInput";
+import { AmountInput } from "@/components/entry-form/AmountInput";
+import { CategorySelector } from "@/components/entry-form/CategorySelector";
+import { DateInput } from "@/components/entry-form/DateInput";
+import { LabelInput } from "@/components/entry-form/LabelInput";
+import { MemoInput } from "@/components/entry-form/MemoInput";
 import { useEntryForm } from "@/hooks/use-entry-form";
 
 export default function EntryFormScreen() {
@@ -50,123 +53,26 @@ export default function EntryFormScreen() {
 				contentContainerClassName="px-4 py-5 gap-5"
 				keyboardShouldPersistTaps="handled"
 			>
-				{/* Type Selector */}
-				<View className="flex-row rounded-xl bg-secondary p-1">
-					<Pressable
-						onPress={() => setCategory("advance")}
-						className={`flex-1 items-center rounded-lg py-2.5 ${
-							category === "advance" ? "bg-primary" : ""
-						}`}
-					>
-						<Text
-							className={`text-sm font-semibold ${
-								category === "advance"
-									? "text-primary-foreground"
-									: "text-muted-foreground"
-							}`}
-						>
-							立替
-						</Text>
-					</Pressable>
-					<Pressable
-						onPress={() => setCategory("deposit")}
-						className={`flex-1 items-center rounded-lg py-2.5 ${
-							category === "deposit" ? "bg-orange-500" : ""
-						}`}
-					>
-						<Text
-							className={`text-sm font-semibold ${
-								category === "deposit" ? "text-white" : "text-muted-foreground"
-							}`}
-						>
-							預り
-						</Text>
-					</Pressable>
-				</View>
-
-				{/* Amount */}
-				<View className="gap-2" accessibilityLabel="金額フィールド">
-					<Text className="text-sm font-medium text-foreground">
-						金額
-						<Text className="text-xs text-destructive"> *必須</Text>
-					</Text>
-					<View className="flex-row items-center rounded-xl border border-border bg-card px-4">
-						<Text className="text-xl font-bold text-muted-foreground">¥</Text>
-						<TextInput
-							value={amount}
-							onChangeText={setAmount}
-							placeholder="0"
-							keyboardType="number-pad"
-							accessibilityLabel="金額"
-							className="flex-1 py-3.5 text-right text-2xl font-bold text-foreground"
-							placeholderTextColor="#9ca3af"
-						/>
-					</View>
-					{fieldErrors.amount ? (
-						<Text className="text-sm text-destructive">
-							{fieldErrors.amount}
-						</Text>
-					): null}
-				</View>
-
-				{/* Date */}
-				<View className="gap-2">
-					<Text className="text-sm font-medium text-foreground">
-						日付
-						<Text className="text-xs text-destructive"> *必須</Text>
-					</Text>
-					<DateInput value={date} onChange={setDate} />
-					{fieldErrors.date ? (
-						<Text className="text-sm text-destructive">{fieldErrors.date}</Text>
-					): null}
-				</View>
-
-				{/* Label */}
-				<View className="gap-2" accessibilityLabel="ラベルフィールド">
-					<Text className="text-sm font-medium text-foreground">
-						ラベル
-						<Text className="text-xs text-destructive"> *必須</Text>
-					</Text>
-					<TextInput
-						value={label}
-						onChangeText={setLabel}
-						placeholder="例: スーパー買い物"
-						accessibilityLabel="ラベル"
-						className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
-						placeholderTextColor="#9ca3af"
-					/>
-					{fieldErrors.label ? (
-						<Text className="text-sm text-destructive">
-							{fieldErrors.label}
-						</Text>
-					): null}
-				</View>
-
-				{/* Memo */}
-				<View className="gap-2">
-					<Text className="text-sm font-medium text-foreground">
-						メモ
-						<Text className="text-xs text-muted-foreground"> 任意</Text>
-					</Text>
-					<TextInput
-						value={memo}
-						onChangeText={setMemo}
-						placeholder="メモを入力..."
-						accessibilityLabel="メモ"
-						multiline
-						numberOfLines={3}
-						className="min-h-20 rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
-						placeholderTextColor="#9ca3af"
-						textAlignVertical="top"
-					/>
-				</View>
+				<CategorySelector value={category} onChange={setCategory} />
+				<AmountInput
+					value={amount}
+					onChange={setAmount}
+					error={fieldErrors.amount}
+				/>
+				<DateInput value={date} onChange={setDate} />
+				<LabelInput
+					value={label}
+					onChange={setLabel}
+					error={fieldErrors.label}
+				/>
+				<MemoInput value={memo} onChange={setMemo} />
 
 				{/* Error */}
 				{error ? (
 					<View className="rounded-xl bg-destructive/10 px-4 py-3">
 						<Text className="text-sm text-destructive">{error}</Text>
 					</View>
-				): null}
+				) : null}
 
 				{/* Submit */}
 				<Pressable
