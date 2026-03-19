@@ -1,10 +1,27 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
+import * as v from "valibot";
 import { apiPost } from "@/lib/api-client";
 import { formatToday } from "@/lib/date";
 
-type Category = "advance" | "deposit";
+const createEntrySchema = v.object({
+	category: v.picklist(["advance", "deposit"]),
+	amount: v.pipe(
+		v.string(),
+		v.minLength(1, "0以上の整数を入力してください"),
+		v.transform(Number),
+		v.integer("0以上の整数を入力してください"),
+		v.minValue(0, "0以上の整数を入力してください"),
+	),
+	date: v.pipe(v.string(), v.isoDate("日付を選択してください")),
+	label: v.pipe(
+		v.string(),
+		v.transform((s: string) => s.trim()),
+		v.minLength(1, "ラベルは必須です"),
+	),
+	memo: v.optional(v.string()),
+});
 
 type ApiError = {
 	message: string;
@@ -13,7 +30,7 @@ type ApiError = {
 
 export function useEntryForm() {
 	const router = useRouter();
-	const [category, setCategory] = useState<Category>("advance");
+	const [category, setCategory] = useState<"advance" | "deposit">("advance");
 	const [amount, setAmount] = useState("");
 	const [date, setDate] = useState(formatToday);
 	const [label, setLabel] = useState("");
@@ -21,13 +38,7 @@ export function useEntryForm() {
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
 	const mutation = useMutation({
-		mutationFn: async (input: {
-			category: Category;
-			amount: number;
-			date: string;
-			label: string;
-			memo?: string;
-		}) => {
+		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
 			const { data, error } = await apiPost("/entries", input);
 			if (error) {
 				throw error;
@@ -48,41 +59,34 @@ export function useEntryForm() {
 		},
 	});
 
-	const validate = useCallback((): boolean => {
-		const errors: Record<string, string> = {};
-
-		const parsedAmount = Number(amount);
-		if (!amount || !Number.isInteger(parsedAmount) || parsedAmount < 0) {
-			errors.amount = "0以上の整数を入力してください";
-		}
-
-		if (!label.trim()) {
-			errors.label = "ラベルは必須です";
-		}
-
-		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-			errors.date = "日付を選択してください";
-		}
-
-		setFieldErrors(errors);
-		return Object.keys(errors).length === 0;
-	}, [amount, label, date]);
-
 	const goBack = useCallback(() => {
 		router.back();
 	}, [router]);
 
 	const submit = useCallback(() => {
-		if (!validate()) return;
-
-		mutation.mutate({
+		const result = v.safeParse(createEntrySchema, {
 			category,
-			amount: Number(amount),
+			amount,
 			date,
-			label: label.trim(),
+			label,
 			memo: memo || undefined,
 		});
-	}, [category, amount, date, label, memo, validate, mutation]);
+
+		if (!result.success) {
+			const flat = v.flatten(result.issues);
+			const errors: Record<string, string> = {};
+			for (const [key, messages] of Object.entries(flat.nested ?? {})) {
+				if (messages?.[0]) {
+					errors[key] = messages[0];
+				}
+			}
+			setFieldErrors(errors);
+			return;
+		}
+
+		setFieldErrors({});
+		mutation.mutate(result.output);
+	}, [category, amount, date, label, memo, mutation]);
 
 	const error = mutation.error?.message ?? "";
 
