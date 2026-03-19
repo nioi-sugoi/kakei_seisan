@@ -109,11 +109,11 @@ export default function RecordFormScreen() {
 							placeholderTextColor="#9ca3af"
 						/>
 					</View>
-					{fieldErrors.amount && (
+					{fieldErrors.amount ? (
 						<Text className="text-sm text-destructive">
 							{fieldErrors.amount}
 						</Text>
-					)}
+					): null}
 				</View>
 
 				{/* Date */}
@@ -164,17 +164,17 @@ export default function RecordFormScreen() {
 							placeholderTextColor="#9ca3af"
 						/>
 					)}
-					{fieldErrors.date && (
+					{fieldErrors.date ? (
 						<Text className="text-sm text-destructive">{fieldErrors.date}</Text>
-					)}
+					): null}
 				</View>
 
 				{/* Label */}
 				<View className="gap-2">
-					<Text className="text-sm font-medium text-foreground">
-						ラベル
-						<Text className="text-xs text-destructive"> *必須</Text>
-					</Text>
+					<View className="flex-row items-baseline">
+						<Text className="text-sm font-medium text-foreground">ラベル</Text>
+						<Text className="text-xs text-destructive ml-1">*必須</Text>
+					</View>
 					<TextInput
 						value={label}
 						onChangeText={setLabel}
@@ -182,19 +182,19 @@ export default function RecordFormScreen() {
 						className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
 						placeholderTextColor="#9ca3af"
 					/>
-					{fieldErrors.label && (
+					{fieldErrors.label ? (
 						<Text className="text-sm text-destructive">
 							{fieldErrors.label}
 						</Text>
-					)}
+					): null}
 				</View>
 
 				{/* Memo */}
 				<View className="gap-2">
-					<Text className="text-sm font-medium text-foreground">
-						メモ
-						<Text className="text-xs text-muted-foreground"> 任意</Text>
-					</Text>
+					<View className="flex-row items-baseline">
+						<Text className="text-sm font-medium text-foreground">メモ</Text>
+						<Text className="text-xs text-muted-foreground ml-1">任意</Text>
+					</View>
 					<TextInput
 						value={memo}
 						onChangeText={setMemo}
@@ -208,11 +208,11 @@ export default function RecordFormScreen() {
 				</View>
 
 				{/* Error */}
-				{error && (
+				{error ? (
 					<View className="rounded-xl bg-destructive/10 px-4 py-3">
 						<Text className="text-sm text-destructive">{error}</Text>
 					</View>
-				)}
+				): null}
 
 				{/* Submit */}
 				<Pressable
