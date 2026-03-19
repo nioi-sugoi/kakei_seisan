@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import * as v from "valibot";
 import { format } from "date-fns";
-import { apiPost } from "@/lib/api-client";
+import { client } from "@/lib/api-client";
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -39,11 +39,20 @@ export function useEntryForm() {
 
 	const mutation = useMutation({
 		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
-			const { data, error } = await apiPost("/entries", input);
-			if (error) {
-				throw error;
+			let res;
+			try {
+				res = await client.api.entries.$post({ json: input });
+			} catch {
+				throw { message: "ネットワークエラーが発生しました" };
 			}
-			return data;
+			if (!res.ok) {
+				const body = (await res.json()) as {
+					error: string;
+					issues?: { field: string; message: string }[];
+				};
+				throw { message: body.error, issues: body.issues };
+			}
+			return await res.json();
 		},
 		onSuccess: () => {
 			router.replace("/(tabs)");
@@ -59,11 +68,11 @@ export function useEntryForm() {
 		},
 	});
 
-	const goBack = useCallback(() => {
+	const goBack = () => {
 		router.back();
-	}, [router]);
+	};
 
-	const submit = useCallback(() => {
+	const submit = () => {
 		const result = v.safeParse(createEntrySchema, {
 			category,
 			amount,
@@ -86,7 +95,7 @@ export function useEntryForm() {
 
 		setFieldErrors({});
 		mutation.mutate(result.output);
-	}, [category, amount, date, label, memo, mutation]);
+	};
 
 	const error = mutation.error?.message ?? "";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Platform, Pressable, Text, TextInput } from "react-native";
+import { Platform, Pressable, Text, TextInput, View } from "react-native";
 import Constants from "expo-constants";
 import { format, parse } from "date-fns";
 
@@ -20,20 +20,30 @@ export function DateInput({ value, onChange }: DateInputProps) {
 
 	if (!NativeDateTimePicker) {
 		return (
-			<TextInput
-				value={value}
-				onChangeText={onChange}
-				placeholder="YYYY-MM-DD"
-				keyboardType="numbers-and-punctuation"
-				accessibilityLabel="日付"
-				className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
-				placeholderTextColor="#9ca3af"
-			/>
+			<View className="gap-2" accessibilityLabel="日付フィールド">
+				<Text className="text-sm font-medium text-foreground">
+					日付
+					<Text className="text-xs text-destructive"> *必須</Text>
+				</Text>
+				<TextInput
+					value={value}
+					onChangeText={onChange}
+					placeholder="YYYY-MM-DD"
+					keyboardType="numbers-and-punctuation"
+					accessibilityLabel="日付"
+					className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
+					placeholderTextColor="#9ca3af"
+				/>
+			</View>
 		);
 	}
 
 	return (
-		<>
+		<View className="gap-2" accessibilityLabel="日付フィールド">
+			<Text className="text-sm font-medium text-foreground">
+				日付
+				<Text className="text-xs text-destructive"> *必須</Text>
+			</Text>
 			<Pressable
 				onPress={() => setShowPicker(true)}
 				accessibilityLabel="日付"
@@ -65,6 +75,6 @@ export function DateInput({ value, onChange }: DateInputProps) {
 					<Text className="text-sm font-medium text-primary">完了</Text>
 				</Pressable>
 			)}
-		</>
+		</View>
 	);
 }

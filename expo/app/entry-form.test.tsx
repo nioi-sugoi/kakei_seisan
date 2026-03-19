@@ -19,14 +19,19 @@ jest.mock("expo-constants", () => ({
 	default: { appOwnership: null },
 }));
 
+const mockPost = jest.fn();
+
 jest.mock("@/lib/api-client", () => ({
-	apiPost: jest.fn(),
+	client: {
+		api: {
+			entries: {
+				$post: (...args: unknown[]) => mockPost(...args),
+			},
+		},
+	},
 }));
 
-import { apiPost } from "@/lib/api-client";
 import EntryFormScreen from "./entry-form";
-
-const mockApiPost = jest.mocked(apiPost);
 
 let queryClient: QueryClient;
 
@@ -44,7 +49,9 @@ function createWrapper() {
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	mockApiPost.mockResolvedValue({ data: {}, error: null });
+	mockPost.mockResolvedValue(
+		new Response(JSON.stringify({}), { status: 201 }),
+	);
 });
 
 afterEach(() => {
@@ -72,7 +79,7 @@ describe("EntryFormScreen", () => {
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	it("ラベルが未入力の場合にエラーが表示される", async () => {
@@ -87,7 +94,7 @@ describe("EntryFormScreen", () => {
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	it("ラベルが半角スペースのみの場合もバリデーションエラーになる", async () => {
@@ -103,7 +110,7 @@ describe("EntryFormScreen", () => {
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	it("ラベルが全角スペースのみの場合もバリデーションエラーになる", async () => {
@@ -119,7 +126,7 @@ describe("EntryFormScreen", () => {
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	it("小数の金額を入力するとバリデーションエラーになる", async () => {
@@ -135,7 +142,7 @@ describe("EntryFormScreen", () => {
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	it("負の金額を入力するとバリデーションエラーになる", async () => {
@@ -151,7 +158,7 @@ describe("EntryFormScreen", () => {
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	it("数字以外の文字列を入力するとバリデーションエラーになる", async () => {
@@ -167,7 +174,7 @@ describe("EntryFormScreen", () => {
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
 		});
-		expect(mockApiPost).not.toHaveBeenCalled();
+		expect(mockPost).not.toHaveBeenCalled();
 	});
 
 	// --- 送信時のトリム・値変換 ---
@@ -180,12 +187,11 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
+			expect(mockPost).toHaveBeenCalledWith({
+				json: expect.objectContaining({
 					label: "食料品",
 				}),
-			);
+			});
 		});
 	});
 
@@ -197,13 +203,15 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const call = mockApiPost.mock.calls[0];
-			expect(call[1]).toEqual(
+			const call = mockPost.mock.calls[0];
+			expect(call[0]).toEqual(
 				expect.objectContaining({
-					amount: 2500,
+					json: expect.objectContaining({
+						amount: 2500,
+					}),
 				}),
 			);
-			expect(typeof (call[1] as Record<string, unknown>).amount).toBe(
+			expect(typeof (call[0] as { json: Record<string, unknown> }).json.amount).toBe(
 				"number",
 			);
 		});
@@ -217,12 +225,11 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
+			expect(mockPost).toHaveBeenCalledWith({
+				json: expect.objectContaining({
 					amount: 0,
 				}),
-			);
+			});
 		});
 	});
 
@@ -236,14 +243,13 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
+			expect(mockPost).toHaveBeenCalledWith({
+				json: expect.objectContaining({
 					category: "advance",
 					amount: 1500,
 					label: "食料品",
 				}),
-			);
+			});
 		});
 	});
 
@@ -256,14 +262,13 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
+			expect(mockPost).toHaveBeenCalledWith({
+				json: expect.objectContaining({
 					category: "deposit",
 					amount: 3000,
 					label: "生活費",
 				}),
-			);
+			});
 		});
 	});
 
@@ -288,22 +293,22 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(mockApiPost).toHaveBeenCalledWith(
-				"/entries",
-				expect.objectContaining({
+			expect(mockPost).toHaveBeenCalledWith({
+				json: expect.objectContaining({
 					memo: "チョコ",
 				}),
-			);
+			});
 		});
 	});
 
 	// --- APIエラー ---
 
 	it("APIエラー時にエラーメッセージが表示される", async () => {
-		mockApiPost.mockResolvedValue({
-			data: null,
-			error: { message: "サーバーエラー" },
-		});
+		mockPost.mockResolvedValue(
+			new Response(JSON.stringify({ error: "サーバーエラー" }), {
+				status: 500,
+			}),
+		);
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
 
 		await user.type(screen.getByLabelText("金額"), "100");

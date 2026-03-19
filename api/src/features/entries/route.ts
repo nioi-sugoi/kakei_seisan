@@ -7,11 +7,6 @@ import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
-const entriesApp = new Hono<{
-	Bindings: Env;
-	Variables: AppVariables;
-}>();
-
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
 	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
@@ -20,16 +15,19 @@ const createEntrySchema = v.object({
 	memo: v.optional(v.string()),
 });
 
-entriesApp.post(
+const entriesApp = new Hono<{
+	Bindings: Env;
+	Variables: AppVariables;
+}>().post(
 	"/",
 	requireAuth,
 	vValidator("json", createEntrySchema, (result, c) => {
 		if (!result.success) {
 			return c.json(
 				{
-					error: "バリデーションエラー",
+					error: "バリデーションエラー" as const,
 					issues: result.issues.map((issue) => ({
-						field: issue.path?.[0]?.key ?? "unknown",
+						field: String(issue.path?.[0]?.key ?? "unknown"),
 						message: issue.message,
 					})),
 				},

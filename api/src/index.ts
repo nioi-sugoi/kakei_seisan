@@ -44,15 +44,14 @@ app.use("*", async (c, next) => {
 });
 
 // ── Routes ───────────────────────────────────────────────────────────
-app.get("/", (c) => {
-	return c.json({ message: "kakei-seisan API" });
-});
-
-app.get("/health", (c) => {
-	return c.json({ status: "ok" });
-});
-
-// ── Feature routes ──────────────────────────────────────────────────
-app.route("/entries", entriesApp);
+const routes = app
+	.get("/", (c) => {
+		return c.json({ message: "kakei-seisan API" });
+	})
+	.get("/health", (c) => {
+		return c.json({ status: "ok" });
+	})
+	.route("/entries", entriesApp);
 
 export default app;
+export type AppType = typeof routes;
