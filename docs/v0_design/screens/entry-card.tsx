@@ -1,6 +1,6 @@
 "use client"
 
-import { HouseholdRecord } from "@/lib/types"
+import { HouseholdEntry } from "@/lib/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Image as ImageIcon, ArrowRight, MessageCircle } from "lucide-react"
@@ -14,7 +14,7 @@ function formatDate(dateStr: string) {
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
 
-function TypeBadge({ type }: { type: HouseholdRecord["type"] }) {
+function TypeBadge({ type }: { type: HouseholdEntry["type"] }) {
   const config = {
     advance: { label: "立替", className: "bg-primary/10 text-primary border-primary/20" },
     deposit: { label: "預り", className: "bg-orange-50 text-orange-600 border-orange-200" },
@@ -28,7 +28,7 @@ function TypeBadge({ type }: { type: HouseholdRecord["type"] }) {
   )
 }
 
-function StatusBadge({ status }: { status: HouseholdRecord["status"] }) {
+function StatusBadge({ status }: { status: HouseholdEntry["status"] }) {
   if (status === "active") return null
   const config = {
     modified: { label: "修正", className: "bg-amber-50 text-amber-600 border-amber-200" },
@@ -43,7 +43,7 @@ function StatusBadge({ status }: { status: HouseholdRecord["status"] }) {
   )
 }
 
-function ApprovalBadge({ status }: { status?: HouseholdRecord["approvalStatus"] }) {
+function ApprovalBadge({ status }: { status?: HouseholdEntry["approvalStatus"] }) {
   if (!status) return null
   const config = {
     pending: { label: "承認待ち", className: "bg-amber-50 text-amber-600 border-amber-200" },
@@ -58,33 +58,33 @@ function ApprovalBadge({ status }: { status?: HouseholdRecord["approvalStatus"] 
   )
 }
 
-interface RecordCardProps {
-  record: HouseholdRecord
+interface EntryCardProps {
+  entry: HouseholdEntry
   showApproval?: boolean
-  onTap?: (record: HouseholdRecord) => void
+  onTap?: (entry: HouseholdEntry) => void
 }
 
-export function RecordCard({ record, showApproval = false, onTap }: RecordCardProps) {
+export function EntryCard({ entry, showApproval = false, onTap }: EntryCardProps) {
   return (
     <Card
       className="cursor-pointer border-0 shadow-sm transition-shadow hover:shadow-md"
-      onClick={() => onTap?.(record)}
+      onClick={() => onTap?.(entry)}
     >
       <CardContent className="flex items-center gap-3 px-4 py-3">
         <div className="flex flex-1 flex-col gap-1">
           <div className="flex items-center gap-2">
-            <TypeBadge type={record.type} />
-            <StatusBadge status={record.status} />
-            {showApproval && <ApprovalBadge status={record.approvalStatus} />}
+            <TypeBadge type={entry.type} />
+            <StatusBadge status={entry.status} />
+            {showApproval && <ApprovalBadge status={entry.approvalStatus} />}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-foreground">{record.label}</span>
-            {record.hasReceipt && (
+            <span className="text-sm font-medium text-foreground">{entry.label}</span>
+            {entry.hasReceipt && (
               <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{formatDate(record.date)}</span>
-          {record.status !== "active" && record.relatedRecordId && (
+          <span className="text-xs text-muted-foreground">{formatDate(entry.date)}</span>
+          {entry.status !== "active" && entry.relatedEntryId && (
             <button className="flex items-center gap-1 text-xs text-primary">
               {"元の記録を見る"}
               <ArrowRight className="h-3 w-3" />
@@ -94,18 +94,18 @@ export function RecordCard({ record, showApproval = false, onTap }: RecordCardPr
         <div className="flex flex-col items-end gap-1">
           <span
             className={`text-lg font-bold tabular-nums ${
-              record.type === "deposit" ? "text-orange-600" : record.type === "settlement" ? "text-emerald-600" : "text-foreground"
-            } ${record.status === "cancelled" ? "line-through opacity-50" : ""}`}
+              entry.type === "deposit" ? "text-orange-600" : entry.type === "settlement" ? "text-emerald-600" : "text-foreground"
+            } ${entry.status === "cancelled" ? "line-through opacity-50" : ""}`}
           >
-            {record.type === "deposit" ? "-" : ""}
-            {formatAmount(record.amount)}
+            {entry.type === "deposit" ? "-" : ""}
+            {formatAmount(entry.amount)}
           </span>
         </div>
       </CardContent>
-      {record.approvalStatus === "rejected" && record.rejectionComment && showApproval && (
+      {entry.approvalStatus === "rejected" && entry.rejectionComment && showApproval && (
         <div className="mx-4 mb-3 flex items-start gap-2 rounded-lg bg-red-50 p-3">
           <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="text-xs leading-relaxed text-red-600">{record.rejectionComment}</p>
+          <p className="text-xs leading-relaxed text-red-600">{entry.rejectionComment}</p>
         </div>
       )}
     </Card>

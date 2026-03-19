@@ -2,24 +2,24 @@
 
 import { useState } from "react"
 import { BalanceSummary } from "./balance-summary"
-import { RecordCard } from "./record-card"
-import { HouseholdRecord } from "@/lib/types"
+import { EntryCard } from "./entry-card"
+import { HouseholdEntry } from "@/lib/types"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type Filter = "all" | "advance" | "deposit" | "settlement"
 
 interface TimelineScreenProps {
-  records: HouseholdRecord[]
+  records: HouseholdEntry[]
   balance: number
   managed?: boolean
   onSettle?: () => void
   onAdd?: () => void
-  onRecordTap?: (record: HouseholdRecord) => void
+  onEntryTap?: (record: HouseholdEntry) => void
 }
 
-function groupByMonth(records: HouseholdRecord[]) {
-  const groups: Record<string, HouseholdRecord[]> = {}
+function groupByMonth(records: HouseholdEntry[]) {
+  const groups: Record<string, HouseholdEntry[]> = {}
   records.forEach((r) => {
     const d = new Date(r.date)
     const key = `${d.getFullYear()}\u5E74${d.getMonth() + 1}\u6708`
@@ -35,7 +35,7 @@ export function TimelineScreen({
   managed = false,
   onSettle,
   onAdd,
-  onRecordTap,
+  onEntryTap,
 }: TimelineScreenProps) {
   const [filter, setFilter] = useState<Filter>("all")
 
@@ -80,11 +80,11 @@ export function TimelineScreen({
             <h3 className="text-sm font-semibold text-muted-foreground">{month}</h3>
             <div className="flex flex-col gap-2">
               {recs.map((r) => (
-                <RecordCard
+                <EntryCard
                   key={r.id}
                   record={r}
                   showApproval={managed}
-                  onTap={onRecordTap}
+                  onTap={onEntryTap}
                 />
               ))}
             </div>

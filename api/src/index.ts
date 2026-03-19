@@ -1,25 +1,23 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { Session, SessionUser } from "./auth";
 import { createAuth } from "./auth";
 import type { Env } from "./bindings";
-
-type Variables = {
-	user: SessionUser | null;
-	session: Session | null;
-};
+import { entriesApp } from "./features/entries";
+import type { AppVariables } from "./types";
 
 const app = new Hono<{
 	Bindings: Env;
-	Variables: Variables;
+	Variables: AppVariables;
 }>().basePath("/api");
 
-// ── CORS for auth endpoints ──────────────────────────────────────────
+// ── CORS ─────────────────────────────────────────────────────────────
+// 開発環境は全開放。本番環境ではCloudflare WorkersのカスタムドメインでSame-Originとなるため
+// CORSは不要（ネイティブアプリはCORS制約を受けない）。
 app.use(
-	"/auth/*",
+	"*",
 	cors({
 		origin: (origin) => origin,
-		allowMethods: ["GET", "POST"],
+		allowMethods: ["GET", "POST", "PUT", "DELETE"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
 	}),
@@ -46,12 +44,14 @@ app.use("*", async (c, next) => {
 });
 
 // ── Routes ───────────────────────────────────────────────────────────
-app.get("/", (c) => {
-	return c.json({ message: "kakei-seisan API" });
-});
-
-app.get("/health", (c) => {
-	return c.json({ status: "ok" });
-});
+const routes = app
+	.get("/", (c) => {
+		return c.json({ message: "kakei-seisan API" });
+	})
+	.get("/health", (c) => {
+		return c.json({ status: "ok" });
+	})
+	.route("/entries", entriesApp);
 
 export default app;
+export type AppType = typeof routes;

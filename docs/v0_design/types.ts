@@ -1,19 +1,19 @@
-export type RecordType = "advance" | "deposit" | "settlement"
+export type EntryType = "advance" | "deposit" | "settlement"
 export type ApprovalStatus = "pending" | "approved" | "rejected"
-export type RecordStatus = "active" | "modified" | "cancelled"
+export type EntryStatus = "active" | "modified" | "cancelled"
 
-export interface HouseholdRecord {
+export interface HouseholdEntry {
   id: string
-  type: RecordType
+  type: EntryType
   amount: number
   date: string
   label: string
   memo?: string
   hasReceipt: boolean
   receiptCount?: number
-  status: RecordStatus
+  status: EntryStatus
   approvalStatus?: ApprovalStatus
   rejectionComment?: string
-  relatedRecordId?: string
+  relatedEntryId?: string
   owner: "self" | "partner"
 }

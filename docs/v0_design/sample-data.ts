@@ -1,6 +1,6 @@
-import { HouseholdRecord } from "./types"
+import { HouseholdEntry } from "./types"
 
-export const sampleRecordsSolo: HouseholdRecord[] = [
+export const sampleEntriesSolo: HouseholdEntry[] = [
   {
     id: "r1",
     type: "advance",
@@ -77,7 +77,7 @@ export const sampleRecordsSolo: HouseholdRecord[] = [
     hasReceipt: true,
     receiptCount: 1,
     status: "modified",
-    relatedRecordId: "r7m",
+    relatedEntryId: "r7m",
     owner: "self",
   },
   {
@@ -89,7 +89,7 @@ export const sampleRecordsSolo: HouseholdRecord[] = [
     hasReceipt: true,
     receiptCount: 1,
     status: "active",
-    relatedRecordId: "r7",
+    relatedEntryId: "r7",
     owner: "self",
   },
   {
@@ -100,12 +100,12 @@ export const sampleRecordsSolo: HouseholdRecord[] = [
     label: "図書カード預かり",
     hasReceipt: false,
     status: "cancelled",
-    relatedRecordId: "r8c",
+    relatedEntryId: "r8c",
     owner: "self",
   },
 ]
 
-export const sampleRecordsManaged: HouseholdRecord[] = [
+export const sampleEntriesManaged: HouseholdEntry[] = [
   {
     id: "m1",
     type: "advance",
@@ -169,7 +169,7 @@ export const sampleRecordsManaged: HouseholdRecord[] = [
   },
 ]
 
-export const samplePartnerRecords: HouseholdRecord[] = [
+export const samplePartnerEntries: HouseholdEntry[] = [
   {
     id: "p1",
     type: "advance",

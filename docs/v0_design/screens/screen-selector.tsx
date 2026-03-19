@@ -4,8 +4,8 @@ type Screen =
   | "login"
   | "timeline-solo"
   | "timeline-managed"
-  | "record-form"
-  | "record-detail"
+  | "entry-form"
+  | "entry-detail"
   | "settlement"
   | "partner-shared"
   | "partner-managed"
@@ -19,8 +19,8 @@ const screens: { value: Screen; label: string; group: string }[] = [
   { value: "login", label: "1. 認証画面", group: "認証" },
   { value: "timeline-solo", label: "2. タイムライン（ソロ）", group: "タイムライン" },
   { value: "timeline-managed", label: "3. タイムライン（管理）", group: "タイムライン" },
-  { value: "record-form", label: "4. 記録登録", group: "記録" },
-  { value: "record-detail", label: "5. 記録詳細", group: "記録" },
+  { value: "entry-form", label: "4. 記録登録", group: "記録" },
+  { value: "entry-detail", label: "5. 記録詳細", group: "記録" },
   { value: "settlement", label: "6. 精算実行", group: "精算" },
   { value: "partner-shared", label: "7. パートナー（共有）", group: "パートナー" },
   { value: "partner-managed", label: "8. パートナー（管理）", group: "パートナー" },
