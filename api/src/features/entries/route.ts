@@ -36,7 +36,8 @@ const entriesApp = new Hono<{
 		}
 	}),
 	async (c) => {
-		const user = c.get("user")!;
+		const user = c.get("user");
+		if (!user) return c.json({ error: "認証が必要です" as const }, 401);
 		const input = c.req.valid("json");
 		const db = drizzle(c.env.DB);
 		const entry = await entriesRepository.createEntry(db, user.id, input);
