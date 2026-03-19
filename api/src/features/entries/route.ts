@@ -18,7 +18,38 @@ const createEntrySchema = v.object({
 const entriesApp = new Hono<{
 	Bindings: Env;
 	Variables: AppVariables;
-}>().post(
+}>()
+	.get(
+		"/",
+		requireAuth,
+		vValidator(
+			"query",
+			v.object({
+				cursor: v.optional(v.string()),
+			}),
+		),
+		async (c) => {
+			const user = c.get("user");
+			if (!user) return c.json({ error: "認証が必要です" as const }, 401);
+
+			const { cursor: cursorParam } = c.req.valid("query");
+			const cursor = cursorParam ? Number(cursorParam) : undefined;
+			const limit = 50;
+
+			const db = drizzle(c.env.DB);
+			const items = await entriesRepository.listByUser(db, user.id, {
+				limit: limit + 1,
+				cursor,
+			});
+
+			const hasMore = items.length > limit;
+			const data = hasMore ? items.slice(0, limit) : items;
+			const nextCursor = hasMore ? data[data.length - 1].createdAt : null;
+
+			return c.json({ data, nextCursor });
+		},
+	)
+	.post(
 	"/",
 	requireAuth,
 	vValidator("json", createEntrySchema, (result, c) => {

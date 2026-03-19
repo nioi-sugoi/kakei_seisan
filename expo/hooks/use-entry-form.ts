@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { parseResponse } from "hono/client";
 import { useState } from "react";
@@ -26,6 +26,7 @@ const createEntrySchema = v.object({
 
 export function useEntryForm() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [category, setCategory] = useState<"advance" | "deposit">("advance");
 	const [amount, setAmount] = useState("");
 	const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
@@ -37,6 +38,7 @@ export function useEntryForm() {
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
 			parseResponse(client.api.entries.$post({ json: input })),
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["entries"] });
 			router.replace("/(tabs)");
 		},
 	});
