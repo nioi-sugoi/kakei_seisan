@@ -8,7 +8,7 @@ type LabelInputProps = {
 
 export function LabelInput({ value, onChange, error }: LabelInputProps) {
 	return (
-		<View className="gap-2" accessibilityLabel="ラベルフィールド">
+		<View className="gap-2" testID="ラベルフィールド">
 			<Text className="text-sm font-medium text-foreground">
 				ラベル
 				<Text className="text-xs text-destructive"> *必須</Text>

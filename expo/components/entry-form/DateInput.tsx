@@ -20,7 +20,7 @@ export function DateInput({ value, onChange }: DateInputProps) {
 
 	if (!NativeDateTimePicker) {
 		return (
-			<View className="gap-2" accessibilityLabel="日付フィールド">
+			<View className="gap-2" testID="日付フィールド">
 				<Text className="text-sm font-medium text-foreground">
 					日付
 					<Text className="text-xs text-destructive"> *必須</Text>
@@ -39,7 +39,7 @@ export function DateInput({ value, onChange }: DateInputProps) {
 	}
 
 	return (
-		<View className="gap-2" accessibilityLabel="日付フィールド">
+		<View className="gap-2" testID="日付フィールド">
 			<Text className="text-sm font-medium text-foreground">
 				日付
 				<Text className="text-xs text-destructive"> *必須</Text>

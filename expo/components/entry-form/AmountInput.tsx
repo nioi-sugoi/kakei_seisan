@@ -8,7 +8,7 @@ type AmountInputProps = {
 
 export function AmountInput({ value, onChange, error }: AmountInputProps) {
 	return (
-		<View className="gap-2" accessibilityLabel="金額フィールド">
+		<View className="gap-2" testID="金額フィールド">
 			<Text className="text-sm font-medium text-foreground">
 				金額
 				<Text className="text-xs text-destructive"> *必須</Text>

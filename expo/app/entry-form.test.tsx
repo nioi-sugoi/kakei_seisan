@@ -74,7 +74,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const amountField = screen.getByLabelText("金額フィールド");
+			const amountField = screen.getByTestId("金額フィールド");
 			expect(
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
@@ -89,7 +89,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const labelField = screen.getByLabelText("ラベルフィールド");
+			const labelField = screen.getByTestId("ラベルフィールド");
 			expect(
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
@@ -105,7 +105,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const labelField = screen.getByLabelText("ラベルフィールド");
+			const labelField = screen.getByTestId("ラベルフィールド");
 			expect(
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
@@ -121,7 +121,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const labelField = screen.getByLabelText("ラベルフィールド");
+			const labelField = screen.getByTestId("ラベルフィールド");
 			expect(
 				within(labelField).getByText("ラベルは必須です"),
 			).toBeOnTheScreen();
@@ -137,7 +137,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const amountField = screen.getByLabelText("金額フィールド");
+			const amountField = screen.getByTestId("金額フィールド");
 			expect(
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
@@ -153,7 +153,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const amountField = screen.getByLabelText("金額フィールド");
+			const amountField = screen.getByTestId("金額フィールド");
 			expect(
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
@@ -169,7 +169,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			const amountField = screen.getByLabelText("金額フィールド");
+			const amountField = screen.getByTestId("金額フィールド");
 			expect(
 				within(amountField).getByText("0以上の整数を入力してください"),
 			).toBeOnTheScreen();
