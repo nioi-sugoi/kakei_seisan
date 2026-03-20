@@ -15,6 +15,8 @@ export function useEntries() {
 			if (!res.ok) throw new Error("記録一覧の取得に失敗しました");
 			return res.json();
 		},
+		// TanStack Query が initialPageParam の値から TPageParam を推論するため、
+		// undefined リテラルだと TPageParam=undefined に狭まり pageParam: number が通らない
 		initialPageParam: undefined as number | undefined,
 		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 	});
