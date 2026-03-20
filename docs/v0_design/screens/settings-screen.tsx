@@ -18,14 +18,12 @@ interface SettingsScreenProps {
   isPartnerConnected?: boolean
   isManaged?: boolean
   onInvite?: () => void
-  onEnterCode?: () => void
 }
 
 export function SettingsScreen({
   isPartnerConnected = true,
   isManaged = true,
   onInvite,
-  onEnterCode,
 }: SettingsScreenProps) {
   return (
     <div className="flex flex-col gap-4 px-4 pb-24 pt-4">
@@ -81,14 +79,6 @@ export function SettingsScreen({
                 onClick={onInvite}
               >
                 <span>{"パートナーを招待"}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 justify-between rounded-xl text-base"
-                onClick={onEnterCode}
-              >
-                <span>{"招待コードを入力"}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
