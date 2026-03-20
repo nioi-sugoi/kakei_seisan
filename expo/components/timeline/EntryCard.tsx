@@ -1,5 +1,10 @@
-import { Pressable, Text, View } from "react-native";
-
+import {
+	Pressable,
+	type StyleProp,
+	Text,
+	View,
+	type ViewStyle,
+} from "react-native";
 import type { Entry } from "@/hooks/use-entries";
 
 function formatAmount(amount: number) {
@@ -11,11 +16,20 @@ function formatDate(dateStr: string) {
 	return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+// NativeWind の bg-xxx/opacity を条件付き className で使うとクラッシュするため
+// (nativewind#1466, #1711) バッジ背景は style prop で指定する
+const badgeBg = {
+	primary: { backgroundColor: "rgba(0, 126, 183, 0.1)" },
+	warning: { backgroundColor: "rgba(223, 161, 26, 0.1)" },
+	destructive: { backgroundColor: "rgba(231, 0, 11, 0.1)" },
+} satisfies Record<string, StyleProp<ViewStyle>>;
+
 function CategoryBadge({ category }: { category: Entry["category"] }) {
 	const isDeposit = category === "deposit";
 	return (
 		<View
-			className={`rounded px-2 py-0.5 ${isDeposit ? "bg-warning/10" : "bg-primary/10"}`}
+			style={isDeposit ? badgeBg.warning : badgeBg.primary}
+			className="rounded px-2 py-0.5"
 		>
 			<Text
 				className={`text-xs font-medium ${isDeposit ? "text-warning" : "text-primary"}`}
@@ -31,7 +45,8 @@ function OperationBadge({ operation }: { operation: Entry["operation"] }) {
 	const isModification = operation === "modification";
 	return (
 		<View
-			className={`rounded px-2 py-0.5 ${isModification ? "bg-warning/10" : "bg-destructive/10"}`}
+			style={isModification ? badgeBg.warning : badgeBg.destructive}
+			className="rounded px-2 py-0.5"
 		>
 			<Text
 				className={`text-xs font-medium ${isModification ? "text-warning" : "text-destructive"}`}

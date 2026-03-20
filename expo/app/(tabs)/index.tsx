@@ -35,7 +35,10 @@ export default function TimelineScreen() {
 	const allEntries = data?.pages.flatMap((page) => page.data) ?? [];
 	const groups = groupEntriesByMonth(allEntries);
 
-	const flatItems: ({ type: "header"; title: string } | { type: "entry"; entry: Entry })[] = [];
+	const flatItems: (
+		| { type: "header"; title: string }
+		| { type: "entry"; entry: Entry }
+	)[] = [];
 	for (const group of groups) {
 		flatItems.push({ type: "header", title: group.title });
 		for (const entry of group.data) {
@@ -71,7 +74,7 @@ export default function TimelineScreen() {
 			) : (
 				<FlatList
 					data={flatItems}
-					keyExtractor={(item, index) =>
+					keyExtractor={(item) =>
 						item.type === "header"
 							? `header-${item.title}`
 							: `entry-${item.entry.id}`
@@ -86,19 +89,14 @@ export default function TimelineScreen() {
 						}
 						return (
 							<View className="px-4 pb-2">
-								<EntryCard
-									entry={item.entry}
-									onPress={handleEntryPress}
-								/>
+								<EntryCard entry={item.entry} onPress={handleEntryPress} />
 							</View>
 						);
 					}}
 					onEndReached={handleEndReached}
 					onEndReachedThreshold={0.5}
 					ListFooterComponent={
-						isFetchingNextPage ? (
-							<ActivityIndicator className="py-4" />
-						) : null
+						isFetchingNextPage ? <ActivityIndicator className="py-4" /> : null
 					}
 					contentContainerClassName="pb-24"
 				/>
@@ -109,9 +107,7 @@ export default function TimelineScreen() {
 				onPress={() => router.push("/entry-form")}
 				className="absolute bottom-6 right-5 h-20 w-20 items-center justify-center rounded-full bg-primary active:opacity-80"
 			>
-				<Text className="text-4xl font-bold text-primary-foreground">
-					＋
-				</Text>
+				<Text className="text-4xl font-bold text-primary-foreground">＋</Text>
 			</Pressable>
 		</View>
 	);
