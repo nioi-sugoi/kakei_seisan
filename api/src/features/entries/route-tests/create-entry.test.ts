@@ -1,5 +1,8 @@
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { entries } from "../../../db/schema";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import { authCookie, client, setupAuth } from "./helpers";
@@ -114,14 +117,15 @@ describe("POST /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const result = await env.DB.prepare(
-			"SELECT * FROM entries WHERE user_id = ?",
-		)
-			.bind(TEST_USER.id)
+		const db = drizzle(env.DB);
+		const result = await db
+			.select()
+			.from(entries)
+			.where(eq(entries.userId, TEST_USER.id))
 			.all();
 
-		expect(result.results).toHaveLength(1);
-		expect(result.results[0]).toMatchObject({
+		expect(result).toHaveLength(1);
+		expect(result[0]).toMatchObject({
 			category: "advance",
 			amount: 1500,
 			date: "2024-03-15",
