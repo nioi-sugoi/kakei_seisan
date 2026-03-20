@@ -26,7 +26,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
-		expect(res.status).toBe(200);
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body).toEqual({ data: [], nextCursor: null });
 	});
@@ -40,7 +41,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
-		expect(res.status).toBe(200);
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.data).toHaveLength(2);
 	});
@@ -62,6 +64,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.data[0].label).toBe("新しい記録");
 		expect(body.data[1].label).toBe("古い記録");
@@ -77,6 +81,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.data).toHaveLength(1);
 		expect(body.data[0].label).toBe("自分の記録");
@@ -100,6 +106,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.data).toHaveLength(50);
 		expect(body.nextCursor).not.toBeNull();
@@ -113,6 +121,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.nextCursor).toBeNull();
 	});
@@ -139,6 +149,8 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.data).toHaveLength(1);
 		expect(body.data[0].label).toBe("古い記録");
