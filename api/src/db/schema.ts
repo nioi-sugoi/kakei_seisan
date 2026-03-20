@@ -159,13 +159,19 @@ export const entries = sqliteTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id),
-		category: text("category").notNull(),
-		operation: text("operation").notNull().default("original"),
+		category: text("category", { enum: ["advance", "deposit"] }).notNull(),
+		operation: text("operation", {
+			enum: ["original", "modification", "cancellation"],
+		})
+			.notNull()
+			.default("original"),
 		amount: integer("amount").notNull(),
 		date: text("date").notNull(),
 		label: text("label").notNull(),
 		memo: text("memo"),
-		status: text("status").notNull().default("approved"),
+		status: text("status", { enum: ["approved", "pending", "rejected"] })
+			.notNull()
+			.default("approved"),
 		parentId: text("parent_id").references((): AnySQLiteColumn => entries.id),
 		approvedBy: text("approved_by").references(() => user.id),
 		approvedAt: integer("approved_at"),
@@ -211,10 +217,16 @@ export const settlements = sqliteTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id),
-		operation: text("operation").notNull().default("original"),
+		operation: text("operation", {
+			enum: ["original", "modification", "cancellation"],
+		})
+			.notNull()
+			.default("original"),
 		amount: integer("amount").notNull(),
 		date: text("date").notNull(),
-		status: text("status").notNull().default("approved"),
+		status: text("status", { enum: ["approved", "pending", "rejected"] })
+			.notNull()
+			.default("approved"),
 		parentId: text("parent_id").references(
 			(): AnySQLiteColumn => settlements.id,
 		),

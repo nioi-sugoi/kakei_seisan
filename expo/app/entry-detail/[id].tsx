@@ -45,9 +45,7 @@ export default function EntryDetailScreen() {
 			<Header onBack={() => router.back()} />
 			<ScrollView className="flex-1" contentContainerClassName="px-4 py-5 gap-4">
 				<EntryInfoCard
-					category={
-						entry.category === "deposit" ? "deposit" : "advance"
-					}
+					category={entry.category}
 					amount={entry.amount}
 					date={entry.date}
 					label={entry.label}
