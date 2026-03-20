@@ -13,13 +13,9 @@ const categoryTextColors = {
 
 // NativeWind の bg-xxx/opacity を条件付き className で使うとクラッシュするため style で指定
 const operationBadgeBg = {
-	modification: {
-		backgroundColor: "rgba(217, 119, 6, 0.1)",
-	} as StyleProp<ViewStyle>,
-	cancellation: {
-		backgroundColor: "rgba(239, 68, 68, 0.1)",
-	} as StyleProp<ViewStyle>,
-} as const;
+	modification: { backgroundColor: "rgba(217, 119, 6, 0.1)" },
+	cancellation: { backgroundColor: "rgba(239, 68, 68, 0.1)" },
+} satisfies Record<string, StyleProp<ViewStyle>>;
 
 type EntryInfoCardProps = {
 	category: "advance" | "deposit";

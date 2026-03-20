@@ -87,7 +87,7 @@ export function createModification(
 	userId: string,
 	parentId: string,
 	original: { category: "advance" | "deposit"; date: string },
-	input: ModifyEntryInput & { amount: number },
+	input: ModifyEntryInput,
 ) {
 	return db
 		.insert(entries)

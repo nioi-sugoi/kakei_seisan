@@ -1,11 +1,13 @@
 import { vValidator } from "@hono/valibot-validator";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import type { Context } from "hono";
 import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
+import type { Operation } from "./types";
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -20,6 +22,34 @@ const modifyEntrySchema = v.object({
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
 });
+
+/** vValidator 共通エラーハンドラ */
+function handleValidationError(
+	result: { success: false; issues: v.BaseIssue<unknown>[] },
+	c: Context,
+) {
+	return c.json(
+		{
+			error: "バリデーションエラー" as const,
+			issues: result.issues.map((issue) => ({
+				field: String(issue.path?.[0]?.key ?? "unknown"),
+				message: issue.message,
+			})),
+		},
+		400,
+	);
+}
+
+/** 元エントリの実効金額を計算（元の金額 + 修正レコードの合計） */
+function computeEffectiveAmount(
+	baseAmount: number,
+	children: { operation: string; amount: number }[],
+): number {
+	const modificationSum = children
+		.filter((child) => child.operation === "modification")
+		.reduce((sum, child) => sum + child.amount, 0);
+	return baseAmount + modificationSum;
+}
 
 const entriesApp = new Hono<{
 	Bindings: Env;
@@ -60,17 +90,19 @@ const entriesApp = new Hono<{
 					? await entriesRepository.getChildOperations(db, originalIds)
 					: [];
 
-			const childOpsMap = new Map<string, Set<string>>();
+			const childOpsMap = new Map<string, Set<Operation>>();
 			for (const row of childOps) {
 				if (!row.parentId) continue;
-				const set = childOpsMap.get(row.parentId) ?? new Set();
+				const set = childOpsMap.get(row.parentId) ?? new Set<Operation>();
 				set.add(row.operation);
 				childOpsMap.set(row.parentId, set);
 			}
 
 			const augmented = data.map((entry) => ({
 				...entry,
-				childOperations: [...(childOpsMap.get(entry.id) ?? new Set<string>())],
+				childOperations: [
+					...(childOpsMap.get(entry.id) ?? new Set<Operation>()),
+				],
 			}));
 
 			return c.json({ data: augmented, nextCursor });
@@ -86,13 +118,15 @@ const entriesApp = new Hono<{
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
 
-		// 子エントリ（修正・取消）を取得
-		const children = await entriesRepository.findChildren(db, id);
-
-		// 親エントリ（修正・取消レコードの場合）
-		const parent = entry.parentId
-			? ((await entriesRepository.findById(db, entry.parentId)) ?? undefined)
-			: undefined;
+		// 子エントリと親エントリを並行取得
+		const [children, parent] = await Promise.all([
+			entriesRepository.findChildren(db, id),
+			entry.parentId
+				? entriesRepository
+						.findById(db, entry.parentId)
+						.then((p) => p ?? undefined)
+				: Promise.resolve(undefined),
+		]);
 
 		return c.json({ ...entry, children, parent }, 200);
 	})
@@ -100,18 +134,7 @@ const entriesApp = new Hono<{
 		"/",
 		requireAuth,
 		vValidator("json", createEntrySchema, (result, c) => {
-			if (!result.success) {
-				return c.json(
-					{
-						error: "バリデーションエラー" as const,
-						issues: result.issues.map((issue) => ({
-							field: String(issue.path?.[0]?.key ?? "unknown"),
-							message: issue.message,
-						})),
-					},
-					400,
-				);
-			}
+			if (!result.success) return handleValidationError(result, c);
 		}),
 		async (c) => {
 			const user = c.get("user");
@@ -126,18 +149,7 @@ const entriesApp = new Hono<{
 		"/:id/modify",
 		requireAuth,
 		vValidator("json", modifyEntrySchema, (result, c) => {
-			if (!result.success) {
-				return c.json(
-					{
-						error: "バリデーションエラー" as const,
-						issues: result.issues.map((issue) => ({
-							field: String(issue.path?.[0]?.key ?? "unknown"),
-							message: issue.message,
-						})),
-					},
-					400,
-				);
-			}
+			if (!result.success) return handleValidationError(result, c);
 		}),
 		async (c) => {
 			const user = c.get("user");
@@ -153,22 +165,18 @@ const entriesApp = new Hono<{
 				return c.json({ error: "元の記録のみ修正できます" as const }, 400);
 			}
 
-			// 子エントリを取得して取消済みチェックと実効金額を計算
 			const children = await entriesRepository.findChildren(db, id);
-			const hasCancellation = children.some(
-				(child) => child.operation === "cancellation",
-			);
-			if (hasCancellation) {
+			if (children.some((child) => child.operation === "cancellation")) {
 				return c.json(
 					{ error: "取り消し済みの記録は修正できません" as const },
 					400,
 				);
 			}
 
-			const modificationSum = children
-				.filter((child) => child.operation === "modification")
-				.reduce((sum, child) => sum + child.amount, 0);
-			const effectiveAmount = entry.amount + modificationSum;
+			const effectiveAmount = computeEffectiveAmount(
+				entry.amount,
+				children,
+			);
 			const diff = input.amount - effectiveAmount;
 
 			if (
@@ -204,17 +212,11 @@ const entriesApp = new Hono<{
 		}
 
 		const children = await entriesRepository.findChildren(db, id);
-		const hasCancellation = children.some(
-			(child) => child.operation === "cancellation",
-		);
-		if (hasCancellation) {
+		if (children.some((child) => child.operation === "cancellation")) {
 			return c.json({ error: "既に取り消し済みです" as const }, 400);
 		}
 
-		const modificationSum = children
-			.filter((child) => child.operation === "modification")
-			.reduce((sum, child) => sum + child.amount, 0);
-		const effectiveAmount = entry.amount + modificationSum;
+		const effectiveAmount = computeEffectiveAmount(entry.amount, children);
 
 		const cancellation = await entriesRepository.createCancellation(
 			db,

@@ -101,7 +101,10 @@ function EntryFormContent({
 
 				{/* Error */}
 				{serverError ? (
-					<View className="rounded-xl bg-destructive/10 px-4 py-3">
+					<View
+						style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+						className="rounded-xl px-4 py-3"
+					>
 						<Text className="text-sm text-destructive">{serverError}</Text>
 					</View>
 				) : null}

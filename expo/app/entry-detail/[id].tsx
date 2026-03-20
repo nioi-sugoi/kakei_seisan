@@ -102,13 +102,16 @@ export default function EntryDetailScreen() {
 				) : null}
 
 				{/* 修正・取消エラー */}
-				{cancelMutation.error && (
-					<View className="rounded-xl bg-destructive/10 px-4 py-3">
+				{cancelMutation.error ? (
+					<View
+						style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+						className="rounded-xl px-4 py-3"
+					>
 						<Text className="text-sm text-destructive">
 							{cancelMutation.error.message}
 						</Text>
 					</View>
-				)}
+				) : null}
 
 				{/* アクションボタン */}
 				{canModify && (
