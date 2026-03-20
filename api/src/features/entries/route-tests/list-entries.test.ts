@@ -46,14 +46,15 @@ describe("GET /api/entries", () => {
 	});
 
 	it("createdAt の降順で返される", async () => {
-		const baseTime = 1700000000000;
+		const older = new Date("2024-01-01").getTime();
+		const newer = new Date("2024-01-02").getTime();
 		await insertEntry(TEST_USER.id, {
 			label: "古い記録",
-			createdAt: baseTime,
+			createdAt: older,
 		});
 		await insertEntry(TEST_USER.id, {
 			label: "新しい記録",
-			createdAt: baseTime + 1000,
+			createdAt: newer,
 		});
 
 		const res = await client.api.entries.$get(
@@ -82,13 +83,13 @@ describe("GET /api/entries", () => {
 	});
 
 	it("50件を超える場合は nextCursor を返す", async () => {
-		const baseTime = 1700000000000;
+		const base = new Date("2024-01-01").getTime();
 		const inserts = [];
 		for (let i = 0; i < 51; i++) {
 			inserts.push(
 				insertEntry(TEST_USER.id, {
 					label: `記録${i}`,
-					createdAt: baseTime + i,
+					createdAt: base + i,
 				}),
 			);
 		}
@@ -117,22 +118,24 @@ describe("GET /api/entries", () => {
 	});
 
 	it("cursor を指定するとそれより前の記録を返す", async () => {
-		const baseTime = 1700000000000;
+		const jan1 = new Date("2024-01-01").getTime();
+		const jan2 = new Date("2024-01-02").getTime();
+		const jan3 = new Date("2024-01-03").getTime();
 		await insertEntry(TEST_USER.id, {
 			label: "古い記録",
-			createdAt: baseTime,
+			createdAt: jan1,
 		});
 		await insertEntry(TEST_USER.id, {
 			label: "中間の記録",
-			createdAt: baseTime + 1000,
+			createdAt: jan2,
 		});
 		await insertEntry(TEST_USER.id, {
 			label: "新しい記録",
-			createdAt: baseTime + 2000,
+			createdAt: jan3,
 		});
 
 		const res = await client.api.entries.$get(
-			{ query: { cursor: String(baseTime + 1000) } },
+			{ query: { cursor: String(jan2) } },
 			{ headers: { Cookie: authCookie } },
 		);
 
