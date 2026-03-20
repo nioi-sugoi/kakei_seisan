@@ -1,12 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-	ActivityIndicator,
-	Image,
-	Pressable,
-	ScrollView,
-	Text,
-	View,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 import { formatAmount, formatDateFull } from "@/lib/format";
 
@@ -43,16 +36,6 @@ function StatusBadge({
 			</Text>
 		</View>
 	);
-}
-
-function analyzeChildren(children: Array<{ id: string; operation: string }>) {
-	let modificationChild: { id: string; operation: string } | null = null;
-	let cancellationChild: { id: string; operation: string } | null = null;
-	for (const child of children) {
-		if (child.operation === "modification") modificationChild = child;
-		if (child.operation === "cancellation") cancellationChild = child;
-	}
-	return { modificationChild, cancellationChild };
 }
 
 function Header({ onBack }: { onBack: () => void }) {
@@ -95,32 +78,6 @@ export default function EntryDetailScreen() {
 	const category = entry.category as "advance" | "deposit";
 	const operation = entry.operation as string;
 	const status = entry.status as string;
-	const images =
-		(
-			entry as {
-				images?: Array<{
-					id: string;
-					storagePath: string;
-					displayOrder: number;
-				}>;
-			}
-		).images ?? [];
-	const children =
-		(entry as { children?: Array<{ id: string; operation: string }> })
-			.children ?? [];
-	const parent = (
-		entry as {
-			parent?: {
-				id: string;
-				operation: string;
-				category: string;
-				amount: number;
-			} | null;
-		}
-	).parent;
-
-	const { modificationChild, cancellationChild } = analyzeChildren(children);
-	const isInactive = !!modificationChild || !!cancellationChild;
 
 	return (
 		<View className="flex-1 bg-background">
@@ -143,12 +100,6 @@ export default function EntryDetailScreen() {
 								{categoryLabels[category]}
 							</Text>
 						</View>
-						{modificationChild && (
-							<StatusBadge label="修正済み" variant="amber" />
-						)}
-						{cancellationChild && (
-							<StatusBadge label="取消済み" variant="red" />
-						)}
 						{operation === "modification" && (
 							<StatusBadge label="修正" variant="amber" />
 						)}
@@ -166,9 +117,7 @@ export default function EntryDetailScreen() {
 					{/* Amount */}
 					<View className="mt-4 items-center">
 						<Text
-							className={`text-3xl font-bold ${
-								isInactive ? "line-through opacity-50" : ""
-							} ${category === "deposit" ? "text-orange-600" : "text-foreground"}`}
+							className={`text-3xl font-bold ${category === "deposit" ? "text-orange-600" : "text-foreground"}`}
 						>
 							{category === "deposit" ? "-" : ""}
 							{formatAmount(entry.amount)}
@@ -201,29 +150,6 @@ export default function EntryDetailScreen() {
 					</View>
 				</View>
 
-				{/* Receipt Images */}
-				{images.length > 0 ? (
-					<View className="rounded-xl bg-card px-5 py-4">
-						<Text className="text-sm font-medium text-foreground">
-							レシート画像
-						</Text>
-						<View className="mt-3 flex-row gap-3">
-							{images.map((img) => (
-								<Pressable
-									key={img.id}
-									className="h-24 w-24 items-center justify-center rounded-lg bg-secondary active:opacity-80"
-								>
-									<Image
-										source={{ uri: img.storagePath }}
-										className="h-24 w-24 rounded-lg"
-										resizeMode="cover"
-									/>
-								</Pressable>
-							))}
-						</View>
-					</View>
-				) : null}
-
 				{/* Rejection Comment */}
 				{status === "rejected" && entry.approvalComment ? (
 					<View className="rounded-xl border-l-4 border-l-red-400 bg-card px-4 py-4">
@@ -236,37 +162,8 @@ export default function EntryDetailScreen() {
 					</View>
 				) : null}
 
-				{/* Related Entry Links */}
-				{modificationChild ? (
-					<Pressable
-						onPress={() => router.push(`/entry-detail/${modificationChild.id}`)}
-						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
-					>
-						<Text className="text-sm text-primary">修正後の記録を見る</Text>
-						<Text className="text-sm text-primary">→</Text>
-					</Pressable>
-				) : null}
-				{cancellationChild ? (
-					<Pressable
-						onPress={() => router.push(`/entry-detail/${cancellationChild.id}`)}
-						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
-					>
-						<Text className="text-sm text-primary">取消記録を見る</Text>
-						<Text className="text-sm text-primary">→</Text>
-					</Pressable>
-				) : null}
-				{parent ? (
-					<Pressable
-						onPress={() => router.push(`/entry-detail/${parent.id}`)}
-						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
-					>
-						<Text className="text-sm text-primary">元の記録を見る</Text>
-						<Text className="text-sm text-primary">→</Text>
-					</Pressable>
-				) : null}
-
-				{/* Action Buttons (visible only for active original entries) */}
-				{!isInactive && operation === "original" ? (
+				{/* Action Buttons */}
+				{operation === "original" ? (
 					<View className="mt-4 flex-row gap-3 pb-4">
 						<Pressable className="flex-1 items-center rounded-xl border border-border py-3 active:opacity-80">
 							<Text className="text-base font-medium text-foreground">

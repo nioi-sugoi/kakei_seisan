@@ -20,22 +20,16 @@ const entriesApp = new Hono<{
 	Variables: AppVariables;
 }>()
 	.get("/:id", requireAuth, async (c) => {
-		const user = c.get("user");
-		if (!user) return c.json({ error: "認証が必要です" as const }, 401);
-
+		const user = c.get("user")!;
 		const id = c.req.param("id");
 		const db = drizzle(c.env.DB);
 
-		const entry = await entriesRepository.findById(db, id);
+		const entry = await entriesRepository.findByOwner(db, id, user.id);
 		if (!entry) {
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
-		if (entry.userId !== user.id) {
-			return c.json({ error: "アクセス権限がありません" as const }, 403);
-		}
 
-		const entryWithRelations = await entriesRepository.findRelations(db, entry);
-		return c.json(entryWithRelations, 200);
+		return c.json(entry, 200);
 	})
 	.post(
 		"/",
@@ -55,8 +49,7 @@ const entriesApp = new Hono<{
 			}
 		}),
 		async (c) => {
-			const user = c.get("user");
-			if (!user) return c.json({ error: "認証が必要です" as const }, 401);
+			const user = c.get("user")!;
 			const input = c.req.valid("json");
 			const db = drizzle(c.env.DB);
 			const entry = await entriesRepository.createEntry(db, user.id, input);

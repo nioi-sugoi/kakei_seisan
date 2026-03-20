@@ -65,9 +65,6 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			approvalComment: null,
 			createdAt: 1742000000000,
 			updatedAt: 1742000000000,
-			images: [],
-			children: [],
-			parent: null,
 			...overrides,
 		}),
 		{ status: 200, headers: jsonHeaders },
@@ -135,44 +132,9 @@ describe("EntryDetailScreen", () => {
 		expect(mockBack).toHaveBeenCalled();
 	});
 
-	it("修正済みの記録は修正済みバッジが表示される", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				children: [{ id: "child-1", operation: "modification" }],
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正済み")).toBeOnTheScreen();
-		});
-	});
-
-	it("取消済みの記録は取消済みバッジが表示される", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				children: [{ id: "child-1", operation: "cancellation" }],
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("取消済み")).toBeOnTheScreen();
-		});
-	});
-
 	it("修正レコードは修正バッジが表示される", async () => {
 		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				operation: "modification",
-				parentId: "parent-1",
-				parent: {
-					id: "parent-1",
-					operation: "original",
-					category: "advance",
-					amount: 5000,
-				},
-			}),
+			mockEntryResponse({ operation: "modification", parentId: "parent-1" }),
 		);
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
 
@@ -183,16 +145,7 @@ describe("EntryDetailScreen", () => {
 
 	it("取消レコードは取消バッジが表示される", async () => {
 		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				operation: "cancellation",
-				parentId: "parent-1",
-				parent: {
-					id: "parent-1",
-					operation: "original",
-					category: "advance",
-					amount: 5000,
-				},
-			}),
+			mockEntryResponse({ operation: "cancellation", parentId: "parent-1" }),
 		);
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
 
@@ -201,62 +154,7 @@ describe("EntryDetailScreen", () => {
 		});
 	});
 
-	it("修正済みの記録から修正後の記録へ遷移できる", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				children: [{ id: "mod-1", operation: "modification" }],
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正後の記録を見る")).toBeOnTheScreen();
-		});
-		await user.press(screen.getByText("修正後の記録を見る"));
-
-		expect(mockPush).toHaveBeenCalledWith("/entry-detail/mod-1");
-	});
-
-	it("取消済みの記録から取消記録へ遷移できる", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				children: [{ id: "cancel-1", operation: "cancellation" }],
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("取消記録を見る")).toBeOnTheScreen();
-		});
-		await user.press(screen.getByText("取消記録を見る"));
-
-		expect(mockPush).toHaveBeenCalledWith("/entry-detail/cancel-1");
-	});
-
-	it("修正・取消レコードから元の記録へ遷移できる", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				operation: "modification",
-				parentId: "parent-1",
-				parent: {
-					id: "parent-1",
-					operation: "original",
-					category: "advance",
-					amount: 5000,
-				},
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("元の記録を見る")).toBeOnTheScreen();
-		});
-		await user.press(screen.getByText("元の記録を見る"));
-
-		expect(mockPush).toHaveBeenCalledWith("/entry-detail/parent-1");
-	});
-
-	it("アクティブなオリジナル記録には修正・取り消しボタンが表示される", async () => {
+	it("オリジナル記録には修正・取り消しボタンが表示される", async () => {
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
 
 		await waitFor(() => {
@@ -265,16 +163,14 @@ describe("EntryDetailScreen", () => {
 		expect(screen.getByText("取り消す")).toBeOnTheScreen();
 	});
 
-	it("修正済みの記録には修正・取り消しボタンが表示されない", async () => {
+	it("修正レコードには修正・取り消しボタンが表示されない", async () => {
 		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				children: [{ id: "child-1", operation: "modification" }],
-			}),
+			mockEntryResponse({ operation: "modification", parentId: "parent-1" }),
 		);
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
 
 		await waitFor(() => {
-			expect(screen.getByText("修正済み")).toBeOnTheScreen();
+			expect(screen.getByText("修正")).toBeOnTheScreen();
 		});
 		expect(screen.queryByText("修正する")).not.toBeOnTheScreen();
 		expect(screen.queryByText("取り消す")).not.toBeOnTheScreen();
