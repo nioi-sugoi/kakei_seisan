@@ -307,6 +307,7 @@ describe("EntryFormScreen", () => {
 		mockPost.mockResolvedValue(
 			new Response(JSON.stringify({ error: "サーバーエラー" }), {
 				status: 500,
+				headers: { "Content-Type": "application/json" },
 			}),
 		);
 		render(<EntryFormScreen />, { wrapper: createWrapper() });
@@ -316,7 +317,7 @@ describe("EntryFormScreen", () => {
 		await user.press(screen.getByText("登録する"));
 
 		await waitFor(() => {
-			expect(screen.getByText("サーバーエラー")).toBeOnTheScreen();
+			expect(screen.getByText("エラーが発生しました")).toBeOnTheScreen();
 		});
 		expect(mockReplace).not.toHaveBeenCalled();
 	});
