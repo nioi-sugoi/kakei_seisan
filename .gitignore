@@ -27,3 +27,6 @@ yarn-error.*
 
 # worktree-local env
 .env.worktree
+
+# Claude Code
+.claude/scheduled_tasks.lock
