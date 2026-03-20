@@ -20,7 +20,7 @@ const entriesApp = new Hono<{
 	Variables: AppVariables;
 }>()
 	.get("/:id", requireAuth, async (c) => {
-		const user = c.get("user")!;
+		const user = c.get("user");
 		const id = c.req.param("id");
 		const db = drizzle(c.env.DB);
 
@@ -49,7 +49,7 @@ const entriesApp = new Hono<{
 			}
 		}),
 		async (c) => {
-			const user = c.get("user")!;
+			const user = c.get("user");
 			const input = c.req.valid("json");
 			const db = drizzle(c.env.DB);
 			const entry = await entriesRepository.createEntry(db, user.id, input);
