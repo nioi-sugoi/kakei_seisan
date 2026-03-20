@@ -12,8 +12,6 @@ type Screen =
   | "approval"
   | "settings"
   | "settings-unconnected"
-  | "invite-code"
-  | "enter-code"
 
 const screens: { value: Screen; label: string; group: string }[] = [
   { value: "login", label: "1. 認証画面", group: "認証" },
@@ -26,8 +24,6 @@ const screens: { value: Screen; label: string; group: string }[] = [
   { value: "partner-managed", label: "8. パートナー（管理）", group: "パートナー" },
   { value: "approval", label: "9. 承認操作", group: "パートナー" },
   { value: "settings", label: "10. 設定", group: "設定" },
-  { value: "invite-code", label: "11. 招待コード発行", group: "設定" },
-  { value: "enter-code", label: "12. 招待コード入力", group: "設定" },
 ]
 
 interface ScreenSelectorProps {
