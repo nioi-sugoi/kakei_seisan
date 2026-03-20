@@ -1,20 +1,10 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { DetailedError, parseResponse } from "hono/client";
+import { parseResponse } from "hono/client";
 import * as v from "valibot";
 import { format } from "date-fns";
 import { client } from "@/lib/api-client";
-
-function getApiErrorMessage(error: Error): string {
-	if (error instanceof DetailedError) {
-		const data = error.detail?.data;
-		if (data && typeof data === "object" && "error" in data) {
-			return String(data.error);
-		}
-	}
-	return error.message;
-}
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -68,7 +58,7 @@ export function useEntryForm() {
 
 	return {
 		form,
-		error: mutation.error ? getApiErrorMessage(mutation.error) : "",
+		error: mutation.error ? "エラーが発生しました" : "",
 		loading: mutation.isPending,
 		goBack: () => router.back(),
 	};
