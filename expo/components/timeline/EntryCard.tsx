@@ -6,15 +6,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import type { Entry } from "@/hooks/use-entries";
-
-function formatAmount(amount: number) {
-	return `¥${amount.toLocaleString()}`;
-}
-
-function formatDate(dateStr: string) {
-	const date = new Date(dateStr);
-	return `${date.getMonth() + 1}/${date.getDate()}`;
-}
+import { formatAmount, formatDateShort } from "@/lib/format";
 
 // NativeWind の bg-xxx/opacity を条件付き className で使うとクラッシュするため
 // (nativewind#1466, #1711) バッジ背景は style prop で指定する
@@ -83,7 +75,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 						{entry.label}
 					</Text>
 					<Text className="text-xs text-muted-foreground">
-						{formatDate(entry.date)}
+						{formatDateShort(entry.date)}
 					</Text>
 				</View>
 				<Text

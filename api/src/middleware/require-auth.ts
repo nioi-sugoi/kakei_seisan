@@ -1,10 +1,13 @@
 import { createMiddleware } from "hono/factory";
+import type { Session, SessionUser } from "../auth";
 import type { Env } from "../bindings";
-import type { AppVariables } from "../types";
 
 export const requireAuth = createMiddleware<{
 	Bindings: Env;
-	Variables: AppVariables;
+	Variables: {
+		user: SessionUser;
+		session: Session;
+	};
 }>(async (c, next) => {
 	const user = c.get("user");
 	if (!user) {

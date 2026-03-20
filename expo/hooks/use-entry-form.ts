@@ -1,7 +1,7 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { parseResponse } from "hono/client";
-import { useState } from "react";
 import * as v from "valibot";
 import { format } from "date-fns";
 import { client } from "@/lib/api-client";
@@ -21,18 +21,15 @@ const createEntrySchema = v.object({
 		v.transform((s: string) => s.trim()),
 		v.minLength(1, "ラベルは必須です"),
 	),
-	memo: v.optional(v.string()),
+	memo: v.optional(v.pipe(
+		v.string(),
+		v.transform((s) => s || undefined),
+	)),
 });
 
 export function useEntryForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const [category, setCategory] = useState<"advance" | "deposit">("advance");
-	const [amount, setAmount] = useState("");
-	const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
-	const [label, setLabel] = useState("");
-	const [memo, setMemo] = useState("");
-	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
 	const mutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
@@ -43,52 +40,29 @@ export function useEntryForm() {
 		},
 	});
 
-	const goBack = () => {
-		router.back();
+	const defaultValues: v.InferInput<typeof createEntrySchema> = {
+		category: "advance",
+		amount: "",
+		date: format(new Date(), "yyyy-MM-dd"),
+		label: "",
+		memo: "",
 	};
 
-	const submit = () => {
-		const result = v.safeParse(createEntrySchema, {
-			category,
-			amount,
-			date,
-			label,
-			memo: memo || undefined,
-		});
-
-		if (!result.success) {
-			const flat = v.flatten(result.issues);
-			const errors: Record<string, string> = {};
-			for (const [key, messages] of Object.entries(flat.nested ?? {})) {
-				if (messages?.[0]) {
-					errors[key] = messages[0];
-				}
-			}
-			setFieldErrors(errors);
-			return;
-		}
-
-		setFieldErrors({});
-		mutation.mutate(result.output);
-	};
-
-	const error = mutation.error?.message ?? "";
+	const form = useForm({
+		defaultValues,
+		validators: {
+			onSubmit: createEntrySchema,
+		},
+		onSubmit: ({ value }) => {
+			// バリデーション通過済みのため parse は必ず成功する
+			mutation.mutate(v.parse(createEntrySchema, value));
+		},
+	});
 
 	return {
-		category,
-		setCategory,
-		amount,
-		setAmount,
-		date,
-		setDate,
-		label,
-		setLabel,
-		memo,
-		setMemo,
-		error,
-		fieldErrors,
+		form,
+		serverError: mutation.error ? "エラーが発生しました" : "",
 		loading: mutation.isPending,
-		submit,
-		goBack,
+		goBack: () => router.back(),
 	};
 }
