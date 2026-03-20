@@ -1,8 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { EntryActionButtons } from "@/components/entry-detail/EntryActionButtons";
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
-import { RejectionComment } from "@/components/entry-detail/RejectionComment";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 
 function Header({ onBack }: { onBack: () => void }) {
@@ -48,18 +46,11 @@ export default function EntryDetailScreen() {
 			<ScrollView className="flex-1" contentContainerClassName="px-4 py-5 gap-4">
 				<EntryInfoCard
 					category={entry.category as "advance" | "deposit"}
-					operation={entry.operation}
-					status={entry.status}
 					amount={entry.amount}
 					date={entry.date}
 					label={entry.label}
 					memo={entry.memo}
 				/>
-				<RejectionComment
-					status={entry.status}
-					comment={entry.approvalComment}
-				/>
-				<EntryActionButtons operation={entry.operation} />
 			</ScrollView>
 		</View>
 	);
