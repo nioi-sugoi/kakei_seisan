@@ -1,10 +1,13 @@
-import { env } from "cloudflare:test";
-import { applyD1Migrations } from "cloudflare:test";
+import { applyD1Migrations, env } from "cloudflare:test";
 import { testClient } from "hono/testing";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import app from "../../index";
 import type { AppType } from "../../index";
-import { TEST_USER, buildAuthCookie, seedTestUser } from "../../testing/auth-helper";
+import app from "../../index";
+import {
+	buildAuthCookie,
+	seedTestUser,
+	TEST_USER,
+} from "../../testing/auth-helper";
 import { cleanAllTables } from "../../testing/db-helper";
 
 let authCookie: string;
@@ -17,6 +20,40 @@ beforeAll(async () => {
 	await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
 	authCookie = await buildAuthCookie();
 });
+
+/** DB に直接エントリを挿入する（createdAt を制御するため） */
+async function insertEntry(
+	overrides: Partial<{
+		id: string;
+		userId: string;
+		category: string;
+		amount: number;
+		date: string;
+		label: string;
+		memo: string | null;
+		createdAt: number;
+	}> = {},
+) {
+	const id = overrides.id ?? crypto.randomUUID();
+	const now = Date.now();
+	await env.DB.prepare(
+		`INSERT INTO entries (id, user_id, category, operation, amount, date, label, memo, status, created_at, updated_at)
+		 VALUES (?, ?, ?, 'original', ?, ?, ?, ?, 'approved', ?, ?)`,
+	)
+		.bind(
+			id,
+			overrides.userId ?? TEST_USER.id,
+			overrides.category ?? "advance",
+			overrides.amount ?? 1000,
+			overrides.date ?? "2024-03-15",
+			overrides.label ?? "テスト",
+			overrides.memo ?? null,
+			overrides.createdAt ?? now,
+			now,
+		)
+		.run();
+	return id;
+}
 
 describe("POST /api/entries", () => {
 	beforeEach(async () => {
@@ -258,5 +295,204 @@ describe("POST /api/entries", () => {
 		);
 
 		expect(res.status).toBe(400);
+	});
+});
+
+describe("GET /api/entries", () => {
+	beforeEach(async () => {
+		await cleanAllTables();
+		await seedTestUser();
+	});
+
+	it("記録が0件の場合は空配列を返す", async () => {
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body).toEqual({ data: [], nextCursor: null });
+	});
+
+	it("自分の記録一覧を取得できる", async () => {
+		await insertEntry({ label: "食費", amount: 1500 });
+		await insertEntry({ label: "交通費", amount: 300 });
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toHaveLength(2);
+	});
+
+	it("createdAt の降順で返される", async () => {
+		const baseTime = 1700000000000;
+		await insertEntry({ label: "古い記録", createdAt: baseTime });
+		await insertEntry({ label: "新しい記録", createdAt: baseTime + 1000 });
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		expect(body.data[0].label).toBe("新しい記録");
+		expect(body.data[1].label).toBe("古い記録");
+	});
+
+	it("他のユーザーの記録は含まれない", async () => {
+		// 別ユーザーをDBに追加
+		await env.DB.prepare(
+			"INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, 1)",
+		)
+			.bind("other-user-id", "Other User", "other@example.com")
+			.run();
+
+		await insertEntry({ label: "自分の記録", userId: TEST_USER.id });
+		await insertEntry({ label: "他人の記録", userId: "other-user-id" });
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		expect(body.data).toHaveLength(1);
+		expect(body.data[0].label).toBe("自分の記録");
+	});
+
+	it("50件を超える場合は nextCursor を返す", async () => {
+		const baseTime = 1700000000000;
+		const inserts = [];
+		for (let i = 0; i < 51; i++) {
+			inserts.push(insertEntry({ label: `記録${i}`, createdAt: baseTime + i }));
+		}
+		await Promise.all(inserts);
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		expect(body.data).toHaveLength(50);
+		expect(body.nextCursor).not.toBeNull();
+	});
+
+	it("50件以下の場合は nextCursor が null", async () => {
+		await insertEntry({ label: "記録" });
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		expect(body.nextCursor).toBeNull();
+	});
+
+	it("cursor を指定するとそれより前の記録を返す", async () => {
+		const baseTime = 1700000000000;
+		await insertEntry({ label: "古い記録", createdAt: baseTime });
+		await insertEntry({ label: "中間の記録", createdAt: baseTime + 1000 });
+		await insertEntry({ label: "新しい記録", createdAt: baseTime + 2000 });
+
+		// 中間の記録の createdAt をカーソルとして指定 → 古い記録のみ返る
+		const res = await client.api.entries.$get(
+			{ query: { cursor: String(baseTime + 1000) } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		expect(body.data).toHaveLength(1);
+		expect(body.data[0].label).toBe("古い記録");
+	});
+
+	it("認証なしでリクエストすると 401 を返す", async () => {
+		const res = await client.api.entries.$get({ query: {} });
+
+		expect(res.status).toBe(401);
+	});
+});
+
+describe("GET /api/entries/:id", () => {
+	beforeEach(async () => {
+		await cleanAllTables();
+		await seedTestUser();
+	});
+
+	it("自分の記録を取得できる", async () => {
+		const entryId = await insertEntry({
+			label: "食費",
+			amount: 1500,
+			date: "2024-03-15",
+			memo: "テストメモ",
+		});
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entryId } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body).toMatchObject({
+			id: entryId,
+			label: "食費",
+			amount: 1500,
+			date: "2024-03-15",
+			memo: "テストメモ",
+			userId: TEST_USER.id,
+			category: "advance",
+			operation: "original",
+			status: "approved",
+		});
+	});
+
+	it("存在しない ID の場合 404 を返す", async () => {
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: "non-existent-id" } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(404);
+		const body = await res.json();
+		expect(body).toHaveProperty("error", "記録が見つかりません");
+	});
+
+	it("他のユーザーの記録にアクセスすると 404 を返す", async () => {
+		await env.DB.prepare(
+			"INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, 1)",
+		)
+			.bind("other-user-id", "Other User", "other@example.com")
+			.run();
+
+		const entryId = await insertEntry({
+			label: "他人の記録",
+			userId: "other-user-id",
+		});
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entryId } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(404);
+		const body = await res.json();
+		expect(body).toHaveProperty("error", "記録が見つかりません");
+	});
+
+	it("認証なしでリクエストすると 401 を返す", async () => {
+		const entryId = await insertEntry({ label: "記録" });
+
+		const res = await client.api.entries[":id"].$get({
+			param: { id: entryId },
+		});
+
+		expect(res.status).toBe(401);
 	});
 });

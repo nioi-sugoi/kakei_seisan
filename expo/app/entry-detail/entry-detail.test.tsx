@@ -23,9 +23,6 @@ jest.mock("@/lib/api-client", () => ({
 
 import EntryDetailScreen from "./[id]";
 
-let cleanupQuery: () => void;
-let wrapper: ReturnType<typeof createQueryWrapper>["wrapper"];
-
 const jsonHeaders = { "Content-Type": "application/json" };
 
 function mockEntryResponse(overrides: Record<string, unknown> = {}) {
@@ -54,19 +51,12 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	const result = createQueryWrapper();
-	wrapper = result.wrapper;
-	cleanupQuery = result.cleanup;
 	mockGet.mockResolvedValue(mockEntryResponse());
-});
-
-afterEach(() => {
-	cleanupQuery();
 });
 
 describe("EntryDetailScreen", () => {
 	it("記録の基本情報が表示される", async () => {
-		render(<EntryDetailScreen />, { wrapper });
+		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
 
 		await waitFor(() => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
@@ -81,7 +71,7 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({ category: "deposit", amount: 3000 }),
 		);
-		render(<EntryDetailScreen />, { wrapper });
+		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
 
 		await waitFor(() => {
 			expect(screen.getByText("-¥3,000")).toBeOnTheScreen();
@@ -91,7 +81,7 @@ describe("EntryDetailScreen", () => {
 
 	it("メモが空の場合はメモ行が表示されない", async () => {
 		mockGet.mockResolvedValue(mockEntryResponse({ memo: null }));
-		render(<EntryDetailScreen />, { wrapper });
+		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
 
 		await waitFor(() => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
@@ -106,7 +96,7 @@ describe("EntryDetailScreen", () => {
 				headers: jsonHeaders,
 			}),
 		);
-		render(<EntryDetailScreen />, { wrapper });
+		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
 
 		await waitFor(() => {
 			expect(screen.getByText(/記録が見つかりません/)).toBeOnTheScreen();

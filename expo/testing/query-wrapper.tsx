@@ -3,12 +3,10 @@ import type { ReactNode } from "react";
 
 /**
  * テスト用の QueryClientProvider ラッパーを生成する。
- * 返り値の wrapper を RNTL の render に渡し、cleanup で afterEach のキャッシュ破棄を行う。
+ * 呼び出しごとに新しい QueryClient を作るためキャッシュは自然に分離される。
  *
  * @example
- * const { wrapper, cleanup } = createQueryWrapper();
- * render(<MyScreen />, { wrapper });
- * // afterEach で cleanup() を呼ぶ
+ * render(<MyScreen />, { wrapper: createQueryWrapper() });
  */
 export function createQueryWrapper() {
 	const queryClient = new QueryClient({
@@ -18,11 +16,7 @@ export function createQueryWrapper() {
 		},
 	});
 
-	const wrapper = ({ children }: { children: ReactNode }) => (
+	return ({ children }: { children: ReactNode }) => (
 		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 	);
-
-	const cleanup = () => queryClient.clear();
-
-	return { wrapper, cleanup };
 }
