@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import {
 	ActivityIndicator,
 	FlatList,
@@ -8,50 +7,18 @@ import {
 } from "react-native";
 
 import { EntryCard } from "@/components/timeline/EntryCard";
-import { type Entry, useEntries } from "@/hooks/use-entries";
-
-type TimelineItem =
-	| { type: "header"; title: string }
-	| { type: "entry"; entry: Entry };
-
-function toMonthLabel(date: string) {
-	const d = new Date(date);
-	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-}
-
-function buildTimelineItems(entries: Entry[]): TimelineItem[] {
-	const items: TimelineItem[] = [];
-	let currentMonth = "";
-
-	for (const entry of entries) {
-		const month = toMonthLabel(entry.date);
-		if (month !== currentMonth) {
-			currentMonth = month;
-			items.push({ type: "header", title: month });
-		}
-		items.push({ type: "entry", entry });
-	}
-
-	return items;
-}
+import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
 
 export default function TimelineScreen() {
-	const router = useRouter();
-	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-		useEntries();
-
-	const allEntries = data?.pages.flatMap((page) => page.data) ?? [];
-	const flatItems = buildTimelineItems(allEntries);
-
-	const handleEntryPress = (entry: Entry) => {
-		router.push(`/entry-detail/${entry.id}`);
-	};
-
-	const handleEndReached = () => {
-		if (hasNextPage && !isFetchingNextPage) {
-			fetchNextPage();
-		}
-	};
+	const {
+		items,
+		isLoading,
+		isEmpty,
+		isFetchingNextPage,
+		handleEntryPress,
+		handleEndReached,
+		handleAddPress,
+	} = useTimeline();
 
 	return (
 		<View className="flex-1 bg-background">
@@ -59,7 +26,7 @@ export default function TimelineScreen() {
 				<View className="flex-1 items-center justify-center">
 					<ActivityIndicator size="large" />
 				</View>
-			) : allEntries.length === 0 ? (
+			) : isEmpty ? (
 				<View className="flex-1 items-center justify-center">
 					<Text className="text-2xl font-bold text-foreground">
 						タイムライン
@@ -69,8 +36,8 @@ export default function TimelineScreen() {
 					</Text>
 				</View>
 			) : (
-				<FlatList
-					data={flatItems}
+				<FlatList<TimelineItem>
+					data={items}
 					keyExtractor={(item) =>
 						item.type === "header"
 							? `header-${item.title}`
@@ -101,7 +68,7 @@ export default function TimelineScreen() {
 
 			{/* FAB */}
 			<Pressable
-				onPress={() => router.push("/entry-form")}
+				onPress={handleAddPress}
 				className="absolute bottom-6 right-5 h-20 w-20 items-center justify-center rounded-full bg-primary active:opacity-80"
 				accessibilityRole="button"
 				accessibilityLabel="記録を追加"
