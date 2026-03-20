@@ -1,8 +1,15 @@
 import { env } from "cloudflare:test";
 import { applyD1Migrations } from "cloudflare:test";
+import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
 import { serializeSigned } from "hono/utils/cookie";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+	account,
+	entries,
+	session,
+	user,
+} from "../../db/schema";
 import app from "../../index";
 import type { AppType } from "../../index";
 
@@ -17,35 +24,31 @@ const SESSION_TOKEN = "test-session-token";
 let authCookie: string;
 
 // app と routes は同一の実行時オブジェクト。型情報のために AppType へキャスト
+// (Hono の export default app は basePath 以降のルート型を含まないため)
 const client = testClient(app as unknown as AppType, env);
+const db = drizzle(env.DB);
 
 async function seedTestUser() {
-	const now = Date.now();
-	await env.DB.prepare(
-		"INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-	)
-		.bind(TEST_USER.id, TEST_USER.name, TEST_USER.email, 1, now, now)
-		.run();
-
-	await env.DB.prepare(
-		"INSERT INTO session (id, expires_at, token, created_at, updated_at, user_id) VALUES (?, ?, ?, ?, ?, ?)",
-	)
-		.bind(
-			"test-session-id",
-			now + 86_400_000,
-			SESSION_TOKEN,
-			now,
-			now,
-			TEST_USER.id,
-		)
-		.run();
+	await db.insert(user).values({
+		id: TEST_USER.id,
+		name: TEST_USER.name,
+		email: TEST_USER.email,
+		emailVerified: true,
+	});
+	await db.insert(session).values({
+		id: "test-session-id",
+		expiresAt: new Date(Date.now() + 86_400_000),
+		token: SESSION_TOKEN,
+		updatedAt: new Date(),
+		userId: TEST_USER.id,
+	});
 }
 
 async function cleanTables() {
-	await env.DB.exec("DELETE FROM entries");
-	await env.DB.exec("DELETE FROM session");
-	await env.DB.exec("DELETE FROM account");
-	await env.DB.exec("DELETE FROM user");
+	await db.delete(entries);
+	await db.delete(session);
+	await db.delete(account);
+	await db.delete(user);
 }
 
 beforeAll(async () => {
