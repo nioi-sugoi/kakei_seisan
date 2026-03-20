@@ -3,6 +3,7 @@ import {
 	screen,
 	userEvent,
 	waitFor,
+	within,
 } from "@testing-library/react-native";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
@@ -126,6 +127,45 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("2026年2月")).toBeOnTheScreen();
+	});
+
+	it("記録が月ごとに正しくグルーピングされている", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({ id: "e1", date: "2026-03-20", label: "3月の記録A" }),
+				makeEntry({ id: "e2", date: "2026-03-10", label: "3月の記録B" }),
+				makeEntry({ id: "e3", date: "2026-02-15", label: "2月の記録" }),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
+		});
+
+		// 3月のカードが2枚、2月のカードが1枚表示される
+		expect(screen.getByText("3月の記録A")).toBeOnTheScreen();
+		expect(screen.getByText("3月の記録B")).toBeOnTheScreen();
+		expect(screen.getByText("2月の記録")).toBeOnTheScreen();
+
+		// 3月ヘッダーが2月ヘッダーより先に表示される（FlatListの順序）
+		const items = screen.root;
+		const marchHeader = screen.getByText("2026年3月");
+		const febHeader = screen.getByText("2026年2月");
+		const marchRecord = screen.getByText("3月の記録A");
+		const febRecord = screen.getByText("2月の記録");
+
+		// 3月のヘッダー → 3月の記録 → 2月のヘッダー → 2月の記録 の順序を検証
+		const allTexts = screen.root.findAll((node) => node.props.children);
+		const marchHeaderIdx = allTexts.indexOf(marchHeader);
+		const marchRecordIdx = allTexts.indexOf(marchRecord);
+		const febHeaderIdx = allTexts.indexOf(febHeader);
+		const febRecordIdx = allTexts.indexOf(febRecord);
+
+		expect(marchHeaderIdx).toBeLessThan(marchRecordIdx);
+		expect(marchRecordIdx).toBeLessThan(febHeaderIdx);
+		expect(febHeaderIdx).toBeLessThan(febRecordIdx);
 	});
 
 	it("記録カードをタップすると詳細画面に遷移する", async () => {
