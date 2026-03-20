@@ -58,7 +58,7 @@ export function useEntryForm() {
 
 	return {
 		form,
-		error: mutation.error ? "エラーが発生しました" : "",
+		serverError: mutation.error ? "エラーが発生しました" : "",
 		loading: mutation.isPending,
 		goBack: () => router.back(),
 	};

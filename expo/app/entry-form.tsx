@@ -15,7 +15,7 @@ import { MemoInput } from "@/components/entry-form/MemoInput";
 import { useEntryForm } from "@/hooks/use-entry-form";
 
 export default function EntryFormScreen() {
-	const { form, error, loading, goBack } = useEntryForm();
+	const { form, serverError, loading, goBack } = useEntryForm();
 
 	return (
 		<KeyboardAvoidingView
@@ -85,9 +85,9 @@ export default function EntryFormScreen() {
 				</form.Field>
 
 				{/* Error */}
-				{error ? (
+				{serverError ? (
 					<View className="rounded-xl bg-destructive/10 px-4 py-3">
-						<Text className="text-sm text-destructive">{error}</Text>
+						<Text className="text-sm text-destructive">{serverError}</Text>
 					</View>
 				) : null}
 
