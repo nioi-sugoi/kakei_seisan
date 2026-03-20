@@ -1,11 +1,10 @@
 import { env } from "cloudflare:test";
 import { applyD1Migrations } from "cloudflare:test";
 import { testClient } from "hono/testing";
+import { serializeSigned } from "hono/utils/cookie";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../../index";
 import type { AppType } from "../../index";
-
-const BETTER_AUTH_SECRET = "test-secret-for-integration-tests!";
 
 const TEST_USER = {
 	id: "test-user-id",
@@ -14,32 +13,6 @@ const TEST_USER = {
 } as const;
 
 const SESSION_TOKEN = "test-session-token";
-
-/**
- * Hono の setSignedCookie と同じ方式で HMAC-SHA256 署名済みクッキー値を生成する。
- * Better Auth の getSignedCookie が検証できる形式: `${value}.${base64Signature}`
- */
-async function makeSignedCookieValue(
-	value: string,
-	secret: string,
-): Promise<string> {
-	const key = await crypto.subtle.importKey(
-		"raw",
-		new TextEncoder().encode(secret),
-		{ name: "HMAC", hash: "SHA-256" },
-		false,
-		["sign"],
-	);
-	const signature = await crypto.subtle.sign(
-		"HMAC",
-		key,
-		new TextEncoder().encode(value),
-	);
-	const base64Signature = btoa(
-		String.fromCharCode(...new Uint8Array(signature)),
-	);
-	return encodeURIComponent(`${value}.${base64Signature}`);
-}
 
 let authCookie: string;
 
@@ -77,11 +50,13 @@ async function cleanTables() {
 
 beforeAll(async () => {
 	await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
-	const signedValue = await makeSignedCookieValue(
+	// serializeSigned は "name=signedValue; Path=/" 形式を返すので name=value 部分だけ取得
+	const setCookie = await serializeSigned(
+		"better-auth.session_token",
 		SESSION_TOKEN,
-		BETTER_AUTH_SECRET,
+		env.BETTER_AUTH_SECRET,
 	);
-	authCookie = `better-auth.session_token=${signedValue}`;
+	authCookie = setCookie.split(";")[0];
 });
 
 describe("POST /api/entries", () => {
