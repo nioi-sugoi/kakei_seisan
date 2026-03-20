@@ -106,6 +106,8 @@ export default function TimelineScreen() {
 			<Pressable
 				onPress={() => router.push("/entry-form")}
 				className="absolute bottom-6 right-5 h-20 w-20 items-center justify-center rounded-full bg-primary active:opacity-80"
+				accessibilityRole="button"
+				accessibilityLabel="記録を追加"
 			>
 				<Text className="text-4xl font-bold text-primary-foreground">＋</Text>
 			</Pressable>

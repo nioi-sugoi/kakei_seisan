@@ -158,11 +158,9 @@ describe("TimelineScreen", () => {
 		mockApiResponse({ data: [], nextCursor: null });
 		render(<TimelineScreen />, { wrapper });
 
-		await waitFor(() => {
-			expect(screen.getByText("＋")).toBeOnTheScreen();
-		});
+		const fab = await screen.findByRole("button", { name: "記録を追加" });
 
-		await user.press(screen.getByText("＋"));
+		await user.press(fab);
 
 		expect(mockPush).toHaveBeenCalledWith("/entry-form");
 	});
