@@ -4,12 +4,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
 import { serializeSigned } from "hono/utils/cookie";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import {
-	account,
-	entries,
-	session,
-	user,
-} from "../../db/schema";
+import { session, user } from "../../db/schema";
 import app from "../../index";
 import type { AppType } from "../../index";
 
@@ -44,11 +39,26 @@ async function seedTestUser() {
 	});
 }
 
-async function cleanTables() {
-	await db.delete(entries);
-	await db.delete(session);
-	await db.delete(account);
-	await db.delete(user);
+async function cleanAllTables() {
+	// sqlite_master からユーザーテーブルを動的に取得し、全行削除する。
+	// テーブルのハードコードが不要になり、スキーマ追加時の削除し忘れを防ぐ。
+	const { results } = await env.DB.prepare(
+		"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'd1_%' AND name NOT LIKE '_cf_%'",
+	).all<{ name: string }>();
+	// D1 は PRAGMA foreign_keys = OFF をサポートしないため、
+	// FK 制約で失敗したテーブルをリトライして依存順を自動解決する
+	let remaining = results.map((r) => r.name);
+	for (let pass = 0; pass < 3 && remaining.length > 0; pass++) {
+		const failed: string[] = [];
+		for (const name of remaining) {
+			try {
+				await env.DB.exec(`DELETE FROM "${name}"`);
+			} catch {
+				failed.push(name);
+			}
+		}
+		remaining = failed;
+	}
 }
 
 beforeAll(async () => {
@@ -64,7 +74,7 @@ beforeAll(async () => {
 
 describe("POST /api/entries", () => {
 	beforeEach(async () => {
-		await cleanTables();
+		await cleanAllTables();
 		await seedTestUser();
 	});
 
