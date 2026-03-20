@@ -186,6 +186,7 @@ export const entries = sqliteTable(
 	(table) => [
 		index("entries_user_status_idx").on(table.userId, table.status),
 		index("entries_user_date_idx").on(table.userId, table.date),
+		index("entries_user_created_idx").on(table.userId, table.createdAt),
 		index("entries_parent_idx").on(table.parentId),
 		check(
 			"entries_category_check",

@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { parseResponse } from "hono/client";
 import * as v from "valibot";
@@ -29,10 +29,13 @@ const createEntrySchema = v.object({
 
 export function useEntryForm() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
+
 	const mutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
 			parseResponse(client.api.entries.$post({ json: input })),
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["entries"] });
 			router.replace("/(tabs)");
 		},
 	});

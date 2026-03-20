@@ -1,6 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react-native";
-import type { ReactNode } from "react";
+import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 jest.mock("expo-router", () => ({
 	useLocalSearchParams: () => ({ id: "entry-1" }),
@@ -23,19 +22,6 @@ jest.mock("@/lib/api-client", () => ({
 }));
 
 import EntryDetailScreen from "./[id]";
-
-let queryClient: QueryClient;
-
-function createWrapper() {
-	queryClient = new QueryClient({
-		defaultOptions: {
-			queries: { retry: false, gcTime: 0 },
-		},
-	});
-	return ({ children }: { children: ReactNode }) => (
-		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-	);
-}
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
@@ -68,13 +54,9 @@ beforeEach(() => {
 	mockGet.mockResolvedValue(mockEntryResponse());
 });
 
-afterEach(() => {
-	queryClient?.clear();
-});
-
 describe("EntryDetailScreen", () => {
 	it("記録の基本情報が表示される", async () => {
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
@@ -89,7 +71,7 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({ category: "deposit", amount: 3000 }),
 		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("-¥3,000")).toBeOnTheScreen();
@@ -99,7 +81,7 @@ describe("EntryDetailScreen", () => {
 
 	it("メモが空の場合はメモ行が表示されない", async () => {
 		mockGet.mockResolvedValue(mockEntryResponse({ memo: null }));
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
@@ -114,7 +96,7 @@ describe("EntryDetailScreen", () => {
 				headers: jsonHeaders,
 			}),
 		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText(/記録が見つかりません/)).toBeOnTheScreen();
