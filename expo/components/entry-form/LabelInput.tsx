@@ -21,9 +21,7 @@ export function LabelInput({ value, onChange, error }: LabelInputProps) {
 				className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
 				placeholderTextColor="#9ca3af"
 			/>
-			{error ? (
-				<Text className="text-sm text-destructive">{error}</Text>
-			) : null}
+			{error ? <Text className="text-sm text-destructive">{error}</Text> : null}
 		</View>
 	);
 }

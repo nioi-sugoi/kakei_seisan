@@ -32,11 +32,12 @@ export function useLoginForm() {
 		setLoading(true);
 
 		try {
-			const { error: apiError } =
-				await authClient.emailOtp.sendVerificationOtp({
+			const { error: apiError } = await authClient.emailOtp.sendVerificationOtp(
+				{
 					email: trimmedEmail,
 					type: "sign-in",
-				});
+				},
+			);
 
 			if (apiError) {
 				setError(apiError.message ?? "送信に失敗しました");

@@ -1,13 +1,14 @@
+import { format, parse } from "date-fns";
+import Constants from "expo-constants";
 import { useState } from "react";
 import { Platform, Pressable, Text, TextInput, View } from "react-native";
-import Constants from "expo-constants";
-import { format, parse } from "date-fns";
 
 const isNativeAvailable =
 	Platform.OS !== "web" && Constants.appOwnership !== "expo";
 
 const NativeDateTimePicker = isNativeAvailable
-	? (require("@react-native-community/datetimepicker").default as typeof import("@react-native-community/datetimepicker").default)
+	? (require("@react-native-community/datetimepicker")
+			.default as typeof import("@react-native-community/datetimepicker").default)
 	: null;
 
 type DateInputProps = {

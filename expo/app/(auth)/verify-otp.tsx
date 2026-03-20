@@ -1,24 +1,12 @@
-import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OtpForm } from "@/components/auth/otp-form";
 import { useVerifyOtp } from "@/hooks/use-verify-otp";
 
 export default function VerifyOtpScreen() {
-	const {
-		email,
-		otp,
-		setOtp,
-		error,
-		loading,
-		verifyOtp,
-		resendOtp,
-		goBack,
-	} = useVerifyOtp();
+	const { email, otp, setOtp, error, loading, verifyOtp, resendOtp, goBack } =
+		useVerifyOtp();
 
 	return (
 		<SafeAreaView className="flex-1 bg-background">

@@ -18,8 +18,7 @@ export default defineConfig(async () => {
 				miniflare: {
 					bindings: {
 						TEST_MIGRATIONS: migrations,
-						BETTER_AUTH_SECRET:
-							"test-secret-for-integration-tests!",
+						BETTER_AUTH_SECRET: "test-secret-for-integration-tests!",
 						BETTER_AUTH_URL: "http://localhost:8787",
 						RESEND_API_KEY: "re_test_dummy",
 						EMAIL_FROM: "test@example.com",
