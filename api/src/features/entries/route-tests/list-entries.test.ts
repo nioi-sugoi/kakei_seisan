@@ -1,13 +1,18 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { seedTestUser, TEST_USER } from "../../testing/auth-helper";
-import { cleanAllTables } from "../../testing/db-helper";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
+import { cleanAllTables } from "../../../testing/db-helper";
 import {
 	authCookie,
 	client,
 	insertEntry,
 	OTHER_USER,
 	seedOtherUser,
-} from "./testing-helpers";
+	setupAuth,
+} from "./helpers";
+
+beforeAll(async () => {
+	await setupAuth();
+});
 
 describe("GET /api/entries", () => {
 	beforeEach(async () => {
@@ -126,7 +131,6 @@ describe("GET /api/entries", () => {
 			createdAt: baseTime + 2000,
 		});
 
-		// 中間の記録の createdAt をカーソルとして指定 → 古い記録のみ返る
 		const res = await client.api.entries.$get(
 			{ query: { cursor: String(baseTime + 1000) } },
 			{ headers: { Cookie: authCookie } },

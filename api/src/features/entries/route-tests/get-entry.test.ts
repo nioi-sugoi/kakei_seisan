@@ -1,13 +1,18 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { seedTestUser, TEST_USER } from "../../testing/auth-helper";
-import { cleanAllTables } from "../../testing/db-helper";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
+import { cleanAllTables } from "../../../testing/db-helper";
 import {
 	authCookie,
 	client,
 	insertEntry,
 	OTHER_USER,
 	seedOtherUser,
-} from "./testing-helpers";
+	setupAuth,
+} from "./helpers";
+
+beforeAll(async () => {
+	await setupAuth();
+});
 
 describe("GET /api/entries/:id", () => {
 	beforeEach(async () => {

@@ -1,8 +1,12 @@
 import { env } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
-import { seedTestUser, TEST_USER } from "../../testing/auth-helper";
-import { cleanAllTables } from "../../testing/db-helper";
-import { authCookie, client } from "./testing-helpers";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
+import { cleanAllTables } from "../../../testing/db-helper";
+import { authCookie, client, setupAuth } from "./helpers";
+
+beforeAll(async () => {
+	await setupAuth();
+});
 
 describe("POST /api/entries", () => {
 	beforeEach(async () => {
