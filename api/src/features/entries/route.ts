@@ -18,32 +18,51 @@ const createEntrySchema = v.object({
 const entriesApp = new Hono<{
 	Bindings: Env;
 	Variables: AppVariables;
-}>().post(
-	"/",
-	requireAuth,
-	vValidator("json", createEntrySchema, (result, c) => {
-		if (!result.success) {
-			return c.json(
-				{
-					error: "バリデーションエラー" as const,
-					issues: result.issues.map((issue) => ({
-						field: String(issue.path?.[0]?.key ?? "unknown"),
-						message: issue.message,
-					})),
-				},
-				400,
-			);
-		}
-	}),
-	async (c) => {
+}>()
+	.get("/:id", requireAuth, async (c) => {
 		const user = c.get("user");
 		if (!user) return c.json({ error: "認証が必要です" as const }, 401);
-		const input = c.req.valid("json");
-		const db = drizzle(c.env.DB);
-		const entry = await entriesRepository.createEntry(db, user.id, input);
 
-		return c.json(entry, 201);
-	},
-);
+		const id = c.req.param("id");
+		const db = drizzle(c.env.DB);
+		const entry = await entriesRepository.findByIdWithRelations(db, id);
+
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+
+		if (entry.userId !== user.id) {
+			return c.json({ error: "アクセス権限がありません" as const }, 403);
+		}
+
+		return c.json(entry, 200);
+	})
+	.post(
+		"/",
+		requireAuth,
+		vValidator("json", createEntrySchema, (result, c) => {
+			if (!result.success) {
+				return c.json(
+					{
+						error: "バリデーションエラー" as const,
+						issues: result.issues.map((issue) => ({
+							field: String(issue.path?.[0]?.key ?? "unknown"),
+							message: issue.message,
+						})),
+					},
+					400,
+				);
+			}
+		}),
+		async (c) => {
+			const user = c.get("user");
+			if (!user) return c.json({ error: "認証が必要です" as const }, 401);
+			const input = c.req.valid("json");
+			const db = drizzle(c.env.DB);
+			const entry = await entriesRepository.createEntry(db, user.id, input);
+
+			return c.json(entry, 201);
+		},
+	);
 
 export { entriesApp };

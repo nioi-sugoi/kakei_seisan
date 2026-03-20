@@ -55,6 +55,12 @@ export default function RootLayout() {
 							presentation: "modal",
 						}}
 					/>
+					<Stack.Screen
+						name="entry-detail/[id]"
+						options={{
+							headerShown: false,
+						}}
+					/>
 				</Stack>
 				<StatusBar style="auto" />
 			</ThemeProvider>
