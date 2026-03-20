@@ -31,7 +31,10 @@ const createEntrySchema = v.object({
 		v.transform((s: string) => s.trim()),
 		v.minLength(1, "ラベルは必須です"),
 	),
-	memo: v.optional(v.string()),
+	memo: v.optional(v.pipe(
+		v.string(),
+		v.transform((s) => s || undefined),
+	)),
 });
 
 export function useEntryForm() {
@@ -54,10 +57,7 @@ export function useEntryForm() {
 		},
 		validators: {
 			onSubmit: ({ value }) => {
-				const result = v.safeParse(createEntrySchema, {
-					...value,
-					memo: value.memo || undefined,
-				});
+				const result = v.safeParse(createEntrySchema, value);
 				if (!result.success) {
 					const flat = v.flatten(result.issues);
 					const fields: Record<string, string> = {};
@@ -71,12 +71,7 @@ export function useEntryForm() {
 		},
 		onSubmit: ({ value }) => {
 			// バリデーション通過済みのため parse は必ず成功する
-			mutation.mutate(
-				v.parse(createEntrySchema, {
-					...value,
-					memo: value.memo || undefined,
-				}),
-			);
+			mutation.mutate(v.parse(createEntrySchema, value));
 		},
 	});
 
