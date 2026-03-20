@@ -106,4 +106,18 @@ describe("EntryDetailScreen", () => {
 		});
 		expect(screen.queryByText("メモ")).not.toBeOnTheScreen();
 	});
+
+	it("APIエラー時にエラーメッセージが表示される", async () => {
+		mockGet.mockResolvedValue(
+			new Response(JSON.stringify({ error: "記録が見つかりません" }), {
+				status: 404,
+				headers: jsonHeaders,
+			}),
+		);
+		render(<EntryDetailScreen />, { wrapper: createWrapper() });
+
+		await waitFor(() => {
+			expect(screen.getByText(/記録が見つかりません/)).toBeOnTheScreen();
+		});
+	});
 });
