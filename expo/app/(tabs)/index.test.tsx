@@ -162,43 +162,6 @@ describe("TimelineScreen", () => {
 		expect(mockPush).toHaveBeenCalledWith("/entry-detail/abc-123");
 	});
 
-	it("修正バッジが表示される", async () => {
-		mockApiResponse({
-			data: [
-				makeEntry({
-					id: "e-mod",
-					operation: "modification",
-					label: "ガソリン代（修正）",
-				}),
-			],
-			nextCursor: null,
-		});
-		render(<TimelineScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正")).toBeOnTheScreen();
-		});
-		expect(screen.getByText("ガソリン代（修正）")).toBeOnTheScreen();
-	});
-
-	it("取消バッジが表示される", async () => {
-		mockApiResponse({
-			data: [
-				makeEntry({
-					id: "e-cancel",
-					operation: "cancellation",
-					label: "図書カード預かり",
-				}),
-			],
-			nextCursor: null,
-		});
-		render(<TimelineScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("取消")).toBeOnTheScreen();
-		});
-	});
-
 	it("FABボタンが表示されタップで記録登録フォームへ遷移する", async () => {
 		mockApiResponse({ data: [], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: createWrapper() });

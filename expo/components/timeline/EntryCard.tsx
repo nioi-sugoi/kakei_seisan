@@ -13,7 +13,6 @@ import { formatAmount, formatDateShort } from "@/lib/format";
 const badgeBg = {
 	primary: { backgroundColor: "rgba(0, 126, 183, 0.1)" },
 	warning: { backgroundColor: "rgba(223, 161, 26, 0.1)" },
-	destructive: { backgroundColor: "rgba(231, 0, 11, 0.1)" },
 } satisfies Record<string, StyleProp<ViewStyle>>;
 
 function CategoryBadge({ category }: { category: Entry["category"] }) {
@@ -32,23 +31,6 @@ function CategoryBadge({ category }: { category: Entry["category"] }) {
 	);
 }
 
-function OperationBadge({ operation }: { operation: Entry["operation"] }) {
-	if (operation === "original") return null;
-	const isModification = operation === "modification";
-	return (
-		<View
-			style={isModification ? badgeBg.warning : badgeBg.destructive}
-			className="rounded px-2 py-0.5"
-		>
-			<Text
-				className={`text-xs font-medium ${isModification ? "text-warning" : "text-destructive"}`}
-			>
-				{isModification ? "修正" : "取消"}
-			</Text>
-		</View>
-	);
-}
-
 interface EntryCardProps {
 	entry: Entry;
 	onPress: (entry: Entry) => void;
@@ -56,7 +38,6 @@ interface EntryCardProps {
 
 export function EntryCard({ entry, onPress }: EntryCardProps) {
 	const isDeposit = entry.category === "deposit";
-	const isCancelled = entry.operation === "cancellation";
 
 	return (
 		<Pressable
@@ -69,7 +50,6 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 				<View className="flex-1 gap-1">
 					<View className="flex-row items-center gap-2">
 						<CategoryBadge category={entry.category} />
-						<OperationBadge operation={entry.operation} />
 					</View>
 					<Text className="text-sm font-medium text-foreground">
 						{entry.label}
@@ -79,7 +59,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 					</Text>
 				</View>
 				<Text
-					className={`text-lg font-bold ${isDeposit ? "text-warning" : "text-foreground"} ${isCancelled ? "line-through opacity-50" : ""}`}
+					className={`text-lg font-bold ${isDeposit ? "text-warning" : "text-foreground"}`}
 				>
 					{isDeposit ? "-" : ""}
 					{formatAmount(entry.amount)}
