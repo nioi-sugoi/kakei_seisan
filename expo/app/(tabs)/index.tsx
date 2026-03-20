@@ -10,21 +10,29 @@ import {
 import { EntryCard } from "@/components/timeline/EntryCard";
 import { type Entry, useEntries } from "@/hooks/use-entries";
 
-function groupEntriesByMonth(entries: Entry[]) {
-	const groups: { title: string; data: Entry[] }[] = [];
-	let currentKey = "";
+type TimelineItem =
+	| { type: "header"; title: string }
+	| { type: "entry"; entry: Entry };
+
+function toMonthLabel(date: string) {
+	const d = new Date(date);
+	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+}
+
+function buildTimelineItems(entries: Entry[]): TimelineItem[] {
+	const items: TimelineItem[] = [];
+	let currentMonth = "";
 
 	for (const entry of entries) {
-		const d = new Date(entry.date);
-		const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
-		if (key !== currentKey) {
-			currentKey = key;
-			groups.push({ title: key, data: [] });
+		const month = toMonthLabel(entry.date);
+		if (month !== currentMonth) {
+			currentMonth = month;
+			items.push({ type: "header", title: month });
 		}
-		groups[groups.length - 1].data.push(entry);
+		items.push({ type: "entry", entry });
 	}
 
-	return groups;
+	return items;
 }
 
 export default function TimelineScreen() {
@@ -33,18 +41,7 @@ export default function TimelineScreen() {
 		useEntries();
 
 	const allEntries = data?.pages.flatMap((page) => page.data) ?? [];
-	const groups = groupEntriesByMonth(allEntries);
-
-	const flatItems: (
-		| { type: "header"; title: string }
-		| { type: "entry"; entry: Entry }
-	)[] = [];
-	for (const group of groups) {
-		flatItems.push({ type: "header", title: group.title });
-		for (const entry of group.data) {
-			flatItems.push({ type: "entry", entry });
-		}
-	}
+	const flatItems = buildTimelineItems(allEntries);
 
 	const handleEntryPress = (entry: Entry) => {
 		router.push(`/entry-detail/${entry.id}`);
