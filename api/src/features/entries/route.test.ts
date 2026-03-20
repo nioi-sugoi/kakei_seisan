@@ -2,7 +2,7 @@ import { applyD1Migrations, env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { entries } from "../../db/schema";
+import { entries, user } from "../../db/schema";
 import type { AppType } from "../../index";
 import app from "../../index";
 import {
@@ -23,36 +23,39 @@ beforeAll(async () => {
 	authCookie = await buildAuthCookie();
 });
 
-/** DB に直接エントリを挿入する（createdAt を制御可能） */
+const OTHER_USER = {
+	id: "other-user-id",
+	name: "Other User",
+	email: "other@example.com",
+} as const;
+
+async function seedOtherUser() {
+	const db = drizzle(env.DB);
+	await db.insert(user).values({
+		id: OTHER_USER.id,
+		name: OTHER_USER.name,
+		email: OTHER_USER.email,
+		emailVerified: true,
+	});
+}
+
 async function insertEntry(
-	overrides: Partial<{
-		id: string;
-		userId: string;
-		category: "advance" | "deposit";
-		amount: number;
-		date: string;
-		label: string;
-		memo: string | null;
-		createdAt: number;
-	}> = {},
+	userId: string,
+	overrides?: Partial<typeof entries.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
-	const now = Date.now();
-	const result = await db
+	const [entry] = await db
 		.insert(entries)
 		.values({
-			userId: overrides.userId ?? TEST_USER.id,
-			category: overrides.category ?? "advance",
-			amount: overrides.amount ?? 1000,
-			date: overrides.date ?? "2024-03-15",
-			label: overrides.label ?? "テスト",
-			memo: overrides.memo ?? null,
-			createdAt: overrides.createdAt ?? now,
-			updatedAt: now,
+			userId,
+			category: "advance",
+			amount: 1500,
+			date: "2024-03-15",
+			label: "食費",
+			...overrides,
 		})
-		.returning({ id: entries.id })
-		.get();
-	return result.id;
+		.returning();
+	return entry;
 }
 
 describe("POST /api/entries", () => {
@@ -316,8 +319,8 @@ describe("GET /api/entries", () => {
 	});
 
 	it("自分の記録一覧を取得できる", async () => {
-		await insertEntry({ label: "食費", amount: 1500 });
-		await insertEntry({ label: "交通費", amount: 300 });
+		await insertEntry(TEST_USER.id, { label: "食費", amount: 1500 });
+		await insertEntry(TEST_USER.id, { label: "交通費", amount: 300 });
 
 		const res = await client.api.entries.$get(
 			{ query: {} },
@@ -331,8 +334,14 @@ describe("GET /api/entries", () => {
 
 	it("createdAt の降順で返される", async () => {
 		const baseTime = 1700000000000;
-		await insertEntry({ label: "古い記録", createdAt: baseTime });
-		await insertEntry({ label: "新しい記録", createdAt: baseTime + 1000 });
+		await insertEntry(TEST_USER.id, {
+			label: "古い記録",
+			createdAt: baseTime,
+		});
+		await insertEntry(TEST_USER.id, {
+			label: "新しい記録",
+			createdAt: baseTime + 1000,
+		});
 
 		const res = await client.api.entries.$get(
 			{ query: {} },
@@ -345,15 +354,9 @@ describe("GET /api/entries", () => {
 	});
 
 	it("他のユーザーの記録は含まれない", async () => {
-		// 別ユーザーをDBに追加
-		await env.DB.prepare(
-			"INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, 1)",
-		)
-			.bind("other-user-id", "Other User", "other@example.com")
-			.run();
-
-		await insertEntry({ label: "自分の記録", userId: TEST_USER.id });
-		await insertEntry({ label: "他人の記録", userId: "other-user-id" });
+		await seedOtherUser();
+		await insertEntry(TEST_USER.id, { label: "自分の記録" });
+		await insertEntry(OTHER_USER.id, { label: "他人の記録" });
 
 		const res = await client.api.entries.$get(
 			{ query: {} },
@@ -369,7 +372,12 @@ describe("GET /api/entries", () => {
 		const baseTime = 1700000000000;
 		const inserts = [];
 		for (let i = 0; i < 51; i++) {
-			inserts.push(insertEntry({ label: `記録${i}`, createdAt: baseTime + i }));
+			inserts.push(
+				insertEntry(TEST_USER.id, {
+					label: `記録${i}`,
+					createdAt: baseTime + i,
+				}),
+			);
 		}
 		await Promise.all(inserts);
 
@@ -384,7 +392,7 @@ describe("GET /api/entries", () => {
 	});
 
 	it("50件以下の場合は nextCursor が null", async () => {
-		await insertEntry({ label: "記録" });
+		await insertEntry(TEST_USER.id);
 
 		const res = await client.api.entries.$get(
 			{ query: {} },
@@ -397,9 +405,18 @@ describe("GET /api/entries", () => {
 
 	it("cursor を指定するとそれより前の記録を返す", async () => {
 		const baseTime = 1700000000000;
-		await insertEntry({ label: "古い記録", createdAt: baseTime });
-		await insertEntry({ label: "中間の記録", createdAt: baseTime + 1000 });
-		await insertEntry({ label: "新しい記録", createdAt: baseTime + 2000 });
+		await insertEntry(TEST_USER.id, {
+			label: "古い記録",
+			createdAt: baseTime,
+		});
+		await insertEntry(TEST_USER.id, {
+			label: "中間の記録",
+			createdAt: baseTime + 1000,
+		});
+		await insertEntry(TEST_USER.id, {
+			label: "新しい記録",
+			createdAt: baseTime + 2000,
+		});
 
 		// 中間の記録の createdAt をカーソルとして指定 → 古い記録のみ返る
 		const res = await client.api.entries.$get(
@@ -426,36 +443,51 @@ describe("GET /api/entries/:id", () => {
 	});
 
 	it("自分の記録を取得できる", async () => {
-		const entryId = await insertEntry({
-			label: "食費",
+		const entry = await insertEntry(TEST_USER.id, {
+			category: "advance",
 			amount: 1500,
 			date: "2024-03-15",
-			memo: "テストメモ",
+			label: "交通費",
 		});
 
 		const res = await client.api.entries[":id"].$get(
-			{ param: { id: entryId } },
+			{ param: { id: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body).toMatchObject({
-			id: entryId,
-			label: "食費",
+			id: entry.id,
+			category: "advance",
 			amount: 1500,
 			date: "2024-03-15",
-			memo: "テストメモ",
+			label: "交通費",
 			userId: TEST_USER.id,
-			category: "advance",
 			operation: "original",
 			status: "approved",
 		});
 	});
 
+	it("memo 付きの記録を取得できる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			label: "ランチ",
+			memo: "同僚と外食",
+		});
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body).toHaveProperty("memo", "同僚と外食");
+	});
+
 	it("存在しない ID の場合 404 を返す", async () => {
 		const res = await client.api.entries[":id"].$get(
-			{ param: { id: "non-existent-id" } },
+			{ param: { id: "nonexistent-id" } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -464,20 +496,12 @@ describe("GET /api/entries/:id", () => {
 		expect(body).toHaveProperty("error", "記録が見つかりません");
 	});
 
-	it("他のユーザーの記録にアクセスすると 404 を返す", async () => {
-		await env.DB.prepare(
-			"INSERT INTO user (id, name, email, email_verified) VALUES (?, ?, ?, 1)",
-		)
-			.bind("other-user-id", "Other User", "other@example.com")
-			.run();
-
-		const entryId = await insertEntry({
-			label: "他人の記録",
-			userId: "other-user-id",
-		});
+	it("他のユーザーの記録は取得できない", async () => {
+		await seedOtherUser();
+		const entry = await insertEntry(OTHER_USER.id);
 
 		const res = await client.api.entries[":id"].$get(
-			{ param: { id: entryId } },
+			{ param: { id: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -487,12 +511,55 @@ describe("GET /api/entries/:id", () => {
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {
-		const entryId = await insertEntry({ label: "記録" });
+		const entry = await insertEntry(TEST_USER.id);
 
 		const res = await client.api.entries[":id"].$get({
-			param: { id: entryId },
+			param: { id: entry.id },
 		});
 
 		expect(res.status).toBe(401);
+	});
+});
+
+describe("POST → GET の結合テスト", () => {
+	beforeEach(async () => {
+		await cleanAllTables();
+		await seedTestUser();
+	});
+
+	it("POST で作成した記録を GET で取得できる", async () => {
+		const createRes = await client.api.entries.$post(
+			{
+				json: {
+					category: "advance",
+					amount: 3000,
+					date: "2024-04-01",
+					label: "会議費",
+					memo: "チームミーティング",
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(createRes.status).toBe(201);
+		const created = await createRes.json();
+		if ("error" in created) throw new Error("unexpected validation error");
+
+		const getRes = await client.api.entries[":id"].$get(
+			{ param: { id: created.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(getRes.status).toBe(200);
+		const fetched = await getRes.json();
+		if ("error" in fetched) throw new Error("unexpected error");
+		expect(fetched).toMatchObject({
+			id: created.id,
+			category: "advance",
+			amount: 3000,
+			date: "2024-04-01",
+			label: "会議費",
+			memo: "チームミーティング",
+		});
 	});
 });
