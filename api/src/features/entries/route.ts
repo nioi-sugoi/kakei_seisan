@@ -25,17 +25,17 @@ const entriesApp = new Hono<{
 
 		const id = c.req.param("id");
 		const db = drizzle(c.env.DB);
-		const entry = await entriesRepository.findByIdWithRelations(db, id);
 
+		const entry = await entriesRepository.findById(db, id);
 		if (!entry) {
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
-
 		if (entry.userId !== user.id) {
 			return c.json({ error: "アクセス権限がありません" as const }, 403);
 		}
 
-		return c.json(entry, 200);
+		const entryWithRelations = await entriesRepository.findRelations(db, entry);
+		return c.json(entryWithRelations, 200);
 	})
 	.post(
 		"/",

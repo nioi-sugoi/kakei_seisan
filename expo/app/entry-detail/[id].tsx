@@ -8,6 +8,7 @@ import {
 	View,
 } from "react-native";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
+import { formatAmount, formatDateFull } from "@/lib/format";
 
 const categoryLabels = { advance: "立替", deposit: "預り" } as const;
 const categoryColors = {
@@ -19,25 +20,50 @@ const categoryTextColors = {
 	deposit: "text-orange-600",
 } as const;
 
-function formatAmount(amount: number) {
-	return `¥${amount.toLocaleString()}`;
+const badgeVariants = {
+	amber: "border-amber-200 bg-amber-100",
+	red: "border-red-200 bg-red-100",
+} as const;
+const badgeTextVariants = {
+	amber: "text-amber-600",
+	red: "text-red-500",
+} as const;
+
+function StatusBadge({
+	label,
+	variant,
+}: {
+	label: string;
+	variant: "amber" | "red";
+}) {
+	return (
+		<View className={`rounded-md border px-2 py-0.5 ${badgeVariants[variant]}`}>
+			<Text className={`text-xs font-medium ${badgeTextVariants[variant]}`}>
+				{label}
+			</Text>
+		</View>
+	);
 }
 
-function formatDateFull(dateStr: string) {
-	const d = new Date(dateStr);
-	return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-}
-
-function hasActiveChildren(
-	children: Array<{ operation: string }>,
-): { modified: boolean; cancelled: boolean } {
-	let modified = false;
-	let cancelled = false;
+function analyzeChildren(children: Array<{ id: string; operation: string }>) {
+	let modificationChild: { id: string; operation: string } | null = null;
+	let cancellationChild: { id: string; operation: string } | null = null;
 	for (const child of children) {
-		if (child.operation === "modification") modified = true;
-		if (child.operation === "cancellation") cancelled = true;
+		if (child.operation === "modification") modificationChild = child;
+		if (child.operation === "cancellation") cancellationChild = child;
 	}
-	return { modified, cancelled };
+	return { modificationChild, cancellationChild };
+}
+
+function Header({ onBack }: { onBack: () => void }) {
+	return (
+		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
+			<Pressable onPress={onBack} className="active:opacity-60">
+				<Text className="text-base text-primary">戻る</Text>
+			</Pressable>
+			<Text className="flex-1 text-lg font-bold text-foreground">記録詳細</Text>
+		</View>
+	);
 }
 
 export default function EntryDetailScreen() {
@@ -56,14 +82,7 @@ export default function EntryDetailScreen() {
 	if (error || !entry) {
 		return (
 			<View className="flex-1 bg-background">
-				<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
-					<Pressable onPress={() => router.back()} className="active:opacity-60">
-						<Text className="text-base text-primary">戻る</Text>
-					</Pressable>
-					<Text className="flex-1 text-lg font-bold text-foreground">
-						記録詳細
-					</Text>
-				</View>
+				<Header onBack={() => router.back()} />
 				<View className="flex-1 items-center justify-center px-4">
 					<Text className="text-base text-destructive">
 						{error?.message ?? "記録が見つかりません"}
@@ -76,27 +95,36 @@ export default function EntryDetailScreen() {
 	const category = entry.category as "advance" | "deposit";
 	const operation = entry.operation as string;
 	const status = entry.status as string;
-	const images = (entry as { images?: Array<{ id: string; storagePath: string; displayOrder: number }> }).images ?? [];
-	const children = (entry as { children?: Array<{ id: string; operation: string }> }).children ?? [];
-	const parent = (entry as { parent?: { id: string; operation: string; category: string; amount: number } | null }).parent;
+	const images =
+		(
+			entry as {
+				images?: Array<{
+					id: string;
+					storagePath: string;
+					displayOrder: number;
+				}>;
+			}
+		).images ?? [];
+	const children =
+		(entry as { children?: Array<{ id: string; operation: string }> })
+			.children ?? [];
+	const parent = (
+		entry as {
+			parent?: {
+				id: string;
+				operation: string;
+				category: string;
+				amount: number;
+			} | null;
+		}
+	).parent;
 
-	const { modified, cancelled } = hasActiveChildren(children);
-	const isInactive = modified || cancelled;
-
-	const modificationChild = children.find((c) => c.operation === "modification");
-	const cancellationChild = children.find((c) => c.operation === "cancellation");
+	const { modificationChild, cancellationChild } = analyzeChildren(children);
+	const isInactive = !!modificationChild || !!cancellationChild;
 
 	return (
 		<View className="flex-1 bg-background">
-			{/* Header */}
-			<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
-				<Pressable onPress={() => router.back()} className="active:opacity-60">
-					<Text className="text-base text-primary">戻る</Text>
-				</Pressable>
-				<Text className="flex-1 text-lg font-bold text-foreground">
-					記録詳細
-				</Text>
-			</View>
+			<Header onBack={() => router.back()} />
 
 			<ScrollView
 				className="flex-1"
@@ -115,47 +143,23 @@ export default function EntryDetailScreen() {
 								{categoryLabels[category]}
 							</Text>
 						</View>
-						{modified && (
-							<View className="rounded-md border border-amber-200 bg-amber-100 px-2 py-0.5">
-								<Text className="text-xs font-medium text-amber-600">
-									修正済み
-								</Text>
-							</View>
+						{modificationChild && (
+							<StatusBadge label="修正済み" variant="amber" />
 						)}
-						{cancelled && (
-							<View className="rounded-md border border-red-200 bg-red-100 px-2 py-0.5">
-								<Text className="text-xs font-medium text-red-500">
-									取消済み
-								</Text>
-							</View>
+						{cancellationChild && (
+							<StatusBadge label="取消済み" variant="red" />
 						)}
 						{operation === "modification" && (
-							<View className="rounded-md border border-amber-200 bg-amber-100 px-2 py-0.5">
-								<Text className="text-xs font-medium text-amber-600">
-									修正
-								</Text>
-							</View>
+							<StatusBadge label="修正" variant="amber" />
 						)}
 						{operation === "cancellation" && (
-							<View className="rounded-md border border-red-200 bg-red-100 px-2 py-0.5">
-								<Text className="text-xs font-medium text-red-500">
-									取消
-								</Text>
-							</View>
+							<StatusBadge label="取消" variant="red" />
 						)}
 						{status === "pending" && (
-							<View className="rounded-md border border-amber-200 bg-amber-100 px-2 py-0.5">
-								<Text className="text-xs font-medium text-amber-600">
-									承認待ち
-								</Text>
-							</View>
+							<StatusBadge label="承認待ち" variant="amber" />
 						)}
 						{status === "rejected" && (
-							<View className="rounded-md border border-red-200 bg-red-100 px-2 py-0.5">
-								<Text className="text-xs font-medium text-red-500">
-									差し戻し
-								</Text>
-							</View>
+							<StatusBadge label="差し戻し" variant="red" />
 						)}
 					</View>
 
@@ -235,27 +239,19 @@ export default function EntryDetailScreen() {
 				{/* Related Entry Links */}
 				{modificationChild ? (
 					<Pressable
-						onPress={() =>
-							router.push(`/entry-detail/${modificationChild.id}`)
-						}
+						onPress={() => router.push(`/entry-detail/${modificationChild.id}`)}
 						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
 					>
-						<Text className="text-sm text-primary">
-							修正後の記録を見る
-						</Text>
+						<Text className="text-sm text-primary">修正後の記録を見る</Text>
 						<Text className="text-sm text-primary">→</Text>
 					</Pressable>
 				) : null}
 				{cancellationChild ? (
 					<Pressable
-						onPress={() =>
-							router.push(`/entry-detail/${cancellationChild.id}`)
-						}
+						onPress={() => router.push(`/entry-detail/${cancellationChild.id}`)}
 						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
 					>
-						<Text className="text-sm text-primary">
-							取消記録を見る
-						</Text>
+						<Text className="text-sm text-primary">取消記録を見る</Text>
 						<Text className="text-sm text-primary">→</Text>
 					</Pressable>
 				) : null}
@@ -264,9 +260,7 @@ export default function EntryDetailScreen() {
 						onPress={() => router.push(`/entry-detail/${parent.id}`)}
 						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
 					>
-						<Text className="text-sm text-primary">
-							元の記録を見る
-						</Text>
+						<Text className="text-sm text-primary">元の記録を見る</Text>
 						<Text className="text-sm text-primary">→</Text>
 					</Pressable>
 				) : null}

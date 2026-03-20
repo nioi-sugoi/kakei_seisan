@@ -26,32 +26,22 @@ export function findById(db: DrizzleD1Database, id: string) {
 	return db.select().from(entries).where(eq(entries.id, id)).get();
 }
 
-export async function findByIdWithRelations(db: DrizzleD1Database, id: string) {
-	const entry = await db
-		.select()
-		.from(entries)
-		.where(eq(entries.id, id))
-		.get();
-	if (!entry) return null;
+type Entry = Awaited<ReturnType<typeof findById>>;
 
+export async function findRelations(
+	db: DrizzleD1Database,
+	entry: NonNullable<Entry>,
+) {
 	const [images, children, parent] = await Promise.all([
 		db
 			.select()
 			.from(entryImages)
-			.where(eq(entryImages.entryId, id))
+			.where(eq(entryImages.entryId, entry.id))
 			.orderBy(entryImages.displayOrder)
 			.all(),
-		db
-			.select()
-			.from(entries)
-			.where(eq(entries.parentId, id))
-			.all(),
+		db.select().from(entries).where(eq(entries.parentId, entry.id)).all(),
 		entry.parentId
-			? db
-					.select()
-					.from(entries)
-					.where(eq(entries.id, entry.parentId))
-					.get()
+			? db.select().from(entries).where(eq(entries.id, entry.parentId)).get()
 			: Promise.resolve(null),
 	]);
 

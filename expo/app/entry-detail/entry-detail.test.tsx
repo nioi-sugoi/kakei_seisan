@@ -1,5 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, userEvent, waitFor } from "@testing-library/react-native";
+import {
+	render,
+	screen,
+	userEvent,
+	waitFor,
+} from "@testing-library/react-native";
 import type { ReactNode } from "react";
 
 const mockBack = jest.fn();
@@ -16,6 +21,7 @@ jest.mock("@/lib/api-client", () => ({
 	client: {
 		api: {
 			entries: {
+				// biome-ignore lint/complexity/useLiteralKeys: Hono RPC client uses ":id" as computed key
 				[":id"]: {
 					$get: (...args: unknown[]) => mockGet(...args),
 				},
@@ -160,7 +166,12 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				operation: "modification",
 				parentId: "parent-1",
-				parent: { id: "parent-1", operation: "original", category: "advance", amount: 5000 },
+				parent: {
+					id: "parent-1",
+					operation: "original",
+					category: "advance",
+					amount: 5000,
+				},
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
@@ -175,7 +186,12 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				operation: "cancellation",
 				parentId: "parent-1",
-				parent: { id: "parent-1", operation: "original", category: "advance", amount: 5000 },
+				parent: {
+					id: "parent-1",
+					operation: "original",
+					category: "advance",
+					amount: 5000,
+				},
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
@@ -222,7 +238,12 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				operation: "modification",
 				parentId: "parent-1",
-				parent: { id: "parent-1", operation: "original", category: "advance", amount: 5000 },
+				parent: {
+					id: "parent-1",
+					operation: "original",
+					category: "advance",
+					amount: 5000,
+				},
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
@@ -293,9 +314,7 @@ describe("EntryDetailScreen", () => {
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
 
 		await waitFor(() => {
-			expect(
-				screen.getByText(/記録が見つかりません/),
-			).toBeOnTheScreen();
+			expect(screen.getByText(/記録が見つかりません/)).toBeOnTheScreen();
 		});
 	});
 
