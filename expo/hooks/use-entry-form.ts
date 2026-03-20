@@ -2,7 +2,6 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { DetailedError, parseResponse } from "hono/client";
-import { useRef } from "react";
 import * as v from "valibot";
 import { format } from "date-fns";
 import { client } from "@/lib/api-client";
@@ -37,8 +36,6 @@ const createEntrySchema = v.object({
 
 export function useEntryForm() {
 	const router = useRouter();
-	const parsedRef = useRef<v.InferOutput<typeof createEntrySchema> | null>(null);
-
 	const mutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
 			parseResponse(client.api.entries.$post({ json: input })),
@@ -69,15 +66,17 @@ export function useEntryForm() {
 					}
 					return { fields };
 				}
-				parsedRef.current = result.output;
 				return undefined;
 			},
 		},
-		onSubmit: () => {
-			if (parsedRef.current) {
-				mutation.mutate(parsedRef.current);
-				parsedRef.current = null;
-			}
+		onSubmit: ({ value }) => {
+			// バリデーション通過済みのため parse は必ず成功する
+			mutation.mutate(
+				v.parse(createEntrySchema, {
+					...value,
+					memo: value.memo || undefined,
+				}),
+			);
 		},
 	});
 
