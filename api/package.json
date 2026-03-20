@@ -21,6 +21,7 @@
 		"valibot": "^1.0.0"
 	},
 	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.13.2",
 		"@cloudflare/workers-types": "^4.20250214.0",
 		"better-sqlite3": "^12.6.2",
 		"drizzle-kit": "^0.31.0",
