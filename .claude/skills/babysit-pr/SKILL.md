@@ -9,9 +9,12 @@ description: >
 
 現在のブランチのPRから未返信レビューコメントを取得し、コード修正（必要時）と返信を行う。
 
-## 1. PR特定
+## 1. PR特定・ステータス確認
 
-`gh pr view --json number -q '.number'` で現在のPR番号を取得。見つからなければ終了。
+現在のブランチのPR番号とステータス（open/closed/merged）を取得する。
+
+- PRが見つからなければ終了
+- **ステータスが `MERGED` または `CLOSED` の場合**: CronListで自身のループジョブを探し、CronDeleteで停止して終了する（「PRがクローズ/マージされたためループを停止しました」と報告）
 
 ## 2. コメント取得（すべて `--paginate` 付き、`per_page=100`）
 
