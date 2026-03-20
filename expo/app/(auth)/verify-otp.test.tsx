@@ -48,20 +48,11 @@ const mockReplace = jest.fn();
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
+	// テストで使用するメソッドのみモック（Router 型は他にも多数のメソッドを要求するため as で絞る）
 	mockUseRouter.mockReturnValue({
 		replace: mockReplace,
 		back: jest.fn(),
-		canGoBack: jest.fn(),
-		push: jest.fn(),
-		navigate: jest.fn(),
-		dismiss: jest.fn(),
-		dismissTo: jest.fn(),
-		dismissAll: jest.fn(),
-		canDismiss: jest.fn(),
-		setParams: jest.fn(),
-		reload: jest.fn(),
-		prefetch: jest.fn(),
-	});
+	} as unknown as ReturnType<typeof useRouter>);
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });
