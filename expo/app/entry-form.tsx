@@ -51,7 +51,7 @@ export default function EntryFormScreen() {
 						<AmountInput
 							value={field.state.value}
 							onChange={field.handleChange}
-							error={field.state.meta.errors[0]?.toString()}
+							error={field.state.meta.errors[0]}
 						/>
 					)}
 				</form.Field>
@@ -70,7 +70,7 @@ export default function EntryFormScreen() {
 						<LabelInput
 							value={field.state.value}
 							onChange={field.handleChange}
-							error={field.state.meta.errors[0]?.toString()}
+							error={field.state.meta.errors[0]}
 						/>
 					)}
 				</form.Field>
