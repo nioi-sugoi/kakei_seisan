@@ -47,14 +47,16 @@ export function useEntryForm() {
 		},
 	});
 
+	const defaultValues: v.InferInput<typeof createEntrySchema> = {
+		category: "advance",
+		amount: "",
+		date: format(new Date(), "yyyy-MM-dd"),
+		label: "",
+		memo: "",
+	};
+
 	const form = useForm({
-		defaultValues: {
-			category: "advance" as "advance" | "deposit",
-			amount: "",
-			date: format(new Date(), "yyyy-MM-dd"),
-			label: "",
-			memo: "",
-		},
+		defaultValues,
 		validators: {
 			onSubmit: ({ value }) => {
 				const result = v.safeParse(createEntrySchema, value);

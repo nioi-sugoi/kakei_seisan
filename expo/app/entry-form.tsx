@@ -78,7 +78,7 @@ export default function EntryFormScreen() {
 				<form.Field name="memo">
 					{(field) => (
 						<MemoInput
-							value={field.state.value}
+							value={field.state.value ?? ""}
 							onChange={field.handleChange}
 						/>
 					)}
