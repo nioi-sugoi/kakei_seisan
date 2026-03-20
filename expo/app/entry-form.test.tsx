@@ -307,6 +307,7 @@ describe("EntryFormScreen", () => {
 		mockPost.mockResolvedValue(
 			new Response(JSON.stringify({ error: "サーバーエラー" }), {
 				status: 500,
+				headers: { "Content-Type": "application/json" },
 			}),
 		);
 		render(<EntryFormScreen />, { wrapper: createWrapper() });

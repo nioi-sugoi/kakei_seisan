@@ -15,23 +15,7 @@ import { MemoInput } from "@/components/entry-form/MemoInput";
 import { useEntryForm } from "@/hooks/use-entry-form";
 
 export default function EntryFormScreen() {
-	const {
-		category,
-		setCategory,
-		amount,
-		setAmount,
-		date,
-		setDate,
-		label,
-		setLabel,
-		memo,
-		setMemo,
-		error,
-		fieldErrors,
-		loading,
-		submit,
-		goBack,
-	} = useEntryForm();
+	const { form, error, loading, goBack } = useEntryForm();
 
 	return (
 		<KeyboardAvoidingView
@@ -53,19 +37,52 @@ export default function EntryFormScreen() {
 				contentContainerClassName="px-4 py-5 gap-5"
 				keyboardShouldPersistTaps="handled"
 			>
-				<CategorySelector value={category} onChange={setCategory} />
-				<AmountInput
-					value={amount}
-					onChange={setAmount}
-					error={fieldErrors.amount}
-				/>
-				<DateInput value={date} onChange={setDate} />
-				<LabelInput
-					value={label}
-					onChange={setLabel}
-					error={fieldErrors.label}
-				/>
-				<MemoInput value={memo} onChange={setMemo} />
+				<form.Field name="category">
+					{(field) => (
+						<CategorySelector
+							value={field.state.value}
+							onChange={field.handleChange}
+						/>
+					)}
+				</form.Field>
+
+				<form.Field name="amount">
+					{(field) => (
+						<AmountInput
+							value={field.state.value}
+							onChange={field.handleChange}
+							error={field.state.meta.errors[0]?.toString()}
+						/>
+					)}
+				</form.Field>
+
+				<form.Field name="date">
+					{(field) => (
+						<DateInput
+							value={field.state.value}
+							onChange={field.handleChange}
+						/>
+					)}
+				</form.Field>
+
+				<form.Field name="label">
+					{(field) => (
+						<LabelInput
+							value={field.state.value}
+							onChange={field.handleChange}
+							error={field.state.meta.errors[0]?.toString()}
+						/>
+					)}
+				</form.Field>
+
+				<form.Field name="memo">
+					{(field) => (
+						<MemoInput
+							value={field.state.value}
+							onChange={field.handleChange}
+						/>
+					)}
+				</form.Field>
 
 				{/* Error */}
 				{error ? (
@@ -76,7 +93,7 @@ export default function EntryFormScreen() {
 
 				{/* Submit */}
 				<Pressable
-					onPress={submit}
+					onPress={() => form.handleSubmit()}
 					disabled={loading}
 					className={`mt-2 items-center rounded-xl py-3.5 bg-primary ${
 						loading ? "opacity-60" : "active:opacity-80"

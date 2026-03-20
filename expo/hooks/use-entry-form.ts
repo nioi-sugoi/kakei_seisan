@@ -1,10 +1,20 @@
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { parseResponse } from "hono/client";
-import { useState } from "react";
+import { DetailedError, parseResponse } from "hono/client";
 import * as v from "valibot";
 import { format } from "date-fns";
 import { client } from "@/lib/api-client";
+
+function getApiErrorMessage(error: Error): string {
+	if (error instanceof DetailedError) {
+		const data = error.detail?.data;
+		if (data && typeof data === "object" && "error" in data) {
+			return String(data.error);
+		}
+	}
+	return error.message;
+}
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -26,12 +36,6 @@ const createEntrySchema = v.object({
 
 export function useEntryForm() {
 	const router = useRouter();
-	const [category, setCategory] = useState<"advance" | "deposit">("advance");
-	const [amount, setAmount] = useState("");
-	const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
-	const [label, setLabel] = useState("");
-	const [memo, setMemo] = useState("");
-	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
 	const mutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
@@ -41,52 +45,45 @@ export function useEntryForm() {
 		},
 	});
 
-	const goBack = () => {
-		router.back();
-	};
-
-	const submit = () => {
-		const result = v.safeParse(createEntrySchema, {
-			category,
-			amount,
-			date,
-			label,
-			memo: memo || undefined,
-		});
-
-		if (!result.success) {
-			const flat = v.flatten(result.issues);
-			const errors: Record<string, string> = {};
-			for (const [key, messages] of Object.entries(flat.nested ?? {})) {
-				if (messages?.[0]) {
-					errors[key] = messages[0];
+	const form = useForm({
+		defaultValues: {
+			category: "advance" as "advance" | "deposit",
+			amount: "",
+			date: format(new Date(), "yyyy-MM-dd"),
+			label: "",
+			memo: "",
+		},
+		validators: {
+			onSubmit: ({ value }) => {
+				const result = v.safeParse(createEntrySchema, {
+					...value,
+					memo: value.memo || undefined,
+				});
+				if (!result.success) {
+					const flat = v.flatten(result.issues);
+					const fields: Record<string, string> = {};
+					for (const [key, messages] of Object.entries(flat.nested ?? {})) {
+						if (messages?.[0]) fields[key] = messages[0];
+					}
+					return { fields };
 				}
-			}
-			setFieldErrors(errors);
-			return;
-		}
-
-		setFieldErrors({});
-		mutation.mutate(result.output);
-	};
-
-	const error = mutation.error?.message ?? "";
+				return undefined;
+			},
+		},
+		onSubmit: ({ value }) => {
+			mutation.mutate(
+				v.parse(createEntrySchema, {
+					...value,
+					memo: value.memo || undefined,
+				}),
+			);
+		},
+	});
 
 	return {
-		category,
-		setCategory,
-		amount,
-		setAmount,
-		date,
-		setDate,
-		label,
-		setLabel,
-		memo,
-		setMemo,
-		error,
-		fieldErrors,
+		form,
+		error: mutation.error ? getApiErrorMessage(mutation.error) : "",
 		loading: mutation.isPending,
-		submit,
-		goBack,
+		goBack: () => router.back(),
 	};
 }
