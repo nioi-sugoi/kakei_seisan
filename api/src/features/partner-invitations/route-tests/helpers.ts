@@ -1,16 +1,19 @@
 import { applyD1Migrations, env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
-import {
-	partnerInvitations,
-	partnerships,
-	session,
-	user,
-} from "../../../db/schema";
+import { serializeSigned } from "hono/utils/cookie";
+import { partnerInvitations, partnerships, session } from "../../../db/schema";
 import type { AppType } from "../../../index";
 import app from "../../../index";
-import { buildAuthCookie } from "../../../testing/auth-helper";
+import {
+	buildAuthCookie,
+	OTHER_USER,
+	seedUser,
+	THIRD_USER,
+} from "../../../testing/auth-helper";
 
+// app と routes は同一の実行時オブジェクト。型情報のために AppType へキャスト
+// (Hono の export default app は basePath 以降のルート型を含まないため)
 export const client = testClient(app as unknown as AppType, env);
 
 export let authCookie: string;
@@ -20,37 +23,17 @@ export async function setupAuth() {
 	authCookie = await buildAuthCookie();
 }
 
-export const OTHER_USER = {
-	id: "other-user-id",
-	name: "Other User",
-	email: "other@example.com",
-} as const;
-
-export const THIRD_USER = {
-	id: "third-user-id",
-	name: "Third User",
-	email: "third@example.com",
-} as const;
+export { OTHER_USER, THIRD_USER };
 
 export async function seedOtherUser() {
-	const db = drizzle(env.DB);
-	await db.insert(user).values({
-		id: OTHER_USER.id,
-		name: OTHER_USER.name,
-		email: OTHER_USER.email,
-		emailVerified: true,
-	});
+	await seedUser(OTHER_USER);
 }
 
 export async function seedThirdUser() {
-	const db = drizzle(env.DB);
-	await db.insert(user).values({
-		id: THIRD_USER.id,
-		name: THIRD_USER.name,
-		email: THIRD_USER.email,
-		emailVerified: true,
-	});
+	await seedUser(THIRD_USER);
 }
+
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export async function insertInvitation(
 	inviterId: string,
@@ -66,7 +49,7 @@ export async function insertInvitation(
 			inviterId,
 			inviteeEmail,
 			status: "pending",
-			expiresAt: now + 24 * 60 * 60 * 1000,
+			expiresAt: now + TWENTY_FOUR_HOURS_MS,
 			createdAt: now,
 			...overrides,
 		})
@@ -93,7 +76,6 @@ export async function insertPartnership(inviterId: string, inviteeId: string) {
  * OTHER_USER 用のセッションをDBに挿入して署名付きクッキーを返す。
  */
 export async function buildOtherUserAuthCookie(): Promise<string> {
-	const { serializeSigned } = await import("hono/utils/cookie");
 	const db = drizzle(env.DB);
 	const token = "other-user-session-token";
 	await db.insert(session).values({

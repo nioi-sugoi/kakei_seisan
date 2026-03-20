@@ -1,4 +1,4 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, gt, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { partnerInvitations, partnerships, user } from "../../db/schema";
 
@@ -48,10 +48,10 @@ export function findPendingByEmail(
 			and(
 				eq(partnerInvitations.inviteeEmail, email),
 				eq(partnerInvitations.status, "pending"),
+				gt(partnerInvitations.expiresAt, now),
 			),
 		)
-		.all()
-		.then((rows) => rows.filter((r) => r.expiresAt > now));
+		.all();
 }
 
 export function findById(db: DrizzleD1Database, id: string) {
@@ -90,26 +90,34 @@ export function findPartnershipByUser(db: DrizzleD1Database, userId: string) {
 		.get();
 }
 
-export function createPartnership(
+/**
+ * 招待を accepted に更新し、パートナー関係を作成する。
+ * D1 の batch API でアトミックに実行される。
+ */
+export async function acceptInvitationAndCreatePartnership(
 	db: DrizzleD1Database,
+	invitationId: string,
 	inviterId: string,
 	inviteeId: string,
 ) {
 	const now = Date.now();
-	return db
-		.insert(partnerships)
-		.values({
-			id: crypto.randomUUID(),
-			inviterId,
-			inviteeId,
-			createdAt: now,
-		})
-		.returning()
-		.get();
-}
+	const partnershipId = crypto.randomUUID();
 
-// ── user lookup ─────────────────────────────────────────────────
+	const [, partnershipRows] = await db.batch([
+		db
+			.update(partnerInvitations)
+			.set({ status: "accepted" })
+			.where(eq(partnerInvitations.id, invitationId)),
+		db
+			.insert(partnerships)
+			.values({
+				id: partnershipId,
+				inviterId,
+				inviteeId,
+				createdAt: now,
+			})
+			.returning(),
+	]);
 
-export function findUserByEmail(db: DrizzleD1Database, email: string) {
-	return db.select().from(user).where(eq(user.email, email)).get();
+	return partnershipRows[0];
 }

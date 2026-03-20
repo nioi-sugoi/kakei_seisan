@@ -9,6 +9,20 @@ export const TEST_USER = {
 	email: "test@example.com",
 } as const;
 
+export const OTHER_USER = {
+	id: "other-user-id",
+	name: "Other User",
+	email: "other@example.com",
+} as const;
+
+export const THIRD_USER = {
+	id: "third-user-id",
+	name: "Third User",
+	email: "third@example.com",
+} as const;
+
+type TestUserData = { id: string; name: string; email: string };
+
 const SESSION_TOKEN = "test-session-token";
 
 /**
@@ -29,6 +43,19 @@ export async function seedTestUser() {
 		token: SESSION_TOKEN,
 		updatedAt: new Date(),
 		userId: TEST_USER.id,
+	});
+}
+
+/**
+ * 任意のテストユーザーを DB にシードする。
+ */
+export async function seedUser(data: TestUserData) {
+	const db = drizzle(env.DB);
+	await db.insert(user).values({
+		id: data.id,
+		name: data.name,
+		email: data.email,
+		emailVerified: true,
 	});
 }
 

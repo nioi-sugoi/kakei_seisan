@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
+import { handleValidationError } from "../../middleware/validation-error-handler";
 import type { AppVariables } from "../../types";
 import * as repository from "./repository";
 
@@ -19,20 +20,7 @@ const partnerInvitationsApp = new Hono<{
 	.post(
 		"/",
 		requireAuth,
-		vValidator("json", createInvitationSchema, (result, c) => {
-			if (!result.success) {
-				return c.json(
-					{
-						error: "バリデーションエラー" as const,
-						issues: result.issues.map((issue) => ({
-							field: String(issue.path?.[0]?.key ?? "unknown"),
-							message: issue.message,
-						})),
-					},
-					400,
-				);
-			}
-		}),
+		vValidator("json", createInvitationSchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
 			const { inviteeEmail } = c.req.valid("json");
@@ -108,11 +96,12 @@ const partnerInvitationsApp = new Hono<{
 			return c.json({ error: "招待の有効期限が切れています" as const }, 410);
 		}
 
-		// 承認者が既にパートナーを持っているかチェック
-		const inviteePartnership = await repository.findPartnershipByUser(
-			db,
-			user.id,
-		);
+		// 双方のパートナーシップを並列チェック
+		const [inviteePartnership, inviterPartnership] = await Promise.all([
+			repository.findPartnershipByUser(db, user.id),
+			repository.findPartnershipByUser(db, invitation.inviterId),
+		]);
+
 		if (inviteePartnership) {
 			return c.json(
 				{ error: "すでにパートナーが登録されています" as const },
@@ -120,11 +109,6 @@ const partnerInvitationsApp = new Hono<{
 			);
 		}
 
-		// 招待者が既にパートナーを持っているかチェック
-		const inviterPartnership = await repository.findPartnershipByUser(
-			db,
-			invitation.inviterId,
-		);
 		if (inviterPartnership) {
 			return c.json(
 				{ error: "招待者は既に別のパートナーが登録されています" as const },
@@ -132,10 +116,10 @@ const partnerInvitationsApp = new Hono<{
 			);
 		}
 
-		// 招待を承認してパートナー関係を作成
-		await repository.updateStatus(db, invitationId, "accepted");
-		const partnership = await repository.createPartnership(
+		// 招待を承認してパートナー関係を作成（アトミック）
+		const partnership = await repository.acceptInvitationAndCreatePartnership(
 			db,
+			invitationId,
 			invitation.inviterId,
 			user.id,
 		);

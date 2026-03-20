@@ -1,10 +1,14 @@
 import { applyD1Migrations, env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
-import { entries, user } from "../../../db/schema";
+import { entries } from "../../../db/schema";
 import type { AppType } from "../../../index";
 import app from "../../../index";
-import { buildAuthCookie } from "../../../testing/auth-helper";
+import {
+	buildAuthCookie,
+	OTHER_USER,
+	seedUser,
+} from "../../../testing/auth-helper";
 
 // app と routes は同一の実行時オブジェクト。型情報のために AppType へキャスト
 // (Hono の export default app は basePath 以降のルート型を含まないため)
@@ -17,20 +21,10 @@ export async function setupAuth() {
 	authCookie = await buildAuthCookie();
 }
 
-export const OTHER_USER = {
-	id: "other-user-id",
-	name: "Other User",
-	email: "other@example.com",
-} as const;
+export { OTHER_USER };
 
 export async function seedOtherUser() {
-	const db = drizzle(env.DB);
-	await db.insert(user).values({
-		id: OTHER_USER.id,
-		name: OTHER_USER.name,
-		email: OTHER_USER.email,
-		emailVerified: true,
-	});
+	await seedUser(OTHER_USER);
 }
 
 export async function insertEntry(
