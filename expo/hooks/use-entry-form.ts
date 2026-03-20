@@ -58,18 +58,7 @@ export function useEntryForm() {
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: ({ value }) => {
-				const result = v.safeParse(createEntrySchema, value);
-				if (!result.success) {
-					const flat = v.flatten(result.issues);
-					const fields: Record<string, string> = {};
-					for (const [key, messages] of Object.entries(flat.nested ?? {})) {
-						if (messages?.[0]) fields[key] = messages[0];
-					}
-					return { fields };
-				}
-				return undefined;
-			},
+			onSubmit: createEntrySchema,
 		},
 		onSubmit: ({ value }) => {
 			// バリデーション通過済みのため parse は必ず成功する
