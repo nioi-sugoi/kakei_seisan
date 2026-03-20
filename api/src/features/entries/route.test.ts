@@ -1,75 +1,21 @@
 import { env } from "cloudflare:test";
 import { applyD1Migrations } from "cloudflare:test";
-import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
-import { serializeSigned } from "hono/utils/cookie";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { session, user } from "../../db/schema";
 import app from "../../index";
 import type { AppType } from "../../index";
-
-const TEST_USER = {
-	id: "test-user-id",
-	name: "Test User",
-	email: "test@example.com",
-} as const;
-
-const SESSION_TOKEN = "test-session-token";
+import { TEST_USER, buildAuthCookie, seedTestUser } from "../../testing/auth-helper";
+import { cleanAllTables } from "../../testing/db-helper";
 
 let authCookie: string;
 
 // app と routes は同一の実行時オブジェクト。型情報のために AppType へキャスト
 // (Hono の export default app は basePath 以降のルート型を含まないため)
 const client = testClient(app as unknown as AppType, env);
-const db = drizzle(env.DB);
-
-async function seedTestUser() {
-	await db.insert(user).values({
-		id: TEST_USER.id,
-		name: TEST_USER.name,
-		email: TEST_USER.email,
-		emailVerified: true,
-	});
-	await db.insert(session).values({
-		id: "test-session-id",
-		expiresAt: new Date(Date.now() + 86_400_000),
-		token: SESSION_TOKEN,
-		updatedAt: new Date(),
-		userId: TEST_USER.id,
-	});
-}
-
-async function cleanAllTables() {
-	// sqlite_master からユーザーテーブルを動的に取得し、全行削除する。
-	// テーブルのハードコードが不要になり、スキーマ追加時の削除し忘れを防ぐ。
-	const { results } = await env.DB.prepare(
-		"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'd1_%' AND name NOT LIKE '_cf_%'",
-	).all<{ name: string }>();
-	// D1 は PRAGMA foreign_keys = OFF をサポートしないため、
-	// FK 制約で失敗したテーブルをリトライして依存順を自動解決する
-	let remaining = results.map((r) => r.name);
-	for (let pass = 0; pass < 3 && remaining.length > 0; pass++) {
-		const failed: string[] = [];
-		for (const name of remaining) {
-			try {
-				await env.DB.exec(`DELETE FROM "${name}"`);
-			} catch {
-				failed.push(name);
-			}
-		}
-		remaining = failed;
-	}
-}
 
 beforeAll(async () => {
 	await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
-	// serializeSigned は "name=signedValue; Path=/" 形式を返すので name=value 部分だけ取得
-	const setCookie = await serializeSigned(
-		"better-auth.session_token",
-		SESSION_TOKEN,
-		env.BETTER_AUTH_SECRET,
-	);
-	authCookie = setCookie.split(";")[0];
+	authCookie = await buildAuthCookie();
 });
 
 describe("POST /api/entries", () => {
