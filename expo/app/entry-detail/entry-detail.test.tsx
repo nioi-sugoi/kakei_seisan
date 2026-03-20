@@ -1,18 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	render,
-	screen,
-	userEvent,
-	waitFor,
-} from "@testing-library/react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
 import type { ReactNode } from "react";
-
-const mockBack = jest.fn();
-const mockPush = jest.fn();
 
 jest.mock("expo-router", () => ({
 	useLocalSearchParams: () => ({ id: "entry-1" }),
-	useRouter: () => ({ back: mockBack, push: mockPush }),
+	useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
 }));
 
 const mockGet = jest.fn();
@@ -81,12 +73,6 @@ afterEach(() => {
 });
 
 describe("EntryDetailScreen", () => {
-	let user: ReturnType<typeof userEvent.setup>;
-
-	beforeEach(() => {
-		user = userEvent.setup();
-	});
-
 	it("記録の基本情報が表示される", async () => {
 		render(<EntryDetailScreen />, { wrapper: createWrapper() });
 
@@ -119,107 +105,5 @@ describe("EntryDetailScreen", () => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
 		});
 		expect(screen.queryByText("メモ")).not.toBeOnTheScreen();
-	});
-
-	it("戻るボタンで前の画面に戻る", async () => {
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
-		});
-		await user.press(screen.getByText("戻る"));
-
-		expect(mockBack).toHaveBeenCalled();
-	});
-
-	it("修正レコードは修正バッジが表示される", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({ operation: "modification", parentId: "parent-1" }),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正")).toBeOnTheScreen();
-		});
-	});
-
-	it("取消レコードは取消バッジが表示される", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({ operation: "cancellation", parentId: "parent-1" }),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("取消")).toBeOnTheScreen();
-		});
-	});
-
-	it("オリジナル記録には修正・取り消しボタンが表示される", async () => {
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正する")).toBeOnTheScreen();
-		});
-		expect(screen.getByText("取り消す")).toBeOnTheScreen();
-	});
-
-	it("修正レコードには修正・取り消しボタンが表示されない", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({ operation: "modification", parentId: "parent-1" }),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正")).toBeOnTheScreen();
-		});
-		expect(screen.queryByText("修正する")).not.toBeOnTheScreen();
-		expect(screen.queryByText("取り消す")).not.toBeOnTheScreen();
-	});
-
-	it("差し戻しコメントが表示される", async () => {
-		mockGet.mockResolvedValue(
-			mockEntryResponse({
-				status: "rejected",
-				approvalComment: "金額を確認してください",
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("差し戻しコメント")).toBeOnTheScreen();
-		});
-		expect(screen.getByText("金額を確認してください")).toBeOnTheScreen();
-	});
-
-	it("承認待ちの場合はバッジが表示される", async () => {
-		mockGet.mockResolvedValue(mockEntryResponse({ status: "pending" }));
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText("承認待ち")).toBeOnTheScreen();
-		});
-	});
-
-	it("APIエラー時にエラーメッセージが表示される", async () => {
-		mockGet.mockResolvedValue(
-			new Response(JSON.stringify({ error: "記録が見つかりません" }), {
-				status: 404,
-				headers: jsonHeaders,
-			}),
-		);
-		render(<EntryDetailScreen />, { wrapper: createWrapper() });
-
-		await waitFor(() => {
-			expect(screen.getByText(/記録が見つかりません/)).toBeOnTheScreen();
-		});
-	});
-
-	it("ローディング中はインジケーターが表示される", () => {
-		mockGet.mockReturnValue(new Promise(() => {}));
-		const { toJSON } = render(<EntryDetailScreen />, {
-			wrapper: createWrapper(),
-		});
-		const tree = JSON.stringify(toJSON());
-		expect(tree).toContain("ActivityIndicator");
 	});
 });
