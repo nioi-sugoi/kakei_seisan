@@ -1,11 +1,10 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	render,
 	screen,
 	userEvent,
 	waitFor,
 } from "@testing-library/react-native";
-import type { ReactNode } from "react";
+import { createQueryWrapper } from "@/testing/query-wrapper";
 
 const mockPush = jest.fn();
 
@@ -27,18 +26,8 @@ jest.mock("@/lib/api-client", () => ({
 
 import TimelineScreen from "./index";
 
-let queryClient: QueryClient;
-
-function createWrapper() {
-	queryClient = new QueryClient({
-		defaultOptions: {
-			queries: { retry: false, gcTime: 0 },
-		},
-	});
-	return ({ children }: { children: ReactNode }) => (
-		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-	);
-}
+let cleanupQuery: () => void;
+let wrapper: ReturnType<typeof createQueryWrapper>["wrapper"];
 
 function mockApiResponse(body: unknown) {
 	mockGet.mockImplementation(() =>
@@ -73,10 +62,13 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
 	jest.clearAllMocks();
+	const result = createQueryWrapper();
+	wrapper = result.wrapper;
+	cleanupQuery = result.cleanup;
 });
 
 afterEach(() => {
-	queryClient?.clear();
+	cleanupQuery();
 });
 
 describe("TimelineScreen", () => {
@@ -88,7 +80,7 @@ describe("TimelineScreen", () => {
 
 	it("記録がない場合に空の状態メッセージが表示される", async () => {
 		mockApiResponse({ data: [], nextCursor: null });
-		render(<TimelineScreen />, { wrapper: createWrapper() });
+		render(<TimelineScreen />, { wrapper });
 
 		await waitFor(() => {
 			expect(
@@ -99,7 +91,7 @@ describe("TimelineScreen", () => {
 
 	it("立替の記録カードが正しく表示される", async () => {
 		mockApiResponse({ data: [makeEntry()], nextCursor: null });
-		render(<TimelineScreen />, { wrapper: createWrapper() });
+		render(<TimelineScreen />, { wrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("立替")).toBeOnTheScreen();
@@ -121,7 +113,7 @@ describe("TimelineScreen", () => {
 			],
 			nextCursor: null,
 		});
-		render(<TimelineScreen />, { wrapper: createWrapper() });
+		render(<TimelineScreen />, { wrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("預り")).toBeOnTheScreen();
@@ -138,7 +130,7 @@ describe("TimelineScreen", () => {
 			],
 			nextCursor: null,
 		});
-		render(<TimelineScreen />, { wrapper: createWrapper() });
+		render(<TimelineScreen />, { wrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
@@ -151,7 +143,7 @@ describe("TimelineScreen", () => {
 			data: [makeEntry({ id: "abc-123" })],
 			nextCursor: null,
 		});
-		render(<TimelineScreen />, { wrapper: createWrapper() });
+		render(<TimelineScreen />, { wrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
@@ -164,7 +156,7 @@ describe("TimelineScreen", () => {
 
 	it("FABボタンが表示されタップで記録登録フォームへ遷移する", async () => {
 		mockApiResponse({ data: [], nextCursor: null });
-		render(<TimelineScreen />, { wrapper: createWrapper() });
+		render(<TimelineScreen />, { wrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("＋")).toBeOnTheScreen();
