@@ -48,7 +48,20 @@ const mockReplace = jest.fn();
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
-	mockUseRouter.mockReturnValue({ replace: mockReplace, back: jest.fn() } as ReturnType<typeof useRouter>);
+	mockUseRouter.mockReturnValue({
+		replace: mockReplace,
+		back: jest.fn(),
+		canGoBack: jest.fn(),
+		push: jest.fn(),
+		navigate: jest.fn(),
+		dismiss: jest.fn(),
+		dismissTo: jest.fn(),
+		dismissAll: jest.fn(),
+		canDismiss: jest.fn(),
+		setParams: jest.fn(),
+		reload: jest.fn(),
+		prefetch: jest.fn(),
+	});
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });

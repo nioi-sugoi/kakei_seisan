@@ -3,7 +3,6 @@ import {
 	screen,
 	userEvent,
 	waitFor,
-	within,
 } from "@testing-library/react-native";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
@@ -150,14 +149,15 @@ describe("TimelineScreen", () => {
 		expect(screen.getByText("2月の記録")).toBeOnTheScreen();
 
 		// 3月ヘッダーが2月ヘッダーより先に表示される（FlatListの順序）
-		const items = screen.root;
 		const marchHeader = screen.getByText("2026年3月");
 		const febHeader = screen.getByText("2026年2月");
 		const marchRecord = screen.getByText("3月の記録A");
 		const febRecord = screen.getByText("2月の記録");
 
 		// 3月のヘッダー → 3月の記録 → 2月のヘッダー → 2月の記録 の順序を検証
-		const allTexts = screen.root.findAll((node) => node.props.children);
+		const allTexts = screen.root.findAll(
+			(node: { props: Record<string, unknown> }) => node.props.children,
+		);
 		const marchHeaderIdx = allTexts.indexOf(marchHeader);
 		const marchRecordIdx = allTexts.indexOf(marchRecord);
 		const febHeaderIdx = allTexts.indexOf(febHeader);
