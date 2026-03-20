@@ -4,7 +4,7 @@ import {
 	userEvent,
 	waitFor,
 } from "@testing-library/react-native";
-import { createQueryWrapper } from "@/testing/query-wrapper";
+import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockPush = jest.fn();
 
@@ -70,7 +70,7 @@ describe("TimelineScreen", () => {
 
 	it("記録がない場合に空の状態メッセージが表示される", async () => {
 		mockApiResponse({ data: [], nextCursor: null });
-		render(<TimelineScreen />, { wrapper: createQueryWrapper() });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(
@@ -81,7 +81,7 @@ describe("TimelineScreen", () => {
 
 	it("立替の記録カードが正しく表示される", async () => {
 		mockApiResponse({ data: [makeEntry()], nextCursor: null });
-		render(<TimelineScreen />, { wrapper: createQueryWrapper() });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("立替")).toBeOnTheScreen();
@@ -103,7 +103,7 @@ describe("TimelineScreen", () => {
 			],
 			nextCursor: null,
 		});
-		render(<TimelineScreen />, { wrapper: createQueryWrapper() });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("預り")).toBeOnTheScreen();
@@ -120,7 +120,7 @@ describe("TimelineScreen", () => {
 			],
 			nextCursor: null,
 		});
-		render(<TimelineScreen />, { wrapper: createQueryWrapper() });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
@@ -133,7 +133,7 @@ describe("TimelineScreen", () => {
 			data: [makeEntry({ id: "abc-123" })],
 			nextCursor: null,
 		});
-		render(<TimelineScreen />, { wrapper: createQueryWrapper() });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
@@ -146,7 +146,7 @@ describe("TimelineScreen", () => {
 
 	it("FABボタンが表示されタップで記録登録フォームへ遷移する", async () => {
 		mockApiResponse({ data: [], nextCursor: null });
-		render(<TimelineScreen />, { wrapper: createQueryWrapper() });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		const fab = await screen.findByRole("button", { name: "記録を追加" });
 

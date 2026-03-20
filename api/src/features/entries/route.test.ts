@@ -1,6 +1,8 @@
 import { applyD1Migrations, env } from "cloudflare:test";
+import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { entries } from "../../db/schema";
 import type { AppType } from "../../index";
 import app from "../../index";
 import {
@@ -21,12 +23,12 @@ beforeAll(async () => {
 	authCookie = await buildAuthCookie();
 });
 
-/** DB に直接エントリを挿入する（createdAt を制御するため） */
+/** DB に直接エントリを挿入する（createdAt を制御可能） */
 async function insertEntry(
 	overrides: Partial<{
 		id: string;
 		userId: string;
-		category: string;
+		category: "advance" | "deposit";
 		amount: number;
 		date: string;
 		label: string;
@@ -34,25 +36,23 @@ async function insertEntry(
 		createdAt: number;
 	}> = {},
 ) {
-	const id = overrides.id ?? crypto.randomUUID();
+	const db = drizzle(env.DB);
 	const now = Date.now();
-	await env.DB.prepare(
-		`INSERT INTO entries (id, user_id, category, operation, amount, date, label, memo, status, created_at, updated_at)
-		 VALUES (?, ?, ?, 'original', ?, ?, ?, ?, 'approved', ?, ?)`,
-	)
-		.bind(
-			id,
-			overrides.userId ?? TEST_USER.id,
-			overrides.category ?? "advance",
-			overrides.amount ?? 1000,
-			overrides.date ?? "2024-03-15",
-			overrides.label ?? "テスト",
-			overrides.memo ?? null,
-			overrides.createdAt ?? now,
-			now,
-		)
-		.run();
-	return id;
+	const result = await db
+		.insert(entries)
+		.values({
+			userId: overrides.userId ?? TEST_USER.id,
+			category: overrides.category ?? "advance",
+			amount: overrides.amount ?? 1000,
+			date: overrides.date ?? "2024-03-15",
+			label: overrides.label ?? "テスト",
+			memo: overrides.memo ?? null,
+			createdAt: overrides.createdAt ?? now,
+			updatedAt: now,
+		})
+		.returning({ id: entries.id })
+		.get();
+	return result.id;
 }
 
 describe("POST /api/entries", () => {

@@ -1,22 +1,25 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 /**
- * テスト用の QueryClientProvider ラッパーを生成する。
- * 呼び出しごとに新しい QueryClient を作るためキャッシュは自然に分離される。
+ * テスト用の QueryClientProvider ラッパーコンポーネント。
+ * マウントごとに新しい QueryClient を生成するためテスト間でキャッシュが分離される。
  *
  * @example
- * render(<MyScreen />, { wrapper: createQueryWrapper() });
+ * render(<MyScreen />, { wrapper: TestQueryWrapper });
  */
-export function createQueryWrapper() {
-	const queryClient = new QueryClient({
-		defaultOptions: {
-			queries: { retry: false, gcTime: 0 },
-			mutations: { retry: false, gcTime: 0 },
-		},
-	});
+export function TestQueryWrapper({ children }: { children: ReactNode }) {
+	const [queryClient] = useState(
+		() =>
+			new QueryClient({
+				defaultOptions: {
+					queries: { retry: false, gcTime: 0 },
+					mutations: { retry: false, gcTime: 0 },
+				},
+			}),
+	);
 
-	return ({ children }: { children: ReactNode }) => (
+	return (
 		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 	);
 }

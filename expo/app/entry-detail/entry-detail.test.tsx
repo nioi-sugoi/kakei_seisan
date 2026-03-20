@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react-native";
-import { createQueryWrapper } from "@/testing/query-wrapper";
+import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 jest.mock("expo-router", () => ({
 	useLocalSearchParams: () => ({ id: "entry-1" }),
@@ -56,7 +56,7 @@ beforeEach(() => {
 
 describe("EntryDetailScreen", () => {
 	it("記録の基本情報が表示される", async () => {
-		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
@@ -71,7 +71,7 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({ category: "deposit", amount: 3000 }),
 		);
-		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("-¥3,000")).toBeOnTheScreen();
@@ -81,7 +81,7 @@ describe("EntryDetailScreen", () => {
 
 	it("メモが空の場合はメモ行が表示されない", async () => {
 		mockGet.mockResolvedValue(mockEntryResponse({ memo: null }));
-		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
@@ -96,7 +96,7 @@ describe("EntryDetailScreen", () => {
 				headers: jsonHeaders,
 			}),
 		);
-		render(<EntryDetailScreen />, { wrapper: createQueryWrapper() });
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
 			expect(screen.getByText(/記録が見つかりません/)).toBeOnTheScreen();
