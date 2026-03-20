@@ -1,0 +1,1 @@
+CREATE INDEX `entries_user_created_idx` ON `entries` (`user_id`,`created_at`);
