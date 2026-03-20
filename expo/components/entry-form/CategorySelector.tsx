@@ -5,13 +5,21 @@ type Category = "advance" | "deposit";
 type CategorySelectorProps = {
 	value: Category;
 	onChange: (value: Category) => void;
+	disabled?: boolean;
 };
 
-export function CategorySelector({ value, onChange }: CategorySelectorProps) {
+export function CategorySelector({
+	value,
+	onChange,
+	disabled,
+}: CategorySelectorProps) {
 	return (
-		<View className="flex-row rounded-xl bg-secondary p-1">
+		<View
+			className={`flex-row rounded-xl bg-secondary p-1 ${disabled ? "opacity-60" : ""}`}
+		>
 			<Pressable
 				onPress={() => onChange("advance")}
+				disabled={disabled}
 				className={`flex-1 items-center rounded-lg py-2.5 ${
 					value === "advance" ? "bg-primary" : ""
 				}`}
@@ -28,6 +36,7 @@ export function CategorySelector({ value, onChange }: CategorySelectorProps) {
 			</Pressable>
 			<Pressable
 				onPress={() => onChange("deposit")}
+				disabled={disabled}
 				className={`flex-1 items-center rounded-lg py-2.5 ${
 					value === "deposit" ? "bg-orange-500" : ""
 				}`}

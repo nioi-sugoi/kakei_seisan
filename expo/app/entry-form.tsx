@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import {
 	ActivityIndicator,
 	KeyboardAvoidingView,
@@ -12,10 +13,23 @@ import { CategorySelector } from "@/components/entry-form/CategorySelector";
 import { DateInput } from "@/components/entry-form/DateInput";
 import { LabelInput } from "@/components/entry-form/LabelInput";
 import { MemoInput } from "@/components/entry-form/MemoInput";
+import { useEntryDetail } from "@/hooks/use-entry-detail";
 import { useEntryForm } from "@/hooks/use-entry-form";
 
-export default function EntryFormScreen() {
-	const { form, serverError, loading, goBack } = useEntryForm();
+function EntryFormContent({
+	modifyTarget,
+}: {
+	modifyTarget?: {
+		id: string;
+		category: "advance" | "deposit";
+		amount: number;
+		date: string;
+		label: string;
+		memo: string | null;
+	};
+}) {
+	const { form, isModifyMode, serverError, loading, goBack } =
+		useEntryForm(modifyTarget);
 
 	return (
 		<KeyboardAvoidingView
@@ -28,7 +42,7 @@ export default function EntryFormScreen() {
 					<Text className="text-base text-primary">戻る</Text>
 				</Pressable>
 				<Text className="flex-1 text-lg font-bold text-foreground">
-					記録を登録
+					{isModifyMode ? "記録を修正" : "記録を登録"}
 				</Text>
 			</View>
 
@@ -42,6 +56,7 @@ export default function EntryFormScreen() {
 						<CategorySelector
 							value={field.state.value}
 							onChange={field.handleChange}
+							disabled={isModifyMode}
 						/>
 					)}
 				</form.Field>
@@ -103,11 +118,62 @@ export default function EntryFormScreen() {
 						<ActivityIndicator color="white" />
 					) : (
 						<Text className="text-base font-semibold text-primary-foreground">
-							登録する
+							{isModifyMode ? "修正する" : "登録する"}
 						</Text>
 					)}
 				</Pressable>
 			</ScrollView>
 		</KeyboardAvoidingView>
+	);
+}
+
+export default function EntryFormScreen() {
+	const { modifyId } = useLocalSearchParams<{ modifyId?: string }>();
+
+	if (!modifyId) {
+		return <EntryFormContent />;
+	}
+
+	return <ModifyFormLoader entryId={modifyId} />;
+}
+
+function ModifyFormLoader({ entryId }: { entryId: string }) {
+	const { data: entry, isPending, error } = useEntryDetail(entryId);
+
+	if (isPending) {
+		return (
+			<View className="flex-1 items-center justify-center bg-background">
+				<ActivityIndicator size="large" />
+			</View>
+		);
+	}
+
+	if (error || !entry) {
+		return (
+			<View className="flex-1 items-center justify-center bg-background">
+				<Text className="text-base text-destructive">
+					{error?.message ?? "記録が見つかりません"}
+				</Text>
+			</View>
+		);
+	}
+
+	// 修正レコード分を加算して実効金額を計算
+	const modificationSum = entry.children
+		.filter((c) => c.operation === "modification")
+		.reduce((sum, c) => sum + c.amount, 0);
+	const effectiveAmount = entry.amount + modificationSum;
+
+	return (
+		<EntryFormContent
+			modifyTarget={{
+				id: entry.id,
+				category: entry.category,
+				amount: effectiveAmount,
+				date: entry.date,
+				label: entry.label,
+				memo: entry.memo,
+			}}
+		/>
 	);
 }

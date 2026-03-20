@@ -12,6 +12,7 @@ const mockBack = jest.fn();
 
 jest.mock("expo-router", () => ({
 	useRouter: () => ({ replace: mockReplace, back: mockBack }),
+	useLocalSearchParams: () => ({}),
 }));
 
 jest.mock("expo-constants", () => ({

@@ -1,10 +1,11 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { parseResponse } from "hono/client";
 import * as v from "valibot";
-import { format } from "date-fns";
 import { client } from "@/lib/api-client";
+import { useModifyEntry } from "./use-modify-entry";
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -21,17 +22,29 @@ const createEntrySchema = v.object({
 		v.transform((s: string) => s.trim()),
 		v.minLength(1, "ラベルは必須です"),
 	),
-	memo: v.optional(v.pipe(
-		v.string(),
-		v.transform((s) => s || undefined),
-	)),
+	memo: v.optional(
+		v.pipe(
+			v.string(),
+			v.transform((s) => s || undefined),
+		),
+	),
 });
 
-export function useEntryForm() {
+type ModifyTarget = {
+	id: string;
+	category: "advance" | "deposit";
+	amount: number;
+	date: string;
+	label: string;
+	memo: string | null;
+};
+
+export function useEntryForm(modifyTarget?: ModifyTarget) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const isModifyMode = !!modifyTarget;
 
-	const mutation = useMutation({
+	const createMutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
 			parseResponse(client.api.entries.$post({ json: input })),
 		onSuccess: () => {
@@ -40,13 +53,23 @@ export function useEntryForm() {
 		},
 	});
 
-	const defaultValues: v.InferInput<typeof createEntrySchema> = {
-		category: "advance",
-		amount: "",
-		date: format(new Date(), "yyyy-MM-dd"),
-		label: "",
-		memo: "",
-	};
+	const modifyMutation = useModifyEntry(modifyTarget?.id ?? "");
+
+	const defaultValues: v.InferInput<typeof createEntrySchema> = modifyTarget
+		? {
+				category: modifyTarget.category,
+				amount: String(modifyTarget.amount),
+				date: modifyTarget.date,
+				label: modifyTarget.label,
+				memo: modifyTarget.memo ?? "",
+			}
+		: {
+				category: "advance",
+				amount: "",
+				date: format(new Date(), "yyyy-MM-dd"),
+				label: "",
+				memo: "",
+			};
 
 	const form = useForm({
 		defaultValues,
@@ -54,15 +77,30 @@ export function useEntryForm() {
 			onSubmit: createEntrySchema,
 		},
 		onSubmit: ({ value }) => {
-			// バリデーション通過済みのため parse は必ず成功する
-			mutation.mutate(v.parse(createEntrySchema, value));
+			const parsed = v.parse(createEntrySchema, value);
+			if (isModifyMode) {
+				modifyMutation.mutate({
+					amount: parsed.amount,
+					label: parsed.label,
+					memo: parsed.memo,
+				});
+			} else {
+				createMutation.mutate(parsed);
+			}
 		},
 	});
 
+	const activeMutation = isModifyMode ? modifyMutation : createMutation;
+
 	return {
 		form,
-		serverError: mutation.error ? "エラーが発生しました" : "",
-		loading: mutation.isPending,
+		isModifyMode,
+		serverError: activeMutation.error
+			? isModifyMode
+				? activeMutation.error.message
+				: "エラーが発生しました"
+			: "",
+		loading: activeMutation.isPending,
 		goBack: () => router.back(),
 	};
 }

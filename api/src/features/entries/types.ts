@@ -9,3 +9,9 @@ export type CreateEntryInput = {
 	label: string;
 	memo?: string;
 };
+
+export type ModifyEntryInput = {
+	amount: number;
+	label: string;
+	memo?: string;
+};

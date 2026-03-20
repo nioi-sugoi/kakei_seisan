@@ -161,4 +161,73 @@ describe("GET /api/entries", () => {
 
 		expect(res.status).toBe(401);
 	});
+
+	it("元エントリに修正子エントリがある場合 childOperations に 'modification' が含まれる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		await client.api.entries[":id"].modify.$post(
+			{
+				param: { id: entry.id },
+				json: { amount: 1000, label: "食費" },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		const original = body.data.find((e) => e.id === entry.id);
+		expect(original?.childOperations).toContain("modification");
+	});
+
+	it("元エントリに取消子エントリがある場合 childOperations に 'cancellation' が含まれる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		await client.api.entries[":id"].cancel.$post(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		const original = body.data.find((e) => e.id === entry.id);
+		expect(original?.childOperations).toContain("cancellation");
+	});
+
+	it("修正・取消レコード自体の childOperations は空配列", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		await client.api.entries[":id"].modify.$post(
+			{
+				param: { id: entry.id },
+				json: { amount: 1000, label: "食費" },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.entries.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const body = await res.json();
+		const modification = body.data.find((e) => e.operation === "modification");
+		expect(modification?.childOperations).toEqual([]);
+	});
 });

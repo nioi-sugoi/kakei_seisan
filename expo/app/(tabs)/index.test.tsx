@@ -53,6 +53,7 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		approvalComment: null,
 		createdAt: 1773676800000,
 		updatedAt: 1773676800000,
+		childOperations: [],
 		...overrides,
 	};
 }
@@ -143,18 +144,15 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
 		});
 
-		// 3月のカードが2枚、2月のカードが1枚表示される
 		expect(screen.getByText("3月の記録A")).toBeOnTheScreen();
 		expect(screen.getByText("3月の記録B")).toBeOnTheScreen();
 		expect(screen.getByText("2月の記録")).toBeOnTheScreen();
 
-		// 3月ヘッダーが2月ヘッダーより先に表示される（FlatListの順序）
 		const marchHeader = screen.getByText("2026年3月");
 		const febHeader = screen.getByText("2026年2月");
 		const marchRecord = screen.getByText("3月の記録A");
 		const febRecord = screen.getByText("2月の記録");
 
-		// 3月のヘッダー → 3月の記録 → 2月のヘッダー → 2月の記録 の順序を検証
 		const allTexts = screen.root.findAll(
 			(node: { props: Record<string, unknown> }) => node.props.children,
 		);
@@ -193,5 +191,120 @@ describe("TimelineScreen", () => {
 		await user.press(fab);
 
 		expect(mockPush).toHaveBeenCalledWith("/entry-form");
+	});
+
+	// --- 修正・取消バッジのテスト ---
+
+	it("修正レコードに「修正」バッジが表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "mod-1",
+					operation: "modification",
+					amount: -1000,
+					parentId: "entry-1",
+					label: "食費修正",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("修正")).toBeOnTheScreen();
+		});
+		expect(screen.getByText("食費修正")).toBeOnTheScreen();
+	});
+
+	it("取消レコードに「取消」バッジが表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "cancel-1",
+					operation: "cancellation",
+					amount: -1500,
+					parentId: "entry-1",
+					label: "食費取消",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("取消")).toBeOnTheScreen();
+		});
+	});
+
+	it("修正済みの元エントリに「修正済み」バッジが表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "entry-1",
+					childOperations: ["modification"],
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("修正済み")).toBeOnTheScreen();
+		});
+	});
+
+	it("取消済みの元エントリに「取消済み」バッジが表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "entry-1",
+					childOperations: ["cancellation"],
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("取消済み")).toBeOnTheScreen();
+		});
+	});
+
+	it("修正レコードの金額は符号付きで表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "mod-1",
+					operation: "modification",
+					amount: -1000,
+					parentId: "entry-1",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("-¥1,000")).toBeOnTheScreen();
+		});
+	});
+
+	it("増額修正レコードの金額はプラス符号付きで表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "mod-1",
+					operation: "modification",
+					amount: 500,
+					parentId: "entry-1",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("+¥500")).toBeOnTheScreen();
+		});
 	});
 });

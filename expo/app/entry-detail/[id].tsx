@@ -1,6 +1,14 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import {
+	ActivityIndicator,
+	Alert,
+	Pressable,
+	ScrollView,
+	Text,
+	View,
+} from "react-native";
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
+import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 
 function Header({ onBack }: { onBack: () => void }) {
@@ -18,6 +26,7 @@ export default function EntryDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
 	const { data: entry, isPending, error } = useEntryDetail(id ?? "");
+	const cancelMutation = useCancelEntry(id ?? "");
 
 	if (isPending) {
 		return (
@@ -40,17 +49,93 @@ export default function EntryDetailScreen() {
 		);
 	}
 
+	const isOriginal = entry.operation === "original";
+	const hasCancellation = entry.children.some(
+		(c) => c.operation === "cancellation",
+	);
+	const canModify = isOriginal && !hasCancellation;
+
+	const handleModify = () => {
+		router.push(`/entry-form?modifyId=${entry.id}`);
+	};
+
+	const handleCancel = () => {
+		Alert.alert(
+			"記録の取り消し",
+			"この記録を取り消しますか？取り消しレコードが作成されます。",
+			[
+				{ text: "キャンセル", style: "cancel" },
+				{
+					text: "取り消す",
+					style: "destructive",
+					onPress: () => cancelMutation.mutate(),
+				},
+			],
+		);
+	};
+
 	return (
 		<View className="flex-1 bg-background">
 			<Header onBack={() => router.back()} />
-			<ScrollView className="flex-1" contentContainerClassName="px-4 py-5 gap-4">
+			<ScrollView
+				className="flex-1"
+				contentContainerClassName="px-4 py-5 gap-4"
+			>
 				<EntryInfoCard
 					category={entry.category}
+					operation={entry.operation}
 					amount={entry.amount}
 					date={entry.date}
 					label={entry.label}
 					memo={entry.memo}
+					isCancelled={isOriginal && hasCancellation}
 				/>
+
+				{/* 元の記録へのリンク（修正・取消レコードの場合） */}
+				{entry.parent ? (
+					<Pressable
+						onPress={() => router.push(`/entry-detail/${entry.parent?.id}`)}
+						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
+					>
+						<Text className="text-sm text-primary">元の記録を見る →</Text>
+					</Pressable>
+				) : null}
+
+				{/* 修正・取消エラー */}
+				{cancelMutation.error && (
+					<View className="rounded-xl bg-destructive/10 px-4 py-3">
+						<Text className="text-sm text-destructive">
+							{cancelMutation.error.message}
+						</Text>
+					</View>
+				)}
+
+				{/* アクションボタン */}
+				{canModify && (
+					<View className="mt-4 flex-row gap-3">
+						<Pressable
+							onPress={handleModify}
+							className="flex-1 items-center rounded-xl border border-border bg-card py-3 active:opacity-80"
+						>
+							<Text className="text-base font-medium text-foreground">
+								修正する
+							</Text>
+						</Pressable>
+						<Pressable
+							onPress={handleCancel}
+							disabled={cancelMutation.isPending}
+							className="flex-1 items-center rounded-xl border border-destructive bg-card py-3 active:opacity-80"
+						>
+							{cancelMutation.isPending ? (
+								<ActivityIndicator />
+							) : (
+								<Text className="text-base font-medium text-destructive">
+									取り消す
+								</Text>
+							)}
+						</Pressable>
+					</View>
+				)}
 			</ScrollView>
 		</View>
 	);
