@@ -45,17 +45,14 @@ describe("POST /api/entries/:id/modify", () => {
 			category: "advance",
 			originalId: entry.id,
 			cancelled: false,
-			latest: true,
 		});
 
-		// DB状態: 2レコード、latest は修正バージョンのみ
+		// DB状態: 2レコード、最新は修正バージョン
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions).toHaveLength(2);
-		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
-		const dbModified = dbVersions.find((v) => v.id !== entry.id);
-		expect(dbOriginal?.latest).toBe(false);
-		expect(dbModified?.latest).toBe(true);
-		expect(dbModified?.amount).toBe(9000);
+		// createdAt DESC なので先頭が最新
+		expect(dbVersions[0].id).not.toBe(entry.id);
+		expect(dbVersions[0].amount).toBe(9000);
 	});
 
 	it("ラベルのみの修正でも新バージョンが作成される", async () => {
@@ -81,7 +78,7 @@ describe("POST /api/entries/:id/modify", () => {
 		});
 	});
 
-	it("修正後、旧バージョンの latest が false になる", async () => {
+	it("修正後、旧バージョンより新しい createdAt を持つバージョンが存在する", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -97,7 +94,9 @@ describe("POST /api/entries/:id/modify", () => {
 
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
-		expect(dbOriginal?.latest).toBe(false);
+		// createdAt DESC なので先頭が最新、旧バージョンは先頭ではない
+		expect(dbVersions[0].id).not.toBe(dbOriginal?.id);
+		expect(dbVersions[0].createdAt).toBeGreaterThan(dbOriginal?.createdAt ?? 0);
 	});
 
 	it("既に修正済みの記録をさらに修正できる", async () => {
@@ -129,12 +128,11 @@ describe("POST /api/entries/:id/modify", () => {
 			originalId: entry.id,
 		});
 
-		// DB状態: 3バージョン、latest は最新修正のみ
+		// DB状態: 3バージョン、最新は最後の修正
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions).toHaveLength(3);
-		const latestVersions = dbVersions.filter((v) => v.latest);
-		expect(latestVersions).toHaveLength(1);
-		expect(latestVersions[0].amount).toBe(8000);
+		// createdAt DESC なので先頭が最新
+		expect(dbVersions[0].amount).toBe(8000);
 	});
 
 	it("変更がない場合は 400 を返す", async () => {

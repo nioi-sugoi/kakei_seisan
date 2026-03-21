@@ -43,17 +43,14 @@ describe("POST /api/entries/:id/cancel", () => {
 			label: "交通費",
 			originalId: entry.id,
 			cancelled: true,
-			latest: true,
 		});
 
-		// DB状態: originalId グループに2レコード、latest は取消バージョンのみ
+		// DB状態: originalId グループに2レコード、最新は取消バージョン
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions).toHaveLength(2);
-		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
-		const dbCancelled = dbVersions.find((v) => v.id !== entry.id);
-		expect(dbOriginal?.latest).toBe(false);
-		expect(dbCancelled?.latest).toBe(true);
-		expect(dbCancelled?.cancelled).toBe(true);
+		// createdAt DESC なので先頭が最新
+		expect(dbVersions[0].cancelled).toBe(true);
+		expect(dbVersions[0].id).not.toBe(entry.id);
 	});
 
 	it("deposit カテゴリの記録も取り消せる", async () => {
@@ -103,16 +100,15 @@ describe("POST /api/entries/:id/cancel", () => {
 			cancelled: true,
 		});
 
-		// DB状態: 3バージョン（初版 + 修正 + 取消）、latest は取消のみ
+		// DB状態: 3バージョン（初版 + 修正 + 取消）、最新は取消
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions).toHaveLength(3);
-		const latestVersions = dbVersions.filter((v) => v.latest);
-		expect(latestVersions).toHaveLength(1);
-		expect(latestVersions[0].cancelled).toBe(true);
-		expect(latestVersions[0].amount).toBe(9000);
+		// createdAt DESC なので先頭が最新
+		expect(dbVersions[0].cancelled).toBe(true);
+		expect(dbVersions[0].amount).toBe(9000);
 	});
 
-	it("取り消し後、旧バージョンの latest が false になる", async () => {
+	it("取り消し後、旧バージョンより新しい createdAt を持つバージョンが存在する", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -125,7 +121,9 @@ describe("POST /api/entries/:id/cancel", () => {
 
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
-		expect(dbOriginal?.latest).toBe(false);
+		// createdAt DESC なので先頭が最新、旧バージョンは先頭ではない
+		expect(dbVersions[0].id).not.toBe(dbOriginal?.id);
+		expect(dbVersions[0].createdAt).toBeGreaterThan(dbOriginal?.createdAt ?? 0);
 	});
 
 	it("既に取り消し済みの記録は再取り消しできない", async () => {

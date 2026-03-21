@@ -162,7 +162,8 @@ function ModifyFormLoader({ entryId }: { entryId: string }) {
 	}
 
 	// 最新バージョンの値をそのまま使う（バージョン管理方式ではフルスナップショット）
-	const latestVersion = entry.versions.find((v) => v.latest) ?? entry;
+	// versions は createdAt DESC でソート済みなので先頭が最新
+	const latestVersion = entry.versions[0] ?? entry;
 
 	return (
 		<EntryFormContent

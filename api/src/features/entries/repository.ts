@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -46,8 +46,31 @@ export function listByUser(
 	if (options.cursor) {
 		conditions.push(lt(entries.createdAt, options.cursor));
 	}
+	const isLatest = sql<boolean>`(
+		${entries.createdAt} = (
+			SELECT MAX(e2.created_at) FROM entries e2
+			WHERE e2.original_id = ${entries.originalId}
+		)
+	)`.mapWith(Boolean);
+
 	return db
-		.select()
+		.select({
+			id: entries.id,
+			userId: entries.userId,
+			category: entries.category,
+			amount: entries.amount,
+			date: entries.date,
+			label: entries.label,
+			memo: entries.memo,
+			originalId: entries.originalId,
+			cancelled: entries.cancelled,
+			status: entries.status,
+			approvedBy: entries.approvedBy,
+			approvedAt: entries.approvedAt,
+			approvalComment: entries.approvalComment,
+			createdAt: entries.createdAt,
+			isLatest,
+		})
 		.from(entries)
 		.where(and(...conditions))
 		.orderBy(desc(entries.createdAt))
@@ -74,18 +97,14 @@ export function findMyLatestVersion(
 	return db
 		.select()
 		.from(entries)
-		.where(
-			and(
-				eq(entries.originalId, originalId),
-				eq(entries.latest, true),
-				eq(entries.userId, userId),
-			),
-		)
+		.where(and(eq(entries.originalId, originalId), eq(entries.userId, userId)))
+		.orderBy(desc(entries.createdAt))
+		.limit(1)
 		.get();
 }
 
 /**
- * 修正バージョンを作成する（バッチ操作でlatest更新 + 新規挿入）。
+ * 修正バージョンを作成する。
  * 修正後のフルスナップショットを保存する。
  */
 export function createModification(
@@ -100,37 +119,26 @@ export function createModification(
 ) {
 	const newId = crypto.randomUUID();
 	const now = Date.now();
-	return db.batch([
-		db
-			.update(entries)
-			.set({ latest: false })
-			.where(
-				and(
-					eq(entries.originalId, original.originalId),
-					eq(entries.latest, true),
-				),
-			),
-		db
-			.insert(entries)
-			.values({
-				id: newId,
-				userId,
-				category: original.category,
-				amount: input.amount,
-				date: original.date,
-				label: input.label,
-				memo: input.memo || null,
-				originalId: original.originalId,
-				cancelled: false,
-				latest: true,
-				createdAt: now,
-			})
-			.returning(),
-	]);
+	return db
+		.insert(entries)
+		.values({
+			id: newId,
+			userId,
+			category: original.category,
+			amount: input.amount,
+			date: original.date,
+			label: input.label,
+			memo: input.memo || null,
+			originalId: original.originalId,
+			cancelled: false,
+			createdAt: now,
+		})
+		.returning()
+		.get();
 }
 
 /**
- * 取消を復元する（バッチ操作でlatest更新 + 新規挿入）。
+ * 取消を復元する。
  * cancelled = false の新バージョンを作成する。
  */
 export function createRestoration(
@@ -147,37 +155,26 @@ export function createRestoration(
 ) {
 	const newId = crypto.randomUUID();
 	const now = Date.now();
-	return db.batch([
-		db
-			.update(entries)
-			.set({ latest: false })
-			.where(
-				and(
-					eq(entries.originalId, latestEntry.originalId),
-					eq(entries.latest, true),
-				),
-			),
-		db
-			.insert(entries)
-			.values({
-				id: newId,
-				userId,
-				category: latestEntry.category,
-				amount: latestEntry.amount,
-				date: latestEntry.date,
-				label: latestEntry.label,
-				memo: latestEntry.memo,
-				originalId: latestEntry.originalId,
-				cancelled: false,
-				latest: true,
-				createdAt: now,
-			})
-			.returning(),
-	]);
+	return db
+		.insert(entries)
+		.values({
+			id: newId,
+			userId,
+			category: latestEntry.category,
+			amount: latestEntry.amount,
+			date: latestEntry.date,
+			label: latestEntry.label,
+			memo: latestEntry.memo,
+			originalId: latestEntry.originalId,
+			cancelled: false,
+			createdAt: now,
+		})
+		.returning()
+		.get();
 }
 
 /**
- * 取り消しバージョンを作成する（バッチ操作でlatest更新 + 新規挿入）。
+ * 取り消しバージョンを作成する。
  */
 export function createCancellation(
 	db: DrizzleD1Database,
@@ -193,31 +190,20 @@ export function createCancellation(
 ) {
 	const newId = crypto.randomUUID();
 	const now = Date.now();
-	return db.batch([
-		db
-			.update(entries)
-			.set({ latest: false })
-			.where(
-				and(
-					eq(entries.originalId, latestEntry.originalId),
-					eq(entries.latest, true),
-				),
-			),
-		db
-			.insert(entries)
-			.values({
-				id: newId,
-				userId,
-				category: latestEntry.category,
-				amount: latestEntry.amount,
-				date: latestEntry.date,
-				label: latestEntry.label,
-				memo: latestEntry.memo,
-				originalId: latestEntry.originalId,
-				cancelled: true,
-				latest: true,
-				createdAt: now,
-			})
-			.returning(),
-	]);
+	return db
+		.insert(entries)
+		.values({
+			id: newId,
+			userId,
+			category: latestEntry.category,
+			amount: latestEntry.amount,
+			date: latestEntry.date,
+			label: latestEntry.label,
+			memo: latestEntry.memo,
+			originalId: latestEntry.originalId,
+			cancelled: true,
+			createdAt: now,
+		})
+		.returning()
+		.get();
 }

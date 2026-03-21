@@ -41,7 +41,6 @@ describe("POST /api/entries", () => {
 			label: "食費",
 			userId: TEST_USER.id,
 			cancelled: false,
-			latest: true,
 			status: "approved",
 			memo: null,
 		});
@@ -136,7 +135,6 @@ describe("POST /api/entries", () => {
 			label: "食費",
 			memo: "テストメモ",
 			cancelled: false,
-			latest: true,
 			status: "approved",
 		});
 		expect(result[0].originalId).toBe(result[0].id);

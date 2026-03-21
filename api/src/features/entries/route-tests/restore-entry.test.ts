@@ -48,15 +48,13 @@ describe("POST /api/entries/:originalId/restore", () => {
 			label: "交通費",
 			originalId: entry.id,
 			cancelled: false,
-			latest: true,
 		});
 
-		// DB状態: 3レコード（初版 + 取消 + 復元）、latest は復元のみ
+		// DB状態: 3レコード（初版 + 取消 + 復元）、最新は復元
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions).toHaveLength(3);
-		const latestVersions = dbVersions.filter((v) => v.latest);
-		expect(latestVersions).toHaveLength(1);
-		expect(latestVersions[0].cancelled).toBe(false);
+		// createdAt DESC なので先頭が最新
+		expect(dbVersions[0].cancelled).toBe(false);
 	});
 
 	it("取り消されていない記録は復元できない", async () => {

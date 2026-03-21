@@ -170,7 +170,6 @@ export const entries = sqliteTable(
 		cancelled: integer("cancelled", { mode: "boolean" })
 			.notNull()
 			.default(false),
-		latest: integer("latest", { mode: "boolean" }).notNull().default(true),
 		status: text("status", { enum: ["approved", "pending", "rejected"] })
 			.notNull()
 			.default("approved"),
@@ -186,7 +185,7 @@ export const entries = sqliteTable(
 		index("entries_user_date_idx").on(table.userId, table.date),
 		index("entries_user_created_idx").on(table.userId, table.createdAt),
 		index("entries_original_idx").on(table.originalId),
-		index("entries_user_latest_idx").on(table.userId, table.latest),
+		index("entries_original_created_idx").on(table.originalId, table.createdAt),
 		check(
 			"entries_category_check",
 			sql`${table.category} IN ('advance', 'deposit')`,
@@ -214,7 +213,6 @@ export const settlements = sqliteTable(
 		cancelled: integer("cancelled", { mode: "boolean" })
 			.notNull()
 			.default(false),
-		latest: integer("latest", { mode: "boolean" }).notNull().default(true),
 		status: text("status", { enum: ["approved", "pending", "rejected"] })
 			.notNull()
 			.default("approved"),
@@ -227,7 +225,10 @@ export const settlements = sqliteTable(
 		index("settlements_user_status_idx").on(table.userId, table.status),
 		index("settlements_user_date_idx").on(table.userId, table.date),
 		index("settlements_original_idx").on(table.originalId),
-		index("settlements_user_latest_idx").on(table.userId, table.latest),
+		index("settlements_original_created_idx").on(
+			table.originalId,
+			table.createdAt,
+		),
 		check(
 			"settlements_status_check",
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,

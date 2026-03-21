@@ -50,7 +50,6 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			memo: "夕食の材料",
 			originalId: "entry-1",
 			cancelled: false,
-			latest: true,
 			status: "approved",
 			approvedBy: null,
 			approvedAt: null,
@@ -59,9 +58,9 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			versions: [
 				{
 					id: "entry-1",
-					latest: true,
 					cancelled: false,
 					amount: 4280,
+					createdAt: 1742000000000,
 				},
 			],
 			original: undefined,
@@ -98,7 +97,12 @@ describe("EntryDetailScreen", () => {
 				category: "deposit",
 				amount: 3000,
 				versions: [
-					{ id: "entry-1", latest: true, cancelled: false, amount: 3000 },
+					{
+						id: "entry-1",
+						cancelled: false,
+						amount: 3000,
+						createdAt: 1742000000000,
+					},
 				],
 			}),
 		);
@@ -182,12 +186,17 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
-					{ id: "entry-1", latest: false, cancelled: false },
 					{
 						id: "cancel-1",
-						latest: true,
 						cancelled: true,
 						amount: 4280,
+						createdAt: 1742000100000,
+					},
+					{
+						id: "entry-1",
+						cancelled: false,
+						amount: 4280,
+						createdAt: 1742000000000,
 					},
 				],
 			}),
@@ -205,8 +214,18 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
-					{ id: "entry-1", latest: false, cancelled: false, amount: 4280 },
-					{ id: "v2-entry", latest: true, cancelled: false, amount: 3000 },
+					{
+						id: "v2-entry",
+						cancelled: false,
+						amount: 3000,
+						createdAt: 1742000100000,
+					},
+					{
+						id: "entry-1",
+						cancelled: false,
+						amount: 4280,
+						createdAt: 1742000000000,
+					},
 				],
 			}),
 		);
@@ -222,8 +241,18 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				originalId: "parent-1",
 				versions: [
-					{ id: "parent-1", latest: false, cancelled: false, amount: 4280 },
-					{ id: "entry-1", latest: true, cancelled: false, amount: 4280 },
+					{
+						id: "entry-1",
+						cancelled: false,
+						amount: 4280,
+						createdAt: 1742000100000,
+					},
+					{
+						id: "parent-1",
+						cancelled: false,
+						amount: 4280,
+						createdAt: 1742000000000,
+					},
 				],
 				original: { id: "parent-1" },
 			}),
@@ -241,8 +270,18 @@ describe("EntryDetailScreen", () => {
 				cancelled: true,
 				originalId: "parent-1",
 				versions: [
-					{ id: "parent-1", latest: false, cancelled: false, amount: 4280 },
-					{ id: "entry-1", latest: true, cancelled: true, amount: 4280 },
+					{
+						id: "entry-1",
+						cancelled: true,
+						amount: 4280,
+						createdAt: 1742000100000,
+					},
+					{
+						id: "parent-1",
+						cancelled: false,
+						amount: 4280,
+						createdAt: 1742000000000,
+					},
 				],
 				original: { id: "parent-1" },
 			}),

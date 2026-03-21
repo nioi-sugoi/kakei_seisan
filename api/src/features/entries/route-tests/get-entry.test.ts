@@ -45,7 +45,6 @@ describe("GET /api/entries/:id", () => {
 			label: "交通費",
 			userId: TEST_USER.id,
 			cancelled: false,
-			latest: true,
 			status: "approved",
 		});
 	});
@@ -114,9 +113,11 @@ describe("GET /api/entries/:id", () => {
 		const body = await res.json();
 		if ("error" in body) throw new Error("unexpected error");
 		expect(body.versions).toHaveLength(2);
-		expect(body.versions[0].latest).toBe(true);
+		// createdAt DESC なので先頭が最新
 		expect(body.versions[0].amount).toBe(4000);
-		expect(body.versions[1].latest).toBe(false);
+		expect(body.versions[0].createdAt).toBeGreaterThan(
+			body.versions[1].createdAt,
+		);
 	});
 
 	it("修正バージョンを取得すると original が含まれる", async () => {
