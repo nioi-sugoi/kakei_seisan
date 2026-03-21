@@ -75,7 +75,11 @@ export function EntryInfoCard({
 			<View className="mt-4 items-center">
 				<Text
 					className={`text-3xl font-bold ${
-						category === "deposit" ? "text-orange-600" : "text-foreground"
+						isCancelled
+							? "line-through text-muted-foreground"
+							: category === "deposit"
+								? "text-orange-600"
+								: "text-foreground"
 					}`}
 				>
 					{category === "deposit" ? "-" : ""}

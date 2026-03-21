@@ -100,7 +100,11 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 				</View>
 				<Text
 					className={`text-lg font-bold ${
-						isDeposit ? "text-warning" : "text-foreground"
+						isCancelled
+							? "line-through text-muted-foreground"
+							: isDeposit
+								? "text-warning"
+								: "text-foreground"
 					}`}
 				>
 					{isDeposit ? "-" : ""}
