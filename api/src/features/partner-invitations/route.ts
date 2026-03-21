@@ -122,9 +122,9 @@ const partnerInvitationsApp = new Hono<{
 			);
 		}
 
-		await repository.deleteInvitation(db, invitationId);
+		const cancelled = await repository.cancelInvitation(db, invitationId);
 
-		return c.json({ success: true });
+		return c.json(cancelled);
 	})
 	// ── POST /:id/accept — 招待を承認 ─────────────────────────
 	.post("/:id/accept", requireAuth, async (c) => {

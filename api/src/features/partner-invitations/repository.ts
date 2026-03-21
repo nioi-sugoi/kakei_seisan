@@ -84,9 +84,10 @@ export function findUserByEmail(db: DrizzleD1Database, email: string) {
 	return db.select().from(user).where(eq(user.email, email)).get();
 }
 
-export function deleteInvitation(db: DrizzleD1Database, id: string) {
+export function cancelInvitation(db: DrizzleD1Database, id: string) {
 	return db
-		.delete(partnerInvitations)
+		.update(partnerInvitations)
+		.set({ status: "cancelled" })
 		.where(eq(partnerInvitations.id, id))
 		.returning()
 		.get();

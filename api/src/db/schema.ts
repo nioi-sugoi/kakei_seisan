@@ -145,7 +145,7 @@ export const partnerInvitations = sqliteTable(
 	(table) => [
 		check(
 			"partner_invitations_status_check",
-			sql`${table.status} IN ('pending', 'accepted', 'expired')`,
+			sql`${table.status} IN ('pending', 'accepted', 'expired', 'cancelled')`,
 		),
 	],
 );

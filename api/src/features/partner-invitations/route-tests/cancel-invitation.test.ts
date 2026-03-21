@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { partnerInvitations } from "../../../db/schema";
@@ -36,10 +37,13 @@ describe("DELETE /api/partner-invitations/:id", () => {
 
 		expect(res.status).toBe(200);
 		const body = await res.json();
-		expect(body).toHaveProperty("success", true);
+		expect(body).toMatchObject({
+			id: invitation.id,
+			status: "cancelled",
+		});
 	});
 
-	it("解除後にDBから招待が削除される", async () => {
+	it("解除後に招待のステータスが cancelled になる", async () => {
 		const invitation = await insertInvitation(
 			TEST_USER.id,
 			"partner@example.com",
@@ -51,8 +55,12 @@ describe("DELETE /api/partner-invitations/:id", () => {
 		);
 
 		const db = drizzle(env.DB);
-		const result = await db.select().from(partnerInvitations).all();
-		expect(result).toHaveLength(0);
+		const updated = await db
+			.select()
+			.from(partnerInvitations)
+			.where(eq(partnerInvitations.id, invitation.id))
+			.get();
+		expect(updated?.status).toBe("cancelled");
 	});
 
 	it("存在しない招待IDの場合 404 を返す", async () => {
@@ -133,7 +141,10 @@ describe("DELETE /api/partner-invitations/:id", () => {
 
 		expect(res.status).toBe(200);
 		const body = await res.json();
-		expect(body).toHaveProperty("success", true);
+		expect(body).toMatchObject({
+			id: invitation.id,
+			status: "cancelled",
+		});
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {
