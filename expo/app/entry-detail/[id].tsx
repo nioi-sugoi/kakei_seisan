@@ -10,6 +10,7 @@ import {
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
+import { useRestoreEntry } from "@/hooks/use-restore-entry";
 import { formatAmount, formatDateFull } from "@/lib/format";
 
 function Header({ onBack }: { onBack: () => void }) {
@@ -28,6 +29,7 @@ export default function EntryDetailScreen() {
 	const router = useRouter();
 	const { data: entry, isPending, error } = useEntryDetail(id ?? "");
 	const cancelMutation = useCancelEntry(id ?? "");
+	const restoreMutation = useRestoreEntry(id ?? "");
 
 	if (isPending) {
 		return (
@@ -68,6 +70,20 @@ export default function EntryDetailScreen() {
 					text: "取り消す",
 					style: "destructive",
 					onPress: () => cancelMutation.mutate(),
+				},
+			],
+		);
+	};
+
+	const handleRestore = () => {
+		Alert.alert(
+			"記録の復元",
+			"取り消した記録を復元しますか？",
+			[
+				{ text: "キャンセル", style: "cancel" },
+				{
+					text: "復元する",
+					onPress: () => restoreMutation.mutate(),
 				},
 			],
 		);
@@ -127,14 +143,14 @@ export default function EntryDetailScreen() {
 					</View>
 				) : null}
 
-				{/* 取消エラー */}
-				{cancelMutation.error ? (
+				{/* エラー表示 */}
+				{cancelMutation.error || restoreMutation.error ? (
 					<View
 						style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
 						className="rounded-xl px-4 py-3"
 					>
 						<Text className="text-sm text-destructive">
-							{cancelMutation.error.message}
+							{cancelMutation.error?.message ?? restoreMutation.error?.message}
 						</Text>
 					</View>
 				) : null}
@@ -164,7 +180,23 @@ export default function EntryDetailScreen() {
 							)}
 						</Pressable>
 					</View>
-				) : null}
+				) : (
+					<View className="mt-4">
+						<Pressable
+							onPress={handleRestore}
+							disabled={restoreMutation.isPending}
+							className="items-center rounded-xl border border-primary bg-card py-3 active:opacity-80"
+						>
+							{restoreMutation.isPending ? (
+								<ActivityIndicator />
+							) : (
+								<Text className="text-base font-medium text-primary">
+									復元する
+								</Text>
+							)}
+						</Pressable>
+					</View>
+				)}
 			</ScrollView>
 		</View>
 	);
