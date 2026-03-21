@@ -6,10 +6,7 @@ import { partnerships, user } from "../../db/schema";
  * パートナー関係をパートナーのユーザー情報付きで返す。
  * userId が inviter なら invitee の情報を、invitee なら inviter の情報を返す。
  */
-export async function findPartnershipWithPartnerInfo(
-	db: DrizzleD1Database,
-	userId: string,
-) {
+export async function findPartner(db: DrizzleD1Database, userId: string) {
 	// inviter として参加しているケース
 	const asInviter = await db
 		.select({
@@ -41,7 +38,7 @@ export async function findPartnershipWithPartnerInfo(
 		.get();
 }
 
-export function findPartnershipByUser(db: DrizzleD1Database, userId: string) {
+export function findPartnerByUser(db: DrizzleD1Database, userId: string) {
 	return db
 		.select()
 		.from(partnerships)

@@ -6,7 +6,7 @@ import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import { handleValidationError } from "../../middleware/validation-error-handler";
 import type { AppVariables } from "../../types";
-import { findPartnershipByUser } from "../partner/repository";
+import { findPartnerByUser } from "../partner/repository";
 import * as repository from "./repository";
 
 const createInvitationSchema = v.object({
@@ -36,7 +36,7 @@ const partnerInvitationsApp = new Hono<{
 			}
 
 			// 既にパートナーがいる場合は招待不可
-			const existingPartnership = await findPartnershipByUser(db, user.id);
+			const existingPartnership = await findPartnerByUser(db, user.id);
 			if (existingPartnership) {
 				return c.json(
 					{ error: "すでにパートナーが登録されています" as const },
@@ -47,7 +47,7 @@ const partnerInvitationsApp = new Hono<{
 			// 相手が登録済みユーザーで既にパートナーがいる場合は招待不可
 			const invitee = await repository.findUserByEmail(db, inviteeEmail);
 			if (invitee) {
-				const inviteePartnership = await findPartnershipByUser(db, invitee.id);
+				const inviteePartnership = await findPartnerByUser(db, invitee.id);
 				if (inviteePartnership) {
 					return c.json(
 						{
@@ -154,8 +154,8 @@ const partnerInvitationsApp = new Hono<{
 
 		// 双方のパートナーシップを並列チェック
 		const [inviteePartnership, inviterPartnership] = await Promise.all([
-			findPartnershipByUser(db, user.id),
-			findPartnershipByUser(db, invitation.inviterId),
+			findPartnerByUser(db, user.id),
+			findPartnerByUser(db, invitation.inviterId),
 		]);
 
 		if (inviteePartnership) {
