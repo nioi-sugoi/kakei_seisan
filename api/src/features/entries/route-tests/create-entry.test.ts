@@ -5,9 +5,10 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { entries } from "../../../db/schema";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
-import { authCookie, client, setupAuth } from "./helpers";
+import { authCookie, client, setupAuth, setupDB } from "./helpers";
 
 beforeAll(async () => {
+	await setupDB();
 	await setupAuth();
 });
 

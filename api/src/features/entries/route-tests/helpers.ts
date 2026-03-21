@@ -1,10 +1,16 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { entries } from "../../../db/schema";
-import { authCookie, client, setupAuth } from "../../../testing/app-helper";
-import { OTHER_USER, seedOtherUser } from "../../../testing/auth-helper";
+import { client } from "../../../testing/app-helper";
+import {
+	OTHER_USER,
+	authCookie,
+	seedOtherUser,
+	setupAuth,
+} from "../../../testing/auth-helper";
+import { setupDB } from "../../../testing/db-helper";
 
-export { authCookie, client, OTHER_USER, seedOtherUser, setupAuth };
+export { authCookie, client, OTHER_USER, seedOtherUser, setupAuth, setupDB };
 
 export async function insertEntry(
 	userId: string,

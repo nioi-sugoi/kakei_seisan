@@ -9,10 +9,12 @@ import {
 	seedOtherUser,
 	seedThirdUser,
 	setupAuth,
+	setupDB,
 	THIRD_USER,
 } from "./helpers";
 
 beforeAll(async () => {
+	await setupDB();
 	await setupAuth();
 });
 

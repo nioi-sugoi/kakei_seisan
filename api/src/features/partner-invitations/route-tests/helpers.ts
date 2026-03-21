@@ -1,15 +1,17 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { partnerInvitations } from "../../../db/schema";
-import { authCookie, client, setupAuth } from "../../../testing/app-helper";
+import { client } from "../../../testing/app-helper";
 import {
 	OTHER_USER,
 	THIRD_USER,
+	authCookie,
 	buildOtherUserAuthCookie,
 	seedOtherUser,
 	seedThirdUser,
+	setupAuth,
 } from "../../../testing/auth-helper";
-import { insertPartnership } from "../../../testing/db-helper";
+import { insertPartnership, setupDB } from "../../../testing/db-helper";
 
 export {
 	authCookie,
@@ -20,6 +22,7 @@ export {
 	seedOtherUser,
 	seedThirdUser,
 	setupAuth,
+	setupDB,
 	THIRD_USER,
 };
 

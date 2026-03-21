@@ -72,6 +72,16 @@ export async function buildAuthCookie(): Promise<string> {
 	return setCookie.split(";")[0];
 }
 
+export let authCookie: string;
+
+/**
+ * 認証クッキーを生成してモジュール変数にセットする。
+ * beforeAll で setupDB() の後に呼び出す。
+ */
+export async function setupAuth() {
+	authCookie = await buildAuthCookie();
+}
+
 export async function seedOtherUser() {
 	await seedUser(OTHER_USER);
 }
