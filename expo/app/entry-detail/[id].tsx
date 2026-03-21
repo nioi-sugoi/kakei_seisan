@@ -10,7 +10,10 @@ import {
 	View,
 } from "react-native";
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
-import { ImagePicker } from "@/components/entry-form/ImagePicker";
+import {
+	ImagePicker,
+	type SelectedImage,
+} from "@/components/entry-form/ImagePicker";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 import {
@@ -40,9 +43,7 @@ export default function EntryDetailScreen() {
 	const restoreMutation = useRestoreEntry(id);
 	const uploadImages = useUploadEntryImages();
 	const deleteImage = useDeleteEntryImage(id);
-	const [newImages, setNewImages] = useState<
-		{ uri: string; mimeType: string; fileName: string }[]
-	>([]);
+	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
 
 	if (isPending) {
 		return (

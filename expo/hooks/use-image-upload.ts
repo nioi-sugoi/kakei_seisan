@@ -7,16 +7,14 @@ import { config } from "@/lib/config";
 type UploadedImage = {
 	id: string;
 	entryId: string;
-	storagePath: string;
 	displayOrder: number;
 	createdAt: number;
 };
 
-async function buildAuthHeaders(): Promise<Record<string, string>> {
+function getAuthHeaders(): Record<string, string> {
 	if (Platform.OS === "web") return {};
 	const cookie = authClient.getCookie();
-	if (cookie) return { Cookie: cookie };
-	return {};
+	return cookie ? { Cookie: cookie } : {};
 }
 
 async function uploadImage(
@@ -24,20 +22,20 @@ async function uploadImage(
 	image: SelectedImage,
 ): Promise<UploadedImage> {
 	const formData = new FormData();
-	// React Native の FormData は { uri, name, type } を受け付ける
+	// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける。
+	// Blob 型への二重キャストは RN 固有の制約のため不可避
 	formData.append("image", {
 		uri: image.uri,
 		name: image.fileName,
 		type: image.mimeType,
 	} as unknown as Blob);
 
-	const headers = await buildAuthHeaders();
 	const res = await fetch(
 		`${config.apiBaseUrl}/api/entries/${entryId}/images`,
 		{
 			method: "POST",
 			body: formData,
-			headers,
+			headers: getAuthHeaders(),
 			credentials: "include",
 		},
 	);
@@ -53,12 +51,11 @@ async function uploadImage(
 }
 
 async function deleteImage(entryId: string, imageId: string): Promise<void> {
-	const headers = await buildAuthHeaders();
 	const res = await fetch(
 		`${config.apiBaseUrl}/api/entries/${entryId}/images/${imageId}`,
 		{
 			method: "DELETE",
-			headers,
+			headers: getAuthHeaders(),
 			credentials: "include",
 		},
 	);
@@ -69,37 +66,23 @@ async function deleteImage(entryId: string, imageId: string): Promise<void> {
 	}
 }
 
-/**
- * エントリー作成後に画像をアップロードするフック。
- * 複数画像を順番にアップロードする。
- */
 export function useUploadEntryImages() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async ({
+		mutationFn: ({
 			entryId,
 			images,
 		}: {
 			entryId: string;
 			images: SelectedImage[];
-		}) => {
-			const results: UploadedImage[] = [];
-			for (const image of images) {
-				const uploaded = await uploadImage(entryId, image);
-				results.push(uploaded);
-			}
-			return results;
-		},
+		}) => Promise.all(images.map((image) => uploadImage(entryId, image))),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
 		},
 	});
 }
 
-/**
- * エントリーの画像を削除するフック。
- */
 export function useDeleteEntryImage(entryId: string) {
 	const queryClient = useQueryClient();
 
@@ -111,14 +94,10 @@ export function useDeleteEntryImage(entryId: string) {
 	});
 }
 
-/**
- * 画像ダウンロード用の URL とヘッダを生成するユーティリティ。
- * expo-image の source に渡す。
- */
 export function getImageSource(entryId: string, imageId: string) {
-	const cookie = Platform.OS !== "web" ? authClient.getCookie() : undefined;
+	const headers = getAuthHeaders();
 	return {
 		uri: `${config.apiBaseUrl}/api/entries/${entryId}/images/${imageId}`,
-		headers: cookie ? { Cookie: cookie } : undefined,
+		headers: Object.keys(headers).length > 0 ? headers : undefined,
 	};
 }

@@ -228,10 +228,9 @@ export function createCancellation(
 // ============================================================
 
 /**
- * エントリーに紐づく画像メタデータを作成する。
- * 単一の INSERT ... SELECT で枚数制限チェックと displayOrder 算出を
- * アトミックに行い、レースコンディションを防止する。
- * 挿入成功時は挿入行を返し、枚数制限超過時は null を返す。
+ * 画像メタデータを作成する（枚数制限超過時は null を返す）。
+ * INSERT...SELECT で枚数チェックと displayOrder 算出をアトミックに行い、
+ * 並行リクエストによる制限超過を防止する。
  */
 export async function createImage(
 	db: DrizzleD1Database,
@@ -242,8 +241,6 @@ export async function createImage(
 ): Promise<typeof entryImages.$inferSelect | null> {
 	const id = crypto.randomUUID();
 	const now = Date.now();
-	// INSERT ... SELECT で COUNT < 2 の場合のみ挿入（アトミック）
-	// displayOrder は MAX+1 を使い、削除後の重複を防止
 	const result = await db.run(sql`
 		INSERT INTO entry_images (id, entry_id, storage_path, display_order, created_at)
 		SELECT ${id}, ${input.entryId}, ${input.storagePath},
@@ -263,7 +260,6 @@ export async function createImage(
 	return row ?? null;
 }
 
-/** エントリーに紐づく画像一覧を取得する（displayOrder 昇順） */
 export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
 	return db
 		.select()
@@ -273,12 +269,10 @@ export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
 		.all();
 }
 
-/** 画像 ID で1件取得する */
 export function findImageById(db: DrizzleD1Database, imageId: string) {
 	return db.select().from(entryImages).where(eq(entryImages.id, imageId)).get();
 }
 
-/** 画像メタデータを削除する */
 export function deleteImage(db: DrizzleD1Database, imageId: string) {
 	return db.delete(entryImages).where(eq(entryImages.id, imageId)).run();
 }
