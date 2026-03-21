@@ -1,10 +1,10 @@
 import { vValidator } from "@hono/valibot-validator";
 import { drizzle } from "drizzle-orm/d1";
-import type { Context } from "hono";
 import { Hono } from "hono";
 import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
+import { handleValidationError } from "../../middleware/validation-error-handler";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
@@ -21,23 +21,6 @@ const modifyEntrySchema = v.object({
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
 });
-
-/** vValidator 共通エラーハンドラ */
-function handleValidationError(
-	result: { success: false; issues: v.BaseIssue<unknown>[] },
-	c: Context,
-) {
-	return c.json(
-		{
-			error: "バリデーションエラー" as const,
-			issues: result.issues.map((issue) => ({
-				field: String(issue.path?.[0]?.key ?? "unknown"),
-				message: issue.message,
-			})),
-		},
-		400,
-	);
-}
 
 const entriesApp = new Hono<{
 	Bindings: Env;
@@ -117,9 +100,7 @@ const entriesApp = new Hono<{
 	.post(
 		"/",
 		requireAuth,
-		vValidator("json", createEntrySchema, (result, c) => {
-			if (!result.success) return handleValidationError(result, c);
-		}),
+		vValidator("json", createEntrySchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
 			const input = c.req.valid("json");
@@ -132,9 +113,7 @@ const entriesApp = new Hono<{
 	.post(
 		"/:id/modify",
 		requireAuth,
-		vValidator("json", modifyEntrySchema, (result, c) => {
-			if (!result.success) return handleValidationError(result, c);
-		}),
+		vValidator("json", modifyEntrySchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
 			const id = c.req.param("id");

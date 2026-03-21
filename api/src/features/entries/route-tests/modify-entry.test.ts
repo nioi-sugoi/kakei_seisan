@@ -9,9 +9,11 @@ import {
 	queryVersionsByOriginalId,
 	seedOtherUser,
 	setupAuth,
+	setupDB,
 } from "./helpers";
 
 beforeAll(async () => {
+	await setupDB();
 	await setupAuth();
 });
 

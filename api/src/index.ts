@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { createAuth } from "./auth";
 import type { Env } from "./bindings";
 import { entriesApp } from "./features/entries";
+import { partnerInvitationsApp } from "./features/partner-invitations";
 import type { AppVariables } from "./types";
 
 const app = new Hono<{
@@ -51,7 +52,8 @@ const routes = app
 	.get("/health", (c) => {
 		return c.json({ status: "ok" });
 	})
-	.route("/entries", entriesApp);
+	.route("/entries", entriesApp)
+	.route("/partner-invitations", partnerInvitationsApp);
 
 export default app;
 export type AppType = typeof routes;

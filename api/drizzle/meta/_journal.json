@@ -1,34 +1,41 @@
 {
-	"version": "7",
-	"dialect": "sqlite",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "6",
-			"when": 1772621772694,
-			"tag": "0000_wet_wallflower",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1772634043305,
-			"tag": "0001_free_yellow_claw",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1773983334255,
-			"tag": "0002_greedy_william_stryker",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "6",
-			"when": 1774060894008,
-			"tag": "0003_version-management",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1772621772694,
+      "tag": "0000_wet_wallflower",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772634043305,
+      "tag": "0001_free_yellow_claw",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1773983334255,
+      "tag": "0002_greedy_william_stryker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1774062543056,
+      "tag": "0003_mixed_phantom_reporter",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1774062600000,
+      "tag": "0004_version-management",
+      "breakpoints": true
+    }
+  ]
 }

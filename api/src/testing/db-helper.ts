@@ -1,4 +1,12 @@
-import { env } from "cloudflare:test";
+import { applyD1Migrations, env } from "cloudflare:test";
+
+/**
+ * D1マイグレーションを適用してテストDBをセットアップする。
+ * beforeAll で最初に1回呼び出す。
+ */
+export async function setupDB() {
+	await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+}
 
 /**
  * sqlite_master からユーザーテーブルを動的に取得し、全行削除する。
