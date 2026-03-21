@@ -150,7 +150,6 @@ const partnerInvitationsApp = new Hono<{
 
 		// 有効期限チェック
 		if (invitation.expiresAt <= Date.now()) {
-			await repository.updateStatus(db, invitationId, "expired");
 			return c.json({ error: "招待の有効期限が切れています" as const }, 410);
 		}
 

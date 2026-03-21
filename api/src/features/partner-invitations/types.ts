@@ -1,1 +1,1 @@
-export type InvitationStatus = "pending" | "accepted" | "expired";
+export type InvitationStatus = "pending" | "accepted";

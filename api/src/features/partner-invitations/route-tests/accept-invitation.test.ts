@@ -134,25 +134,6 @@ describe("POST /api/partner-invitations/:id/accept", () => {
 		expect(body).toHaveProperty("error", "招待の有効期限が切れています");
 	});
 
-	it("有効期限切れの招待を承認しようとすると expired に更新される", async () => {
-		const invitation = await insertInvitation(OTHER_USER.id, TEST_USER.email, {
-			expiresAt: Date.now() - 1000,
-		});
-
-		await client.api["partner-invitations"][":id"].accept.$post(
-			{ param: { id: invitation.id } },
-			{ headers: { Cookie: authCookie } },
-		);
-
-		const db = drizzle(env.DB);
-		const updated = await db
-			.select()
-			.from(partnerInvitations)
-			.where(eq(partnerInvitations.id, invitation.id))
-			.get();
-		expect(updated?.status).toBe("expired");
-	});
-
 	it("承認者が既にパートナーを持っている場合 409 を返す", async () => {
 		await seedThirdUser();
 		await insertPartnership(TEST_USER.id, THIRD_USER.id);

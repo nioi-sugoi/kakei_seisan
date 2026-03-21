@@ -62,19 +62,6 @@ export function findById(db: DrizzleD1Database, id: string) {
 		.get();
 }
 
-export function updateStatus(
-	db: DrizzleD1Database,
-	id: string,
-	status: "accepted" | "expired",
-) {
-	return db
-		.update(partnerInvitations)
-		.set({ status })
-		.where(eq(partnerInvitations.id, id))
-		.returning()
-		.get();
-}
-
 export function findPendingByInviter(
 	db: DrizzleD1Database,
 	inviterId: string,

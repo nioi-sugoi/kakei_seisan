@@ -152,7 +152,7 @@ describe("POST /api/partner-invitations", () => {
 		expect(body).toHaveProperty("error", "すでに有効な招待があります");
 	});
 
-	it("有効期限切れの招待がある場合は新しい招待を送信できる", async () => {
+	it("有効期限切れの招待があっても新しい招待を送信できる", async () => {
 		await insertInvitation(TEST_USER.id, "first@example.com", {
 			expiresAt: Date.now() - 1000,
 		});
