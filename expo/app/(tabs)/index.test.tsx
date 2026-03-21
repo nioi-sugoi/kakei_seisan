@@ -169,7 +169,7 @@ describe("TimelineScreen", () => {
 
 	it("記録カードをタップすると詳細画面に遷移する", async () => {
 		mockApiResponse({
-			data: [makeEntry({ id: "abc-123" })],
+			data: [makeEntry({ id: "abc-123", originalId: "abc-123" })],
 			nextCursor: null,
 		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
