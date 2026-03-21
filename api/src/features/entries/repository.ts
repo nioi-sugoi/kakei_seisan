@@ -8,15 +8,18 @@ export function createEntry(
 	userId: string,
 	input: CreateEntryInput,
 ) {
+	const id = crypto.randomUUID();
 	return db
 		.insert(entries)
 		.values({
+			id,
 			userId,
 			category: input.category,
 			amount: input.amount,
 			date: input.date,
 			label: input.label,
 			memo: input.memo || null,
+			originalId: id,
 		})
 		.returning()
 		.get();
@@ -52,83 +55,139 @@ export function listByUser(
 		.all();
 }
 
-/**
- * 指定した親エントリ群に対して、子エントリの operation 種別を取得する。
- * タイムラインで「修正済み」「取消済み」バッジを表示するために使用。
- */
-export function getChildOperations(db: DrizzleD1Database, parentIds: string[]) {
-	if (parentIds.length === 0) return Promise.resolve([]);
-	return db
-		.select({
-			parentId: entries.parentId,
-			operation: entries.operation,
-		})
-		.from(entries)
-		.where(inArray(entries.parentId, parentIds))
-		.all();
-}
-
-/** 特定エントリの子エントリ（修正・取消）を取得する */
-export function findChildren(db: DrizzleD1Database, parentId: string) {
+/** 同じ original_id グループの全バージョンを取得 */
+export function findVersions(db: DrizzleD1Database, originalId: string) {
 	return db
 		.select()
 		.from(entries)
-		.where(eq(entries.parentId, parentId))
-		.orderBy(desc(entries.createdAt))
+		.where(eq(entries.originalId, originalId))
+		.orderBy(desc(entries.version))
+		.all();
+}
+
+/** 同じ original_id グループの最新バージョンを取得 */
+export function findLatestVersion(db: DrizzleD1Database, originalId: string) {
+	return db
+		.select()
+		.from(entries)
+		.where(and(eq(entries.originalId, originalId), eq(entries.latest, true)))
+		.get();
+}
+
+/**
+ * 非最新エントリの original_id 群に対し、最新バージョンの cancelled 状態を取得。
+ * タイムラインで旧バージョンに「修正済み」「取消済み」を表示するために使用。
+ */
+export function getGroupCancelledStatus(
+	db: DrizzleD1Database,
+	originalIds: string[],
+) {
+	if (originalIds.length === 0) return Promise.resolve([]);
+	return db
+		.select({
+			originalId: entries.originalId,
+			cancelled: entries.cancelled,
+		})
+		.from(entries)
+		.where(
+			and(inArray(entries.originalId, originalIds), eq(entries.latest, true)),
+		)
 		.all();
 }
 
 /**
- * 修正エントリを作成する。
- * amount は差分（新しい金額 - 現在の実効金額）として渡される。
+ * 修正バージョンを作成する（バッチ操作でlatest更新 + 新規挿入）。
+ * 修正後のフルスナップショットを保存する。
  */
 export function createModification(
 	db: DrizzleD1Database,
 	userId: string,
-	parentId: string,
-	original: { category: "advance" | "deposit"; date: string },
+	original: {
+		originalId: string;
+		category: "advance" | "deposit";
+		date: string;
+		currentVersion: number;
+	},
 	input: ModifyEntryInput,
 ) {
-	return db
-		.insert(entries)
-		.values({
-			userId,
-			category: original.category,
-			operation: "modification",
-			amount: input.amount,
-			date: original.date,
-			label: input.label,
-			memo: input.memo || null,
-			parentId,
-		})
-		.returning()
-		.get();
+	const newId = crypto.randomUUID();
+	const now = Date.now();
+	return db.batch([
+		db
+			.update(entries)
+			.set({ latest: false, updatedAt: now })
+			.where(
+				and(
+					eq(entries.originalId, original.originalId),
+					eq(entries.latest, true),
+				),
+			),
+		db
+			.insert(entries)
+			.values({
+				id: newId,
+				userId,
+				category: original.category,
+				amount: input.amount,
+				date: original.date,
+				label: input.label,
+				memo: input.memo || null,
+				version: original.currentVersion + 1,
+				originalId: original.originalId,
+				cancelled: false,
+				latest: true,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.returning(),
+	]);
 }
 
-/** 取り消しエントリを作成する */
+/**
+ * 取り消しバージョンを作成する（バッチ操作でlatest更新 + 新規挿入）。
+ */
 export function createCancellation(
 	db: DrizzleD1Database,
 	userId: string,
-	parentId: string,
-	original: {
+	latestEntry: {
+		originalId: string;
 		category: "advance" | "deposit";
+		amount: number;
 		date: string;
 		label: string;
+		memo: string | null;
+		version: number;
 	},
-	effectiveAmount: number,
 ) {
-	return db
-		.insert(entries)
-		.values({
-			userId,
-			category: original.category,
-			operation: "cancellation",
-			amount: -effectiveAmount,
-			date: original.date,
-			label: original.label,
-			memo: null,
-			parentId,
-		})
-		.returning()
-		.get();
+	const newId = crypto.randomUUID();
+	const now = Date.now();
+	return db.batch([
+		db
+			.update(entries)
+			.set({ latest: false, updatedAt: now })
+			.where(
+				and(
+					eq(entries.originalId, latestEntry.originalId),
+					eq(entries.latest, true),
+				),
+			),
+		db
+			.insert(entries)
+			.values({
+				id: newId,
+				userId,
+				category: latestEntry.category,
+				amount: latestEntry.amount,
+				date: latestEntry.date,
+				label: latestEntry.label,
+				memo: latestEntry.memo,
+				version: latestEntry.version + 1,
+				originalId: latestEntry.originalId,
+				cancelled: true,
+				latest: true,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.returning(),
+	]);
 }

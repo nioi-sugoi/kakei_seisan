@@ -38,14 +38,17 @@ export async function insertEntry(
 	overrides?: Partial<typeof entries.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
+	const id = crypto.randomUUID();
 	const [entry] = await db
 		.insert(entries)
 		.values({
+			id,
 			userId,
 			category: "advance",
 			amount: 1500,
 			date: "2024-03-15",
 			label: "食費",
+			originalId: id,
 			...overrides,
 		})
 		.returning();

@@ -49,14 +49,13 @@ export default function EntryDetailScreen() {
 		);
 	}
 
-	const isOriginal = entry.operation === "original";
-	const hasCancellation = entry.children.some(
-		(c) => c.operation === "cancellation",
-	);
-	const canModify = isOriginal && !hasCancellation;
+	// グループの最新バージョンが取消済みかチェック
+	const latestVersion = entry.versions.find((v) => v.latest);
+	const groupCancelled = latestVersion?.cancelled ?? false;
+	const canModify = !groupCancelled;
 
 	const handleModify = () => {
-		router.push(`/entry-form?modifyId=${entry.id}`);
+		router.push(`/entry-form?modifyId=${entry.originalId}`);
 	};
 
 	const handleCancel = () => {
@@ -83,25 +82,26 @@ export default function EntryDetailScreen() {
 			>
 				<EntryInfoCard
 					category={entry.category}
-					operation={entry.operation}
+					version={entry.version}
+					cancelled={entry.cancelled}
 					amount={entry.amount}
 					date={entry.date}
 					label={entry.label}
 					memo={entry.memo}
-					isCancelled={isOriginal && hasCancellation}
+					isCancelled={groupCancelled}
 				/>
 
-				{/* 元の記録へのリンク（修正・取消レコードの場合） */}
-				{entry.parent ? (
+				{/* 元の記録へのリンク（v2+ の場合） */}
+				{entry.original ? (
 					<Pressable
-						onPress={() => router.push(`/entry-detail/${entry.parent?.id}`)}
+						onPress={() => router.push(`/entry-detail/${entry.original?.id}`)}
 						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
 					>
 						<Text className="text-sm text-primary">元の記録を見る →</Text>
 					</Pressable>
 				) : null}
 
-				{/* 修正・取消エラー */}
+				{/* 取消エラー */}
 				{cancelMutation.error ? (
 					<View
 						style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
@@ -114,7 +114,7 @@ export default function EntryDetailScreen() {
 				) : null}
 
 				{/* アクションボタン */}
-				{canModify && (
+				{canModify ? (
 					<View className="mt-4 flex-row gap-3">
 						<Pressable
 							onPress={handleModify}
@@ -138,7 +138,7 @@ export default function EntryDetailScreen() {
 							)}
 						</Pressable>
 					</View>
-				)}
+				) : null}
 			</ScrollView>
 		</View>
 	);

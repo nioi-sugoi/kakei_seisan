@@ -42,7 +42,9 @@ describe("GET /api/entries/:id", () => {
 			date: "2024-03-15",
 			label: "交通費",
 			userId: TEST_USER.id,
-			operation: "original",
+			version: 1,
+			cancelled: false,
+			latest: true,
 			status: "approved",
 		});
 	});

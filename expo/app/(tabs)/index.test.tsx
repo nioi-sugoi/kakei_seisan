@@ -41,19 +41,21 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		id: "entry-1",
 		userId: "user-1",
 		category: "advance",
-		operation: "original",
 		amount: 1500,
 		date: "2026-03-15",
 		label: "スーパー買い物",
 		memo: null,
+		version: 1,
+		originalId: "entry-1",
+		cancelled: false,
+		latest: true,
 		status: "approved",
-		parentId: null,
 		approvedBy: null,
 		approvedAt: null,
 		approvalComment: null,
 		createdAt: 1773676800000,
 		updatedAt: 1773676800000,
-		childOperations: [],
+		groupCancelled: false,
 		...overrides,
 	};
 }
@@ -193,16 +195,17 @@ describe("TimelineScreen", () => {
 		expect(mockPush).toHaveBeenCalledWith("/entry-form");
 	});
 
-	// --- 修正・取消バッジのテスト ---
+	// --- バージョン管理バッジのテスト ---
 
-	it("修正レコードに「修正」バッジが表示される", async () => {
+	it("修正バージョン(v2)に「修正」バッジが表示される", async () => {
 		mockApiResponse({
 			data: [
 				makeEntry({
 					id: "mod-1",
-					operation: "modification",
-					amount: -1000,
-					parentId: "entry-1",
+					version: 2,
+					originalId: "entry-1",
+					latest: true,
+					amount: 9000,
 					label: "食費修正",
 				}),
 			],
@@ -214,17 +217,19 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("修正")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("食費修正")).toBeOnTheScreen();
+		expect(screen.getByText("¥9,000")).toBeOnTheScreen();
 	});
 
-	it("取消レコードに「取消」バッジが表示される", async () => {
+	it("取消バージョンに「取消」バッジが表示される", async () => {
 		mockApiResponse({
 			data: [
 				makeEntry({
 					id: "cancel-1",
-					operation: "cancellation",
-					amount: -1500,
-					parentId: "entry-1",
-					label: "食費取消",
+					version: 2,
+					originalId: "entry-1",
+					cancelled: true,
+					latest: true,
+					groupCancelled: true,
 				}),
 			],
 			nextCursor: null,
@@ -236,12 +241,13 @@ describe("TimelineScreen", () => {
 		});
 	});
 
-	it("修正済みの元エントリに「修正済み」バッジが表示される", async () => {
+	it("修正済みの v1 エントリに「修正済み」バッジが表示される", async () => {
 		mockApiResponse({
 			data: [
 				makeEntry({
 					id: "entry-1",
-					childOperations: ["modification"],
+					latest: false,
+					groupCancelled: false,
 				}),
 			],
 			nextCursor: null,
@@ -253,12 +259,13 @@ describe("TimelineScreen", () => {
 		});
 	});
 
-	it("取消済みの元エントリに「取消済み」バッジが表示される", async () => {
+	it("取消済みの v1 エントリに「取消済み」バッジが表示される", async () => {
 		mockApiResponse({
 			data: [
 				makeEntry({
 					id: "entry-1",
-					childOperations: ["cancellation"],
+					latest: false,
+					groupCancelled: true,
 				}),
 			],
 			nextCursor: null,
@@ -270,14 +277,15 @@ describe("TimelineScreen", () => {
 		});
 	});
 
-	it("修正レコードの金額は符号付きで表示される", async () => {
+	it("金額は常に正の値で表示される（バージョン管理方式）", async () => {
 		mockApiResponse({
 			data: [
 				makeEntry({
 					id: "mod-1",
-					operation: "modification",
-					amount: -1000,
-					parentId: "entry-1",
+					version: 2,
+					originalId: "entry-1",
+					amount: 9000,
+					latest: true,
 				}),
 			],
 			nextCursor: null,
@@ -285,26 +293,7 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("-¥1,000")).toBeOnTheScreen();
-		});
-	});
-
-	it("増額修正レコードの金額はプラス符号付きで表示される", async () => {
-		mockApiResponse({
-			data: [
-				makeEntry({
-					id: "mod-1",
-					operation: "modification",
-					amount: 500,
-					parentId: "entry-1",
-				}),
-			],
-			nextCursor: null,
-		});
-		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
-
-		await waitFor(() => {
-			expect(screen.getByText("+¥500")).toBeOnTheScreen();
+			expect(screen.getByText("¥9,000")).toBeOnTheScreen();
 		});
 	});
 });

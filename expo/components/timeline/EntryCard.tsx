@@ -6,11 +6,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import type { Entry } from "@/hooks/use-entries";
-import {
-	formatAmount,
-	formatDateShort,
-	formatSignedAmount,
-} from "@/lib/format";
+import { formatAmount, formatDateShort } from "@/lib/format";
 
 // NativeWind の bg-xxx/opacity を条件付き className で使うとクラッシュするため
 // (nativewind#1466, #1711) バッジ背景は style prop で指定する
@@ -38,12 +34,8 @@ function CategoryBadge({ category }: { category: Entry["category"] }) {
 	);
 }
 
-function OperationBadge({
-	operation,
-}: {
-	operation: "modification" | "cancellation";
-}) {
-	const isCancel = operation === "cancellation";
+function VersionBadge({ type }: { type: "modified" | "cancelled" }) {
+	const isCancel = type === "cancelled";
 	return (
 		<View
 			style={isCancel ? badgeBg.red : badgeBg.amber}
@@ -76,41 +68,33 @@ interface EntryCardProps {
 
 export function EntryCard({ entry, onPress }: EntryCardProps) {
 	const isDeposit = entry.category === "deposit";
-	const isOriginal = entry.operation === "original";
-	const hasCancellation = entry.childOperations.includes("cancellation");
-	const hasModification = entry.childOperations.includes("modification");
-
-	// 金額表示: 修正・取消レコードは差分の符号をそのまま表示
-	const displayAmount = isOriginal
-		? `${isDeposit ? "-" : ""}${formatAmount(entry.amount)}`
-		: formatSignedAmount(entry.amount);
+	const isV1 = entry.version === 1;
+	const isLatest = entry.latest;
+	const isCancelled = entry.cancelled;
+	const groupCancelled = entry.groupCancelled;
 
 	return (
 		<Pressable
 			onPress={() => onPress(entry)}
-			className={`rounded-xl bg-card px-4 py-3 active:opacity-80 ${hasCancellation ? "opacity-50" : ""}`}
+			className={`rounded-xl bg-card px-4 py-3 active:opacity-80 ${groupCancelled ? "opacity-50" : ""}`}
 			accessibilityRole="button"
-			accessibilityLabel={`${entry.category === "advance" ? "立替" : "預り"} ${entry.label} ${formatAmount(entry.amount)}`}
+			accessibilityLabel={`${isDeposit ? "預り" : "立替"} ${entry.label} ${formatAmount(entry.amount)}`}
 		>
 			<View className="flex-row items-center justify-between">
 				<View className="flex-1 gap-1">
 					<View className="flex-row items-center gap-2">
 						<CategoryBadge category={entry.category} />
-						{entry.operation === "modification" && (
-							<OperationBadge operation="modification" />
-						)}
-						{entry.operation === "cancellation" && (
-							<OperationBadge operation="cancellation" />
-						)}
-						{isOriginal && hasModification && !hasCancellation && (
+						{!isV1 && !isCancelled && <VersionBadge type="modified" />}
+						{isCancelled && <VersionBadge type="cancelled" />}
+						{isV1 && !isLatest && !groupCancelled && (
 							<StatusBadge status="modified" />
 						)}
-						{isOriginal && hasCancellation && (
+						{isV1 && !isLatest && groupCancelled && (
 							<StatusBadge status="cancelled" />
 						)}
 					</View>
 					<Text
-						className={`text-sm font-medium text-foreground ${hasCancellation ? "line-through" : ""}`}
+						className={`text-sm font-medium text-foreground ${groupCancelled ? "line-through" : ""}`}
 					>
 						{entry.label}
 					</Text>
@@ -120,18 +104,15 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 				</View>
 				<Text
 					className={`text-lg font-bold ${
-						hasCancellation
+						groupCancelled
 							? "line-through text-muted-foreground"
-							: !isOriginal
-								? entry.amount < 0
-									? "text-red-500"
-									: "text-emerald-600"
-								: isDeposit
-									? "text-warning"
-									: "text-foreground"
+							: isDeposit
+								? "text-warning"
+								: "text-foreground"
 					}`}
 				>
-					{displayAmount}
+					{isDeposit ? "-" : ""}
+					{formatAmount(entry.amount)}
 				</Text>
 			</View>
 		</Pressable>

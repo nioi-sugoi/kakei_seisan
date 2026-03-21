@@ -161,21 +161,18 @@ function ModifyFormLoader({ entryId }: { entryId: string }) {
 		);
 	}
 
-	// 修正レコード分を加算して実効金額を計算
-	const modificationSum = entry.children
-		.filter((c) => c.operation === "modification")
-		.reduce((sum, c) => sum + c.amount, 0);
-	const effectiveAmount = entry.amount + modificationSum;
+	// 最新バージョンの値をそのまま使う（バージョン管理方式ではフルスナップショット）
+	const latestVersion = entry.versions.find((v) => v.latest) ?? entry;
 
 	return (
 		<EntryFormContent
 			modifyTarget={{
-				id: entry.id,
-				category: entry.category,
-				amount: effectiveAmount,
-				date: entry.date,
-				label: entry.label,
-				memo: entry.memo,
+				id: entry.originalId,
+				category: latestVersion.category,
+				amount: latestVersion.amount,
+				date: latestVersion.date,
+				label: latestVersion.label,
+				memo: latestVersion.memo,
 			}}
 		/>
 	);

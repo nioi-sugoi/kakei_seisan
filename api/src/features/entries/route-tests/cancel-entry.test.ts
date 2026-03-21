@@ -20,7 +20,7 @@ describe("POST /api/entries/:id/cancel", () => {
 		await seedTestUser();
 	});
 
-	it("記録を取り消すと打消しレコードが作成される", async () => {
+	it("記録を取り消すと cancelled バージョンが作成される", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 5000,
 			label: "交通費",
@@ -35,11 +35,13 @@ describe("POST /api/entries/:id/cancel", () => {
 		expect(res.status).toBe(201);
 		const body = await res.json();
 		expect(body).toMatchObject({
-			operation: "cancellation",
-			amount: -5000,
+			amount: 5000,
 			category: "advance",
-			parentId: entry.id,
 			label: "交通費",
+			originalId: entry.id,
+			version: 2,
+			cancelled: true,
+			latest: true,
 		});
 	});
 
@@ -58,19 +60,18 @@ describe("POST /api/entries/:id/cancel", () => {
 		expect(res.status).toBe(201);
 		const body = await res.json();
 		expect(body).toMatchObject({
-			operation: "cancellation",
-			amount: -3000,
+			amount: 3000,
 			category: "deposit",
+			cancelled: true,
 		});
 	});
 
-	it("修正済みエントリの取り消しは実効金額で打ち消す", async () => {
+	it("修正済みエントリを取り消すと最新バージョンの値が保持される", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 10000,
 			label: "食費",
 		});
 
-		// 修正: 10000 → 9000
 		await client.api.entries[":id"].modify.$post(
 			{
 				param: { id: entry.id },
@@ -86,10 +87,31 @@ describe("POST /api/entries/:id/cancel", () => {
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		// 実効金額 9000 の打消しなので -9000
 		expect(body).toMatchObject({
-			amount: -9000,
+			amount: 9000,
+			version: 3,
+			cancelled: true,
 		});
+	});
+
+	it("取り消し後、旧バージョンの latest が false になる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		await client.api.entries[":id"].cancel.$post(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const getRes = await client.api.entries[":id"].$get(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+		const original = await getRes.json();
+		if ("error" in original) throw new Error("unexpected error");
+		expect(original.latest).toBe(false);
 	});
 
 	it("既に取り消し済みのエントリは再取り消しできない", async () => {
@@ -111,32 +133,6 @@ describe("POST /api/entries/:id/cancel", () => {
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body).toHaveProperty("error", "既に取り消し済みです");
-	});
-
-	it("修正・取消レコード自体は取り消しできない", async () => {
-		const entry = await insertEntry(TEST_USER.id, {
-			amount: 10000,
-			label: "食費",
-		});
-
-		const modRes = await client.api.entries[":id"].modify.$post(
-			{
-				param: { id: entry.id },
-				json: { amount: 9000, label: "食費" },
-			},
-			{ headers: { Cookie: authCookie } },
-		);
-		const modification = await modRes.json();
-		if ("error" in modification) throw new Error("unexpected error");
-
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: modification.id } },
-			{ headers: { Cookie: authCookie } },
-		);
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body).toHaveProperty("error", "元の記録のみ取り消しできます");
 	});
 
 	it("他ユーザーのエントリは取り消せない", async () => {

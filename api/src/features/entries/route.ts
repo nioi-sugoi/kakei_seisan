@@ -1,13 +1,12 @@
 import { vValidator } from "@hono/valibot-validator";
 import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
 import type { Context } from "hono";
+import { Hono } from "hono";
 import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
-import type { Operation } from "./types";
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
@@ -40,17 +39,6 @@ function handleValidationError(
 	);
 }
 
-/** 元エントリの実効金額を計算（元の金額 + 修正レコードの合計） */
-function computeEffectiveAmount(
-	baseAmount: number,
-	children: { operation: string; amount: number }[],
-): number {
-	const modificationSum = children
-		.filter((child) => child.operation === "modification")
-		.reduce((sum, child) => sum + child.amount, 0);
-	return baseAmount + modificationSum;
-}
-
 const entriesApp = new Hono<{
 	Bindings: Env;
 	Variables: AppVariables;
@@ -81,28 +69,24 @@ const entriesApp = new Hono<{
 			const data = hasMore ? items.slice(0, limit) : items;
 			const nextCursor = hasMore ? data[data.length - 1].createdAt : null;
 
-			// 元エントリの子レコード（修正・取消）を取得して childOperations を付与
-			const originalIds = data
-				.filter((e) => e.operation === "original")
-				.map((e) => e.id);
-			const childOps =
-				originalIds.length > 0
-					? await entriesRepository.getChildOperations(db, originalIds)
-					: [];
+			// 非最新エントリのグループが取消済みかどうかを取得
+			const nonLatestOriginalIds = [
+				...new Set(data.filter((e) => !e.latest).map((e) => e.originalId)),
+			];
+			const cancelledStatuses = await entriesRepository.getGroupCancelledStatus(
+				db,
+				nonLatestOriginalIds,
+			);
 
-			const childOpsMap = new Map<string, Set<Operation>>();
-			for (const row of childOps) {
-				if (!row.parentId) continue;
-				const set = childOpsMap.get(row.parentId) ?? new Set<Operation>();
-				set.add(row.operation);
-				childOpsMap.set(row.parentId, set);
-			}
+			const cancelledMap = new Map(
+				cancelledStatuses.map((s) => [s.originalId, s.cancelled]),
+			);
 
 			const augmented = data.map((entry) => ({
 				...entry,
-				childOperations: [
-					...(childOpsMap.get(entry.id) ?? new Set<Operation>()),
-				],
+				groupCancelled: entry.latest
+					? entry.cancelled
+					: (cancelledMap.get(entry.originalId) ?? false),
 			}));
 
 			return c.json({ data: augmented, nextCursor });
@@ -118,17 +102,17 @@ const entriesApp = new Hono<{
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
 
-		// 子エントリと親エントリを並行取得
-		const [children, parent] = await Promise.all([
-			entriesRepository.findChildren(db, id),
-			entry.parentId
+		// バージョン一覧と元エントリを並行取得
+		const [versions, original] = await Promise.all([
+			entriesRepository.findVersions(db, entry.originalId),
+			entry.version > 1
 				? entriesRepository
-						.findById(db, entry.parentId)
-						.then((p) => p ?? undefined)
+						.findById(db, entry.originalId)
+						.then((e) => e ?? undefined)
 				: Promise.resolve(undefined),
 		]);
 
-		return c.json({ ...entry, children, parent }, 200);
+		return c.json({ ...entry, versions, original }, 200);
 	})
 	.post(
 		"/",
@@ -161,41 +145,42 @@ const entriesApp = new Hono<{
 			if (!entry) {
 				return c.json({ error: "記録が見つかりません" as const }, 404);
 			}
-			if (entry.operation !== "original") {
-				return c.json({ error: "元の記録のみ修正できます" as const }, 400);
-			}
 
-			const children = await entriesRepository.findChildren(db, id);
-			if (children.some((child) => child.operation === "cancellation")) {
+			const latestEntry = await entriesRepository.findLatestVersion(
+				db,
+				entry.originalId,
+			);
+			if (!latestEntry) {
+				return c.json({ error: "記録が見つかりません" as const }, 404);
+			}
+			if (latestEntry.cancelled) {
 				return c.json(
 					{ error: "取り消し済みの記録は修正できません" as const },
 					400,
 				);
 			}
 
-			const effectiveAmount = computeEffectiveAmount(
-				entry.amount,
-				children,
-			);
-			const diff = input.amount - effectiveAmount;
-
 			if (
-				diff === 0 &&
-				input.label === entry.label &&
-				(input.memo ?? null) === entry.memo
+				input.amount === latestEntry.amount &&
+				input.label === latestEntry.label &&
+				(input.memo ?? null) === latestEntry.memo
 			) {
 				return c.json({ error: "変更がありません" as const }, 400);
 			}
 
-			const modification = await entriesRepository.createModification(
+			const [, inserted] = await entriesRepository.createModification(
 				db,
 				user.id,
-				id,
-				{ category: entry.category, date: entry.date },
-				{ amount: diff, label: input.label, memo: input.memo },
+				{
+					originalId: entry.originalId,
+					category: latestEntry.category,
+					date: latestEntry.date,
+					currentVersion: latestEntry.version,
+				},
+				input,
 			);
 
-			return c.json(modification, 201);
+			return c.json(inserted[0], 201);
 		},
 	)
 	.post("/:id/cancel", requireAuth, async (c) => {
@@ -207,26 +192,25 @@ const entriesApp = new Hono<{
 		if (!entry) {
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
-		if (entry.operation !== "original") {
-			return c.json({ error: "元の記録のみ取り消しできます" as const }, 400);
-		}
 
-		const children = await entriesRepository.findChildren(db, id);
-		if (children.some((child) => child.operation === "cancellation")) {
+		const latestEntry = await entriesRepository.findLatestVersion(
+			db,
+			entry.originalId,
+		);
+		if (!latestEntry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		if (latestEntry.cancelled) {
 			return c.json({ error: "既に取り消し済みです" as const }, 400);
 		}
 
-		const effectiveAmount = computeEffectiveAmount(entry.amount, children);
-
-		const cancellation = await entriesRepository.createCancellation(
+		const [, inserted] = await entriesRepository.createCancellation(
 			db,
 			user.id,
-			id,
-			{ category: entry.category, date: entry.date, label: entry.label },
-			effectiveAmount,
+			latestEntry,
 		);
 
-		return c.json(cancellation, 201);
+		return c.json(inserted[0], 201);
 	});
 
 export { entriesApp };

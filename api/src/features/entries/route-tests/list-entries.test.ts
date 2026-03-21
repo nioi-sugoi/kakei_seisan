@@ -162,7 +162,7 @@ describe("GET /api/entries", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("元エントリに修正子エントリがある場合 childOperations に 'modification' が含まれる", async () => {
+	it("修正後、旧バージョンの groupCancelled は false", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -181,12 +181,15 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		const original = body.data.find((e) => e.id === entry.id);
-		expect(original?.childOperations).toContain("modification");
+		expect(original?.latest).toBe(false);
+		expect(original?.groupCancelled).toBe(false);
 	});
 
-	it("元エントリに取消子エントリがある場合 childOperations に 'cancellation' が含まれる", async () => {
+	it("取消後、旧バージョンの groupCancelled は true", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -202,12 +205,14 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		const original = body.data.find((e) => e.id === entry.id);
-		expect(original?.childOperations).toContain("cancellation");
+		expect(original?.groupCancelled).toBe(true);
 	});
 
-	it("修正・取消レコード自体の childOperations は空配列", async () => {
+	it("最新バージョンの groupCancelled は自身の cancelled と同じ", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -226,8 +231,11 @@ describe("GET /api/entries", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
-		const modification = body.data.find((e) => e.operation === "modification");
-		expect(modification?.childOperations).toEqual([]);
+		const modification = body.data.find((e) => e.version === 2);
+		expect(modification?.latest).toBe(true);
+		expect(modification?.groupCancelled).toBe(false);
 	});
 });

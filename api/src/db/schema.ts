@@ -160,19 +160,21 @@ export const entries = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		category: text("category", { enum: ["advance", "deposit"] }).notNull(),
-		operation: text("operation", {
-			enum: ["original", "modification", "cancellation"],
-		})
-			.notNull()
-			.default("original"),
 		amount: integer("amount").notNull(),
 		date: text("date").notNull(),
 		label: text("label").notNull(),
 		memo: text("memo"),
+		version: integer("version").notNull().default(1),
+		originalId: text("original_id")
+			.notNull()
+			.references((): AnySQLiteColumn => entries.id),
+		cancelled: integer("cancelled", { mode: "boolean" })
+			.notNull()
+			.default(false),
+		latest: integer("latest", { mode: "boolean" }).notNull().default(true),
 		status: text("status", { enum: ["approved", "pending", "rejected"] })
 			.notNull()
 			.default("approved"),
-		parentId: text("parent_id").references((): AnySQLiteColumn => entries.id),
 		approvedBy: text("approved_by").references(() => user.id),
 		approvedAt: integer("approved_at"),
 		approvalComment: text("approval_comment"),
@@ -187,27 +189,18 @@ export const entries = sqliteTable(
 		index("entries_user_status_idx").on(table.userId, table.status),
 		index("entries_user_date_idx").on(table.userId, table.date),
 		index("entries_user_created_idx").on(table.userId, table.createdAt),
-		index("entries_parent_idx").on(table.parentId),
+		index("entries_original_idx").on(table.originalId),
+		index("entries_user_latest_idx").on(table.userId, table.latest),
 		check(
 			"entries_category_check",
 			sql`${table.category} IN ('advance', 'deposit')`,
 		),
 		check(
-			"entries_operation_check",
-			sql`${table.operation} IN ('original', 'modification', 'cancellation')`,
-		),
-		check(
 			"entries_status_check",
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,
 		),
-		check(
-			"entries_parent_check",
-			sql`(${table.operation} = 'original' AND ${table.parentId} IS NULL) OR (${table.operation} != 'original' AND ${table.parentId} IS NOT NULL)`,
-		),
-		check(
-			"entries_amount_check",
-			sql`${table.operation} = 'original' AND ${table.amount} >= 0 OR ${table.operation} != 'original'`,
-		),
+		check("entries_amount_check", sql`${table.amount} >= 0`),
+		check("entries_version_check", sql`${table.version} >= 1`),
 	],
 );
 
@@ -218,19 +211,19 @@ export const settlements = sqliteTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id),
-		operation: text("operation", {
-			enum: ["original", "modification", "cancellation"],
-		})
-			.notNull()
-			.default("original"),
 		amount: integer("amount").notNull(),
 		date: text("date").notNull(),
+		version: integer("version").notNull().default(1),
+		originalId: text("original_id")
+			.notNull()
+			.references((): AnySQLiteColumn => settlements.id),
+		cancelled: integer("cancelled", { mode: "boolean" })
+			.notNull()
+			.default(false),
+		latest: integer("latest", { mode: "boolean" }).notNull().default(true),
 		status: text("status", { enum: ["approved", "pending", "rejected"] })
 			.notNull()
 			.default("approved"),
-		parentId: text("parent_id").references(
-			(): AnySQLiteColumn => settlements.id,
-		),
 		approvedBy: text("approved_by").references(() => user.id),
 		approvedAt: integer("approved_at"),
 		approvalComment: text("approval_comment"),
@@ -240,23 +233,14 @@ export const settlements = sqliteTable(
 	(table) => [
 		index("settlements_user_status_idx").on(table.userId, table.status),
 		index("settlements_user_date_idx").on(table.userId, table.date),
-		index("settlements_parent_idx").on(table.parentId),
-		check(
-			"settlements_operation_check",
-			sql`${table.operation} IN ('original', 'modification', 'cancellation')`,
-		),
+		index("settlements_original_idx").on(table.originalId),
+		index("settlements_user_latest_idx").on(table.userId, table.latest),
 		check(
 			"settlements_status_check",
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,
 		),
-		check(
-			"settlements_parent_check",
-			sql`(${table.operation} = 'original' AND ${table.parentId} IS NULL) OR (${table.operation} != 'original' AND ${table.parentId} IS NOT NULL)`,
-		),
-		check(
-			"settlements_amount_check",
-			sql`${table.operation} = 'original' AND ${table.amount} >= 0 OR ${table.operation} != 'original'`,
-		),
+		check("settlements_amount_check", sql`${table.amount} >= 0`),
+		check("settlements_version_check", sql`${table.version} >= 1`),
 	],
 );
 
@@ -345,12 +329,12 @@ export const entriesRelations = relations(entries, ({ one, many }) => ({
 		references: [user.id],
 		relationName: "entryUser",
 	}),
-	parent: one(entries, {
-		fields: [entries.parentId],
+	original: one(entries, {
+		fields: [entries.originalId],
 		references: [entries.id],
-		relationName: "entryChildren",
+		relationName: "entryVersions",
 	}),
-	children: many(entries, { relationName: "entryChildren" }),
+	versions: many(entries, { relationName: "entryVersions" }),
 	approver: one(user, {
 		fields: [entries.approvedBy],
 		references: [user.id],
@@ -365,12 +349,12 @@ export const settlementsRelations = relations(settlements, ({ one, many }) => ({
 		references: [user.id],
 		relationName: "settlementUser",
 	}),
-	parent: one(settlements, {
-		fields: [settlements.parentId],
+	original: one(settlements, {
+		fields: [settlements.originalId],
 		references: [settlements.id],
-		relationName: "settlementChildren",
+		relationName: "settlementVersions",
 	}),
-	children: many(settlements, { relationName: "settlementChildren" }),
+	versions: many(settlements, { relationName: "settlementVersions" }),
 	approver: one(user, {
 		fields: [settlements.approvedBy],
 		references: [user.id],

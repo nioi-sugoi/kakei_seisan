@@ -1,5 +1,5 @@
 import { type StyleProp, Text, View, type ViewStyle } from "react-native";
-import { formatAmount, formatDateFull, formatSignedAmount } from "@/lib/format";
+import { formatAmount, formatDateFull } from "@/lib/format";
 
 const categoryLabels = { advance: "立替", deposit: "預り" } as const;
 const categoryColors = {
@@ -12,14 +12,15 @@ const categoryTextColors = {
 } as const;
 
 // NativeWind の bg-xxx/opacity を条件付き className で使うとクラッシュするため style で指定
-const operationBadgeBg = {
-	modification: { backgroundColor: "rgba(217, 119, 6, 0.1)" },
-	cancellation: { backgroundColor: "rgba(239, 68, 68, 0.1)" },
+const versionBadgeBg = {
+	modified: { backgroundColor: "rgba(217, 119, 6, 0.1)" },
+	cancelled: { backgroundColor: "rgba(239, 68, 68, 0.1)" },
 } satisfies Record<string, StyleProp<ViewStyle>>;
 
 type EntryInfoCardProps = {
 	category: "advance" | "deposit";
-	operation: "original" | "modification" | "cancellation";
+	version: number;
+	cancelled: boolean;
 	amount: number;
 	date: string;
 	label: string;
@@ -29,23 +30,19 @@ type EntryInfoCardProps = {
 
 export function EntryInfoCard({
 	category,
-	operation,
+	version,
+	cancelled,
 	amount,
 	date,
 	label,
 	memo,
 	isCancelled,
 }: EntryInfoCardProps) {
-	const isOriginal = operation === "original";
-
-	// 金額表示
-	const displayAmount = isOriginal
-		? `${category === "deposit" ? "-" : ""}${formatAmount(amount)}`
-		: formatSignedAmount(amount);
+	const isV1 = version === 1;
 
 	return (
 		<View className="rounded-xl bg-card px-5 py-5">
-			{/* Category + Operation Badges */}
+			{/* Category + Version Badges */}
 			<View className="flex-row items-center gap-2">
 				<View
 					className={`rounded-md border px-2 py-0.5 ${categoryColors[category]}`}
@@ -56,17 +53,17 @@ export function EntryInfoCard({
 						{categoryLabels[category]}
 					</Text>
 				</View>
-				{operation === "modification" && (
+				{!isV1 && !cancelled && (
 					<View
-						style={operationBadgeBg.modification}
+						style={versionBadgeBg.modified}
 						className="rounded-md border border-amber-200 px-2 py-0.5"
 					>
 						<Text className="text-xs font-medium text-amber-600">修正</Text>
 					</View>
 				)}
-				{operation === "cancellation" && (
+				{cancelled && (
 					<View
-						style={operationBadgeBg.cancellation}
+						style={versionBadgeBg.cancelled}
 						className="rounded-md border border-red-200 px-2 py-0.5"
 					>
 						<Text className="text-xs font-medium text-red-500">取消</Text>
@@ -80,16 +77,13 @@ export function EntryInfoCard({
 					className={`text-3xl font-bold ${
 						isCancelled
 							? "line-through text-muted-foreground"
-							: !isOriginal
-								? amount < 0
-									? "text-red-500"
-									: "text-emerald-600"
-								: category === "deposit"
-									? "text-orange-600"
-									: "text-foreground"
+							: category === "deposit"
+								? "text-orange-600"
+								: "text-foreground"
 					}`}
 				>
-					{displayAmount}
+					{category === "deposit" ? "-" : ""}
+					{formatAmount(amount)}
 				</Text>
 			</View>
 

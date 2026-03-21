@@ -38,11 +38,15 @@ describe("POST /api/entries", () => {
 			date: "2024-03-15",
 			label: "食費",
 			userId: TEST_USER.id,
-			operation: "original",
+			version: 1,
+			cancelled: false,
+			latest: true,
 			status: "approved",
 			memo: null,
 		});
 		expect(body).toHaveProperty("id", expect.any(String));
+		// originalId は自身の id と一致
+		expect(body.originalId).toBe(body.id);
 	});
 
 	it("deposit カテゴリで記録を登録できる", async () => {
@@ -131,9 +135,12 @@ describe("POST /api/entries", () => {
 			date: "2024-03-15",
 			label: "食費",
 			memo: "テストメモ",
-			operation: "original",
+			version: 1,
+			cancelled: false,
+			latest: true,
 			status: "approved",
 		});
+		expect(result[0].originalId).toBe(result[0].id);
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {
