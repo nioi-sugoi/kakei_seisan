@@ -65,7 +65,7 @@ describe("POST /api/partner-invitations", () => {
 		});
 	});
 
-	it("有効期限が約24時間後に設定される", async () => {
+	it("有効期限が約48時間後に設定される", async () => {
 		const before = Date.now();
 		const res = await client.api["partner-invitations"].$post(
 			{ json: { inviteeEmail: "partner@example.com" } },
@@ -75,10 +75,10 @@ describe("POST /api/partner-invitations", () => {
 
 		expect(res.status).toBe(201);
 		const body: Record<string, unknown> = await res.json();
-		const twentyFourHours = 24 * 60 * 60 * 1000;
+		const fortyEightHours = 48 * 60 * 60 * 1000;
 		const expiresAt = body.expiresAt;
-		expect(expiresAt).toBeGreaterThanOrEqual(before + twentyFourHours);
-		expect(expiresAt).toBeLessThanOrEqual(after + twentyFourHours);
+		expect(expiresAt).toBeGreaterThanOrEqual(before + fortyEightHours);
+		expect(expiresAt).toBeLessThanOrEqual(after + fortyEightHours);
 	});
 
 	it("自分自身のメールアドレスには招待を送れない", async () => {

@@ -119,6 +119,23 @@ describe("DELETE /api/partner-invitations/:id", () => {
 		expect(res.status).toBe(201);
 	});
 
+	it("有効期限切れの招待も解除できる", async () => {
+		const invitation = await insertInvitation(
+			TEST_USER.id,
+			"partner@example.com",
+			{ expiresAt: Date.now() - 1000 },
+		);
+
+		const res = await client.api["partner-invitations"][":id"].$delete(
+			{ param: { id: invitation.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body).toHaveProperty("success", true);
+	});
+
 	it("認証なしでリクエストすると 401 を返す", async () => {
 		const invitation = await insertInvitation(
 			TEST_USER.id,

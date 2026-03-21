@@ -2,7 +2,7 @@ import { and, eq, gt, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { partnerInvitations, partnerships, user } from "../../db/schema";
 
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
 
 // ── partner_invitations ─────────────────────────────────────────
 
@@ -19,7 +19,7 @@ export function createInvitation(
 			inviterId,
 			inviteeEmail,
 			status: "pending",
-			expiresAt: now + TWENTY_FOUR_HOURS_MS,
+			expiresAt: now + FORTY_EIGHT_HOURS_MS,
 			createdAt: now,
 		})
 		.returning()

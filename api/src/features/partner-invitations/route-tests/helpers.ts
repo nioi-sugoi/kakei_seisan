@@ -23,7 +23,7 @@ export {
 	THIRD_USER,
 };
 
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
 
 export async function insertInvitation(
 	inviterId: string,
@@ -39,7 +39,7 @@ export async function insertInvitation(
 			inviterId,
 			inviteeEmail,
 			status: "pending",
-			expiresAt: now + TWENTY_FOUR_HOURS_MS,
+			expiresAt: now + FORTY_EIGHT_HOURS_MS,
 			createdAt: now,
 			...overrides,
 		})
