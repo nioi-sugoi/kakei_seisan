@@ -9,10 +9,11 @@ import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
+let mockSearchParams: Record<string, string> = {};
 
 jest.mock("expo-router", () => ({
 	useRouter: () => ({ replace: mockReplace, back: mockBack }),
-	useLocalSearchParams: () => ({}),
+	useLocalSearchParams: () => mockSearchParams,
 }));
 
 jest.mock("expo-constants", () => ({
@@ -20,12 +21,22 @@ jest.mock("expo-constants", () => ({
 }));
 
 const mockPost = jest.fn();
+const mockGet = jest.fn();
+const mockModifyPost = jest.fn();
 
 jest.mock("@/lib/api-client", () => ({
 	client: {
 		api: {
 			entries: {
 				$post: (...args: unknown[]) => mockPost(...args),
+				":id": {
+					$get: (...args: unknown[]) => mockGet(...args),
+				},
+				":originalId": {
+					modify: {
+						$post: (...args: unknown[]) => mockModifyPost(...args),
+					},
+				},
 			},
 		},
 	},
@@ -35,6 +46,7 @@ import EntryFormScreen from "./entry-form";
 
 beforeEach(() => {
 	jest.clearAllMocks();
+	mockSearchParams = {};
 	mockPost.mockResolvedValue(new Response(JSON.stringify({}), { status: 201 }));
 });
 
@@ -279,6 +291,56 @@ describe("EntryFormScreen", () => {
 				}),
 			});
 		});
+	});
+
+	// --- APIエラー ---
+
+	// --- 修正モード ---
+
+	it("修正モードではカテゴリセレクターが操作できない", async () => {
+		mockSearchParams = { modifyId: "entry-1" };
+		mockGet.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					id: "entry-1",
+					userId: "user-1",
+					category: "deposit",
+					amount: 3000,
+					date: "2026-03-15",
+					label: "お釣り",
+					memo: null,
+					originalId: "entry-1",
+					cancelled: false,
+					createdAt: 1742000000000,
+					versions: [
+						{
+							id: "entry-1",
+							category: "deposit",
+							amount: 3000,
+							date: "2026-03-15",
+							label: "お釣り",
+							memo: null,
+							cancelled: false,
+							createdAt: 1742000000000,
+						},
+					],
+					original: undefined,
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			),
+		);
+
+		render(<EntryFormScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("記録を修正")).toBeOnTheScreen();
+		});
+
+		// カテゴリセレクターの「立替」「預り」ボタンがdisabledであることを確認
+		const advanceButton = screen.getByText("立替");
+		const depositButton = screen.getByText("預り");
+		expect(advanceButton).toBeDisabled();
+		expect(depositButton).toBeDisabled();
 	});
 
 	// --- APIエラー ---

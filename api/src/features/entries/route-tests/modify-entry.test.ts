@@ -135,6 +135,29 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(dbVersions[0].amount).toBe(8000);
 	});
 
+	it("修正してもカテゴリは元の値が維持される", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 5000,
+			label: "お釣り",
+			category: "deposit",
+		});
+
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: { amount: 3000, label: "お釣り修正" },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toMatchObject({ category: "deposit" });
+
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions[0].category).toBe("deposit");
+	});
+
 	it("変更がない場合は 400 を返す", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
