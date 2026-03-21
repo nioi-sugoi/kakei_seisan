@@ -111,23 +111,19 @@ const entriesApp = new Hono<{
 		},
 	)
 	.post(
-		"/:id/modify",
+		"/:originalId/modify",
 		requireAuth,
 		vValidator("json", modifyEntrySchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
-			const id = c.req.param("id");
+			const originalId = c.req.param("originalId");
 			const input = c.req.valid("json");
 			const db = drizzle(c.env.DB);
 
-			const entry = await entriesRepository.findByOwner(db, id, user.id);
-			if (!entry) {
-				return c.json({ error: "記録が見つかりません" as const }, 404);
-			}
-
-			const latestEntry = await entriesRepository.findLatestVersion(
+			const latestEntry = await entriesRepository.findLatestByOwner(
 				db,
-				entry.originalId,
+				originalId,
+				user.id,
 			);
 			if (!latestEntry) {
 				return c.json({ error: "記録が見つかりません" as const }, 404);
@@ -151,7 +147,7 @@ const entriesApp = new Hono<{
 				db,
 				user.id,
 				{
-					originalId: entry.originalId,
+					originalId,
 					category: latestEntry.category,
 					date: latestEntry.date,
 				},
@@ -161,19 +157,15 @@ const entriesApp = new Hono<{
 			return c.json(inserted[0], 201);
 		},
 	)
-	.post("/:id/cancel", requireAuth, async (c) => {
+	.post("/:originalId/cancel", requireAuth, async (c) => {
 		const user = c.get("user");
-		const id = c.req.param("id");
+		const originalId = c.req.param("originalId");
 		const db = drizzle(c.env.DB);
 
-		const entry = await entriesRepository.findByOwner(db, id, user.id);
-		if (!entry) {
-			return c.json({ error: "記録が見つかりません" as const }, 404);
-		}
-
-		const latestEntry = await entriesRepository.findLatestVersion(
+		const latestEntry = await entriesRepository.findLatestByOwner(
 			db,
-			entry.originalId,
+			originalId,
+			user.id,
 		);
 		if (!latestEntry) {
 			return c.json({ error: "記録が見つかりません" as const }, 404);
@@ -183,6 +175,34 @@ const entriesApp = new Hono<{
 		}
 
 		const [, inserted] = await entriesRepository.createCancellation(
+			db,
+			user.id,
+			latestEntry,
+		);
+
+		return c.json(inserted[0], 201);
+	})
+	.post("/:originalId/restore", requireAuth, async (c) => {
+		const user = c.get("user");
+		const originalId = c.req.param("originalId");
+		const db = drizzle(c.env.DB);
+
+		const latestEntry = await entriesRepository.findLatestByOwner(
+			db,
+			originalId,
+			user.id,
+		);
+		if (!latestEntry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		if (!latestEntry.cancelled) {
+			return c.json(
+				{ error: "取り消しされていない記録は復元できません" as const },
+				400,
+			);
+		}
+
+		const [, inserted] = await entriesRepository.createRestoration(
 			db,
 			user.id,
 			latestEntry,

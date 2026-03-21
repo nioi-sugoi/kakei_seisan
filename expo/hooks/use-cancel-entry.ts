@@ -8,8 +8,8 @@ export function useCancelEntry(entryId: string) {
 
 	return useMutation({
 		mutationFn: async () => {
-			const res = await client.api.entries[":id"].cancel.$post({
-				param: { id: entryId },
+			const res = await client.api.entries[":originalId"].cancel.$post({
+				param: { originalId: entryId },
 			});
 			if (!res.ok) {
 				const body = await res.json();

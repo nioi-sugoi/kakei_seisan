@@ -170,9 +170,9 @@ describe("GET /api/entries", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].modify.$post(
+		await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -197,8 +197,8 @@ describe("GET /api/entries", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -220,9 +220,9 @@ describe("GET /api/entries", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].modify.$post(
+		await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },

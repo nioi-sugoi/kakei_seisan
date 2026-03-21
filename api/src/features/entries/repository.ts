@@ -74,6 +74,25 @@ export function findLatestVersion(db: DrizzleD1Database, originalId: string) {
 		.get();
 }
 
+/** originalId + userId で最新バージョンを取得（所有者チェック付き） */
+export function findLatestByOwner(
+	db: DrizzleD1Database,
+	originalId: string,
+	userId: string,
+) {
+	return db
+		.select()
+		.from(entries)
+		.where(
+			and(
+				eq(entries.originalId, originalId),
+				eq(entries.latest, true),
+				eq(entries.userId, userId),
+			),
+		)
+		.get();
+}
+
 /**
  * 非最新エントリの original_id 群に対し、最新バージョンの cancelled 状態を取得。
  * タイムラインで旧バージョンに「修正済み」「取消済み」を表示するために使用。
@@ -132,6 +151,54 @@ export function createModification(
 				label: input.label,
 				memo: input.memo || null,
 				originalId: original.originalId,
+				cancelled: false,
+				latest: true,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.returning(),
+	]);
+}
+
+/**
+ * 取消を復元する（バッチ操作でlatest更新 + 新規挿入）。
+ * cancelled = false の新バージョンを作成する。
+ */
+export function createRestoration(
+	db: DrizzleD1Database,
+	userId: string,
+	latestEntry: {
+		originalId: string;
+		category: "advance" | "deposit";
+		amount: number;
+		date: string;
+		label: string;
+		memo: string | null;
+	},
+) {
+	const newId = crypto.randomUUID();
+	const now = Date.now();
+	return db.batch([
+		db
+			.update(entries)
+			.set({ latest: false, updatedAt: now })
+			.where(
+				and(
+					eq(entries.originalId, latestEntry.originalId),
+					eq(entries.latest, true),
+				),
+			),
+		db
+			.insert(entries)
+			.values({
+				id: newId,
+				userId,
+				category: latestEntry.category,
+				amount: latestEntry.amount,
+				date: latestEntry.date,
+				label: latestEntry.label,
+				memo: latestEntry.memo,
+				originalId: latestEntry.originalId,
 				cancelled: false,
 				latest: true,
 				createdAt: now,

@@ -30,8 +30,8 @@ describe("POST /api/entries/:id/cancel", () => {
 			category: "advance",
 		});
 
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		const res = await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -63,8 +63,8 @@ describe("POST /api/entries/:id/cancel", () => {
 			label: "預り金",
 		});
 
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		const res = await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -83,16 +83,16 @@ describe("POST /api/entries/:id/cancel", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].modify.$post(
+		await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 9000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		const res = await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -118,8 +118,8 @@ describe("POST /api/entries/:id/cancel", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -134,13 +134,13 @@ describe("POST /api/entries/:id/cancel", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		const res = await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -153,8 +153,8 @@ describe("POST /api/entries/:id/cancel", () => {
 		await seedOtherUser();
 		const entry = await insertEntry(OTHER_USER.id);
 
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		const res = await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -162,8 +162,8 @@ describe("POST /api/entries/:id/cancel", () => {
 	});
 
 	it("存在しない ID の場合 404 を返す", async () => {
-		const res = await client.api.entries[":id"].cancel.$post(
-			{ param: { id: "nonexistent" } },
+		const res = await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: "nonexistent" } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -173,8 +173,8 @@ describe("POST /api/entries/:id/cancel", () => {
 	it("認証なしでリクエストすると 401 を返す", async () => {
 		const entry = await insertEntry(TEST_USER.id);
 
-		const res = await client.api.entries[":id"].cancel.$post({
-			param: { id: entry.id },
+		const res = await client.api.entries[":originalId"].cancel.$post({
+			param: { originalId: entry.id },
 		});
 
 		expect(res.status).toBe(401);

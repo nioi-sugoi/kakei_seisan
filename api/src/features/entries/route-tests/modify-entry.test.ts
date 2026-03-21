@@ -29,9 +29,9 @@ describe("POST /api/entries/:id/modify", () => {
 			label: "食費",
 		});
 
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 9000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -64,9 +64,9 @@ describe("POST /api/entries/:id/modify", () => {
 			label: "食費",
 		});
 
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1500, label: "日用品" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -87,9 +87,9 @@ describe("POST /api/entries/:id/modify", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].modify.$post(
+		await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -106,17 +106,17 @@ describe("POST /api/entries/:id/modify", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].modify.$post(
+		await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 9000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 8000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -143,9 +143,9 @@ describe("POST /api/entries/:id/modify", () => {
 			label: "食費",
 		});
 
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1500, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -162,14 +162,14 @@ describe("POST /api/entries/:id/modify", () => {
 			label: "食費",
 		});
 
-		await client.api.entries[":id"].cancel.$post(
-			{ param: { id: entry.id } },
+		await client.api.entries[":originalId"].cancel.$post(
+			{ param: { originalId: entry.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -184,9 +184,9 @@ describe("POST /api/entries/:id/modify", () => {
 		await seedOtherUser();
 		const entry = await insertEntry(OTHER_USER.id);
 
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: entry.id },
+				param: { originalId: entry.id },
 				json: { amount: 1000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -196,9 +196,9 @@ describe("POST /api/entries/:id/modify", () => {
 	});
 
 	it("存在しない ID の場合 404 を返す", async () => {
-		const res = await client.api.entries[":id"].modify.$post(
+		const res = await client.api.entries[":originalId"].modify.$post(
 			{
-				param: { id: "nonexistent" },
+				param: { originalId: "nonexistent" },
 				json: { amount: 1000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
@@ -210,8 +210,8 @@ describe("POST /api/entries/:id/modify", () => {
 	it("認証なしでリクエストすると 401 を返す", async () => {
 		const entry = await insertEntry(TEST_USER.id);
 
-		const res = await client.api.entries[":id"].modify.$post({
-			param: { id: entry.id },
+		const res = await client.api.entries[":originalId"].modify.$post({
+			param: { originalId: entry.id },
 			json: { amount: 1000, label: "食費" },
 		});
 
