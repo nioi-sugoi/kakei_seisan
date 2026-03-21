@@ -76,17 +76,13 @@ export default function EntryDetailScreen() {
 	};
 
 	const handleRestore = () => {
-		Alert.alert(
-			"記録の復元",
-			"取り消した記録を復元しますか？",
-			[
-				{ text: "キャンセル", style: "cancel" },
-				{
-					text: "復元する",
-					onPress: () => restoreMutation.mutate(),
-				},
-			],
-		);
+		Alert.alert("記録の復元", "取り消した記録を復元しますか？", [
+			{ text: "キャンセル", style: "cancel" },
+			{
+				text: "復元する",
+				onPress: () => restoreMutation.mutate(),
+			},
+		]);
 	};
 
 	return (
@@ -128,13 +124,21 @@ export default function EntryDetailScreen() {
 										{v.cancelled && (
 											<Text className="text-xs text-destructive">取消</Text>
 										)}
-										{v.latest && !v.cancelled && (
-											<Text className="text-xs text-primary">最新</Text>
-										)}
+										{!v.cancelled &&
+											i > 0 &&
+											entry.versions[i - 1]?.cancelled && (
+												<Text className="text-xs text-green-600">復元</Text>
+											)}
+										{v.latest &&
+											!v.cancelled &&
+											!(i > 0 && entry.versions[i - 1]?.cancelled) && (
+												<Text className="text-xs text-primary">最新</Text>
+											)}
 									</View>
 									{v.date ? (
 										<Text className="text-xs text-muted-foreground">
-											{formatDateFull(v.date)}{v.label ? ` · ${v.label}` : ""}
+											{formatDateFull(v.date)}
+											{v.label ? ` · ${v.label}` : ""}
 										</Text>
 									) : null}
 								</View>

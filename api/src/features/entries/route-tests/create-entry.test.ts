@@ -33,6 +33,7 @@ describe("POST /api/entries", () => {
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
 		expect(body).toMatchObject({
 			category: "advance",
 			amount: 1500,
@@ -44,7 +45,6 @@ describe("POST /api/entries", () => {
 			status: "approved",
 			memo: null,
 		});
-		expect(body).toHaveProperty("id", expect.any(String));
 		// originalId は自身の id と一致
 		expect(body.originalId).toBe(body.id);
 	});

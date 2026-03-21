@@ -51,7 +51,7 @@ beforeEach(() => {
 	mockUseRouter.mockReturnValue({
 		replace: mockReplace,
 		back: jest.fn(),
-	} as ReturnType<typeof useRouter>);
+	} as unknown as ReturnType<typeof useRouter>);
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });
