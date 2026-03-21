@@ -56,7 +56,7 @@ export function listByUser(
 }
 
 /** 同じ original_id グループの全バージョンを取得 */
-export function findVersions(db: DrizzleD1Database, originalId: string) {
+export function listVersions(db: DrizzleD1Database, originalId: string) {
 	return db
 		.select()
 		.from(entries)
@@ -65,17 +65,8 @@ export function findVersions(db: DrizzleD1Database, originalId: string) {
 		.all();
 }
 
-/** 同じ original_id グループの最新バージョンを取得 */
-export function findLatestVersion(db: DrizzleD1Database, originalId: string) {
-	return db
-		.select()
-		.from(entries)
-		.where(and(eq(entries.originalId, originalId), eq(entries.latest, true)))
-		.get();
-}
-
 /** originalId + userId で最新バージョンを取得（所有者チェック付き） */
-export function findLatestByOwner(
+export function findMyLatestVersion(
 	db: DrizzleD1Database,
 	originalId: string,
 	userId: string,

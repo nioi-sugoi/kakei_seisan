@@ -87,7 +87,7 @@ const entriesApp = new Hono<{
 
 		// バージョン一覧と元エントリを並行取得
 		const [versions, original] = await Promise.all([
-			entriesRepository.findVersions(db, entry.originalId),
+			entriesRepository.listVersions(db, entry.originalId),
 			entry.id !== entry.originalId
 				? entriesRepository
 						.findById(db, entry.originalId)
@@ -120,7 +120,7 @@ const entriesApp = new Hono<{
 			const input = c.req.valid("json");
 			const db = drizzle(c.env.DB);
 
-			const latestEntry = await entriesRepository.findLatestByOwner(
+			const latestEntry = await entriesRepository.findMyLatestVersion(
 				db,
 				originalId,
 				user.id,
@@ -162,7 +162,7 @@ const entriesApp = new Hono<{
 		const originalId = c.req.param("originalId");
 		const db = drizzle(c.env.DB);
 
-		const latestEntry = await entriesRepository.findLatestByOwner(
+		const latestEntry = await entriesRepository.findMyLatestVersion(
 			db,
 			originalId,
 			user.id,
@@ -187,7 +187,7 @@ const entriesApp = new Hono<{
 		const originalId = c.req.param("originalId");
 		const db = drizzle(c.env.DB);
 
-		const latestEntry = await entriesRepository.findLatestByOwner(
+		const latestEntry = await entriesRepository.findMyLatestVersion(
 			db,
 			originalId,
 			user.id,
