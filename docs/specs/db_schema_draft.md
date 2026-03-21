@@ -55,7 +55,7 @@ CHECK (status IN ('pending', 'accepted', 'expired'))
 | `user_id` | TEXT | NOT NULL, FK → user.id |
 | `category` | TEXT | NOT NULL |
 | `amount` | INTEGER | NOT NULL |
-| `date` | TEXT | NOT NULL |
+| `occurred_on` | TEXT | NOT NULL |
 | `label` | TEXT | NOT NULL |
 | `memo` | TEXT | |
 | `original_id` | TEXT | NOT NULL, FK → entries.id |
@@ -76,7 +76,7 @@ CHECK (cancelled IN (0, 1))
 CHECK (latest IN (0, 1))
 ```
 
-**Index**: `(user_id, status)`, `(user_id, date)`, `(original_id)`, `(user_id, latest)`
+**Index**: `(user_id, status)`, `(user_id, occurred_on)`, `(original_id)`, `(user_id, latest)`
 
 **バージョン管理の仕組み:**
 
@@ -96,7 +96,7 @@ CHECK (latest IN (0, 1))
 | `id` | TEXT | PK |
 | `user_id` | TEXT | NOT NULL, FK → user.id |
 | `amount` | INTEGER | NOT NULL |
-| `date` | TEXT | NOT NULL |
+| `occurred_on` | TEXT | NOT NULL |
 | `original_id` | TEXT | NOT NULL, FK → settlements.id |
 | `cancelled` | INTEGER | NOT NULL DEFAULT 0 |
 | `latest` | INTEGER | NOT NULL DEFAULT 1 |
@@ -114,7 +114,7 @@ CHECK (cancelled IN (0, 1))
 CHECK (latest IN (0, 1))
 ```
 
-**Index**: `(user_id, status)`, `(user_id, date)`, `(original_id)`, `(user_id, latest)`
+**Index**: `(user_id, status)`, `(user_id, occurred_on)`, `(original_id)`, `(user_id, latest)`
 
 ---
 
@@ -157,7 +157,7 @@ CHECK (latest IN (0, 1))
 - **`is_managed` を `partnership` に配置** → パートナー関係がなければ管理モードも存在しないことをスキーマで表現
 - **enum CHECK 制約** → SQLite に enum 型がないため、CHECK で値域を制限
 - **金額は常に正** → `amount >= 0` を全バージョンで保証。差分レコード方式の負値許容を廃止
-- **`settlement` に `date` 追加** → 精算日（業務日）を `created_at`（登録時刻）と分離
+- **`settlement` に `occurred_on` 追加** → 精算日（業務日）を `created_at`（登録時刻）と分離
 - **バージョン管理方式** → 差分レコード（operation: modification/cancellation）方式を廃止。修正・取消は新バージョンのレコードとしてフルスナップショットを保存。金額が常に正で意味が明確
 - **`latest` カラム（非正規化）** → 最新バージョンを即座にクエリ可能にするためのフラグ。新バージョン作成時にバッチ操作で旧バージョンの `latest` を `false` に更新
 - **`original_id` は NOT NULL** → 初版は自身の ID を `original_id` に設定。バージョングループの識別が常に `original_id` で統一的に行える

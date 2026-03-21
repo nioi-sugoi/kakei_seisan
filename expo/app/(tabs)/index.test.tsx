@@ -42,7 +42,7 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		userId: "user-1",
 		category: "advance",
 		amount: 1500,
-		date: "2026-03-15",
+		occurredOn: "2026-03-15",
 		label: "スーパー買い物",
 		memo: null,
 		originalId: "entry-1",
@@ -115,8 +115,8 @@ describe("TimelineScreen", () => {
 	it("月ごとのセクションヘッダーが表示される", async () => {
 		mockApiResponse({
 			data: [
-				makeEntry({ id: "e1", date: "2026-03-15" }),
-				makeEntry({ id: "e2", date: "2026-02-28", label: "電気代" }),
+				makeEntry({ id: "e1", occurredOn: "2026-03-15" }),
+				makeEntry({ id: "e2", occurredOn: "2026-02-28", label: "電気代" }),
 			],
 			nextCursor: null,
 		});
@@ -131,9 +131,9 @@ describe("TimelineScreen", () => {
 	it("記録が月ごとに正しくグルーピングされている", async () => {
 		mockApiResponse({
 			data: [
-				makeEntry({ id: "e1", date: "2026-03-20", label: "3月の記録A" }),
-				makeEntry({ id: "e2", date: "2026-03-10", label: "3月の記録B" }),
-				makeEntry({ id: "e3", date: "2026-02-15", label: "2月の記録" }),
+				makeEntry({ id: "e1", occurredOn: "2026-03-20", label: "3月の記録A" }),
+				makeEntry({ id: "e2", occurredOn: "2026-03-10", label: "3月の記録B" }),
+				makeEntry({ id: "e3", occurredOn: "2026-02-15", label: "2月の記録" }),
 			],
 			nextCursor: null,
 		});

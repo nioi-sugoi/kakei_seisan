@@ -24,7 +24,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: 1500,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "食費",
 				},
 			},
@@ -37,7 +37,7 @@ describe("POST /api/entries", () => {
 		expect(body).toMatchObject({
 			category: "advance",
 			amount: 1500,
-			date: "2024-03-15",
+			occurredOn: "2024-03-15",
 			label: "食費",
 			userId: TEST_USER.id,
 			cancelled: false,
@@ -55,7 +55,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "deposit",
 					amount: 5000,
-					date: "2024-03-20",
+					occurredOn: "2024-03-20",
 					label: "ATM入金",
 				},
 			},
@@ -76,7 +76,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: 800,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "ランチ",
 					memo: "同僚と外食",
 				},
@@ -95,7 +95,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: 0,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "無料サンプル",
 				},
 			},
@@ -113,7 +113,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: 1500,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "食費",
 					memo: "テストメモ",
 				},
@@ -132,7 +132,7 @@ describe("POST /api/entries", () => {
 		expect(result[0]).toMatchObject({
 			category: "advance",
 			amount: 1500,
-			date: "2024-03-15",
+			occurredOn: "2024-03-15",
 			label: "食費",
 			memo: "テストメモ",
 			cancelled: false,
@@ -147,7 +147,7 @@ describe("POST /api/entries", () => {
 			json: {
 				category: "advance",
 				amount: 1000,
-				date: "2024-03-15",
+				occurredOn: "2024-03-15",
 				label: "食費",
 			},
 		});
@@ -161,7 +161,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "invalid" as "advance",
 					amount: 1000,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "食費",
 				},
 			},
@@ -179,7 +179,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: -100,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "食費",
 				},
 			},
@@ -197,7 +197,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: 100.5,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "食費",
 				},
 			},
@@ -209,13 +209,13 @@ describe("POST /api/entries", () => {
 		expect(body).toHaveProperty("error", "バリデーションエラー");
 	});
 
-	it("date が ISO 日付形式でない場合 400 を返す", async () => {
+	it("occurredOn が ISO 日付形式でない場合 400 を返す", async () => {
 		const res = await client.api.entries.$post(
 			{
 				json: {
 					category: "advance",
 					amount: 1000,
-					date: "2024/03/15",
+					occurredOn: "2024/03/15",
 					label: "食費",
 				},
 			},
@@ -231,7 +231,7 @@ describe("POST /api/entries", () => {
 				json: {
 					category: "advance",
 					amount: 1000,
-					date: "2024-03-15",
+					occurredOn: "2024-03-15",
 					label: "",
 				},
 			},
@@ -250,7 +250,7 @@ describe("POST /api/entries", () => {
 				} as {
 					category: "advance";
 					amount: number;
-					date: string;
+					occurredOn: string;
 					label: string;
 				},
 			},

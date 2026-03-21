@@ -1,8 +1,8 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "fc664613-9059-4dca-bfd6-098e5ea3be58",
-	"prevId": "86c8d7ac-4ac4-4f46-bc86-18d6f284ce4b",
+	"id": "f99b0673-a380-4cb7-aa28-21e41eddb5f6",
+	"prevId": "75ca0831-8844-43cc-a119-5689ff843c66",
 	"tables": {
 		"account": {
 			"name": "account",
@@ -153,8 +153,8 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"date": {
-					"name": "date",
+				"occurred_on": {
+					"name": "occurred_on",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true,
@@ -232,13 +232,6 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
-				},
-				"updated_at": {
-					"name": "updated_at",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
 				}
 			},
 			"indexes": {
@@ -247,9 +240,9 @@
 					"columns": ["user_id", "status"],
 					"isUnique": false
 				},
-				"entries_user_date_idx": {
-					"name": "entries_user_date_idx",
-					"columns": ["user_id", "date"],
+				"entries_user_occurred_on_idx": {
+					"name": "entries_user_occurred_on_idx",
+					"columns": ["user_id", "occurred_on"],
 					"isUnique": false
 				},
 				"entries_user_created_idx": {
@@ -260,6 +253,11 @@
 				"entries_original_idx": {
 					"name": "entries_original_idx",
 					"columns": ["original_id"],
+					"isUnique": false
+				},
+				"entries_original_created_idx": {
+					"name": "entries_original_created_idx",
+					"columns": ["original_id", "created_at"],
 					"isUnique": false
 				},
 				"entries_user_latest_idx": {
@@ -707,8 +705,8 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"date": {
-					"name": "date",
+				"occurred_on": {
+					"name": "occurred_on",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true,
@@ -772,13 +770,6 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
-				},
-				"updated_at": {
-					"name": "updated_at",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
 				}
 			},
 			"indexes": {
@@ -787,9 +778,9 @@
 					"columns": ["user_id", "status"],
 					"isUnique": false
 				},
-				"settlements_user_date_idx": {
-					"name": "settlements_user_date_idx",
-					"columns": ["user_id", "date"],
+				"settlements_user_occurred_on_idx": {
+					"name": "settlements_user_occurred_on_idx",
+					"columns": ["user_id", "occurred_on"],
 					"isUnique": false
 				},
 				"settlements_original_idx": {
@@ -800,6 +791,11 @@
 				"settlements_user_latest_idx": {
 					"name": "settlements_user_latest_idx",
 					"columns": ["user_id", "latest"],
+					"isUnique": false
+				},
+				"settlements_original_created_idx": {
+					"name": "settlements_original_created_idx",
+					"columns": ["original_id", "created_at"],
 					"isUnique": false
 				}
 			},
@@ -979,7 +975,10 @@
 	"_meta": {
 		"schemas": {},
 		"tables": {},
-		"columns": {}
+		"columns": {
+			"\"entries\".\"date\"": "\"entries\".\"occurred_on\"",
+			"\"settlements\".\"date\"": "\"settlements\".\"occurred_on\""
+		}
 	},
 	"internal": {
 		"indexes": {}

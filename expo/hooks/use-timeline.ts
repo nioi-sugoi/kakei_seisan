@@ -15,7 +15,7 @@ function buildTimelineItems(entries: Entry[]): TimelineItem[] {
 	let currentMonth = "";
 
 	for (const entry of entries) {
-		const month = toMonthLabel(entry.date);
+		const month = toMonthLabel(entry.occurredOn);
 		if (month !== currentMonth) {
 			currentMonth = month;
 			items.push({ type: "header", title: month });

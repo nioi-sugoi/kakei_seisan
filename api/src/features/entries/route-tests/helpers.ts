@@ -4,8 +4,8 @@ import { drizzle } from "drizzle-orm/d1";
 import { entries } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
-	OTHER_USER,
 	authCookie,
+	OTHER_USER,
 	seedOtherUser,
 	setupAuth,
 } from "../../../testing/auth-helper";
@@ -26,7 +26,7 @@ export async function insertEntry(
 			userId,
 			category: "advance",
 			amount: 1500,
-			date: "2024-03-15",
+			occurredOn: "2024-03-15",
 			label: "食費",
 			originalId: id,
 			...overrides,

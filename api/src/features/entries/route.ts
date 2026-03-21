@@ -11,7 +11,7 @@ import * as entriesRepository from "./repository";
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
 	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
-	date: v.pipe(v.string(), v.isoDate()),
+	occurredOn: v.pipe(v.string(), v.isoDate()),
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
 });
@@ -121,7 +121,7 @@ const entriesApp = new Hono<{
 				{
 					originalId,
 					category: latestEntry.category,
-					date: latestEntry.date,
+					occurredOn: latestEntry.occurredOn,
 				},
 				input,
 			);

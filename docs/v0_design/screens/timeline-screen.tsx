@@ -21,7 +21,7 @@ interface TimelineScreenProps {
 function groupByMonth(records: HouseholdEntry[]) {
   const groups: Record<string, HouseholdEntry[]> = {}
   records.forEach((r) => {
-    const d = new Date(r.date)
+    const d = new Date(r.occurredOn)
     const key = `${d.getFullYear()}\u5E74${d.getMonth() + 1}\u6708`
     if (!groups[key]) groups[key] = []
     groups[key].push(r)

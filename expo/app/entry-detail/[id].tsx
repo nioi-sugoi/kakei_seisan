@@ -96,7 +96,7 @@ export default function EntryDetailScreen() {
 					isOriginal={latestVersion.id === entry.originalId}
 					cancelled={latestVersion.cancelled}
 					amount={latestVersion.amount ?? entry.amount}
-					date={entry.date}
+					occurredOn={entry.occurredOn}
 					label={latestVersion.label ?? entry.label}
 					memo={latestVersion.memo ?? entry.memo}
 					isCancelled={latestVersion.cancelled}
@@ -125,9 +125,9 @@ export default function EntryDetailScreen() {
 											<Text className="text-xs text-green-600">復元</Text>
 										)}
 									</View>
-									{v.date ? (
+									{v.occurredOn ? (
 										<Text className="text-xs text-muted-foreground">
-											{formatDateFull(v.date)}
+											{formatDateFull(v.occurredOn)}
 											{v.label ? ` · ${v.label}` : ""}
 										</Text>
 									) : null}

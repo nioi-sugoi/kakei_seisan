@@ -24,7 +24,7 @@ type ModifyTarget = {
 	id: string;
 	category: "advance" | "deposit";
 	amount: number;
-	date: string;
+	occurredOn: string;
 	label: string;
 	memo: string | null;
 };
@@ -61,7 +61,7 @@ function ModifyEntryForm({ target }: { target: ModifyTarget }) {
 						/>
 					)}
 				</form.Field>
-				<form.Field name="date">
+				<form.Field name="occurredOn">
 					{(field) => (
 						<DateInput
 							value={field.state.value}
@@ -132,7 +132,7 @@ export default function ModifyEntryScreen() {
 				id: entry.originalId,
 				category: latestVersion.category,
 				amount: latestVersion.amount,
-				date: latestVersion.date,
+				occurredOn: latestVersion.occurredOn,
 				label: latestVersion.label,
 				memo: latestVersion.memo,
 			}}

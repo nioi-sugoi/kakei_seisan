@@ -79,7 +79,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 						{entry.label}
 					</Text>
 					<Text className="text-xs text-muted-foreground">
-						{formatDateShort(entry.date)}
+						{formatDateShort(entry.occurredOn)}
 					</Text>
 				</View>
 				<Text

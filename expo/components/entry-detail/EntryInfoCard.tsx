@@ -22,7 +22,7 @@ type EntryInfoCardProps = {
 	isOriginal: boolean;
 	cancelled: boolean;
 	amount: number;
-	date: string;
+	occurredOn: string;
 	label: string;
 	memo: string | null;
 	isCancelled?: boolean;
@@ -33,7 +33,7 @@ export function EntryInfoCard({
 	isOriginal,
 	cancelled,
 	amount,
-	date,
+	occurredOn,
 	label,
 	memo,
 	isCancelled,
@@ -94,7 +94,7 @@ export function EntryInfoCard({
 				<View className="flex-row justify-between">
 					<Text className="text-sm text-muted-foreground">日付</Text>
 					<Text className="text-sm font-medium text-foreground">
-						{formatDateFull(date)}
+						{formatDateFull(occurredOn)}
 					</Text>
 				</View>
 				<View className="flex-row justify-between">

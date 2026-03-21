@@ -71,7 +71,7 @@ export function ApprovalScreen({ entry, onBack }: ApprovalScreenProps) {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{"日付"}</span>
                 <span className="text-sm font-medium text-foreground">
-                  {formatDateFull(entry.date)}
+                  {formatDateFull(entry.occurredOn)}
                 </span>
               </div>
               <div className="flex justify-between">
