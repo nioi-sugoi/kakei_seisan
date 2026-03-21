@@ -58,7 +58,6 @@ CHECK (status IN ('pending', 'accepted', 'expired'))
 | `date` | TEXT | NOT NULL |
 | `label` | TEXT | NOT NULL |
 | `memo` | TEXT | |
-| `version` | INTEGER | NOT NULL DEFAULT 1 |
 | `original_id` | TEXT | NOT NULL, FK → entries.id |
 | `cancelled` | INTEGER | NOT NULL DEFAULT 0 |
 | `latest` | INTEGER | NOT NULL DEFAULT 1 |
@@ -72,7 +71,6 @@ CHECK (status IN ('pending', 'accepted', 'expired'))
 ```sql
 CHECK (category IN ('advance', 'deposit'))
 CHECK (amount >= 0)
-CHECK (version >= 1)
 CHECK (status IN ('approved', 'pending', 'rejected'))
 CHECK (cancelled IN (0, 1))
 CHECK (latest IN (0, 1))
@@ -82,8 +80,8 @@ CHECK (latest IN (0, 1))
 
 **バージョン管理の仕組み:**
 
-- 新規作成（v1）: `original_id = 自身の id`, `version = 1`, `latest = true`
-- 修正（v2+）: `original_id = v1 の id`, `version = N+1`, `latest = true`。旧バージョンは `latest = false` に更新
+- 新規作成: `original_id = 自身の id`, `latest = true`
+- 修正: `original_id = 初版の id`, `latest = true`。旧バージョンは `latest = false` に更新。バージョン順は `created_at` で判定
 - 取り消し: 修正と同様に新バージョンを作成し `cancelled = true` を設定。`amount` には取消直前の金額を保持（表示用）
 - **残高計算**: `latest = true AND cancelled = false` のレコードのみ対象。`SUM(CASE WHEN category = 'advance' THEN amount ELSE -amount END)`
 
@@ -99,7 +97,6 @@ CHECK (latest IN (0, 1))
 | `user_id` | TEXT | NOT NULL, FK → user.id |
 | `amount` | INTEGER | NOT NULL |
 | `date` | TEXT | NOT NULL |
-| `version` | INTEGER | NOT NULL DEFAULT 1 |
 | `original_id` | TEXT | NOT NULL, FK → settlements.id |
 | `cancelled` | INTEGER | NOT NULL DEFAULT 0 |
 | `latest` | INTEGER | NOT NULL DEFAULT 1 |
@@ -112,7 +109,6 @@ CHECK (latest IN (0, 1))
 
 ```sql
 CHECK (amount >= 0)
-CHECK (version >= 1)
 CHECK (status IN ('approved', 'pending', 'rejected'))
 CHECK (cancelled IN (0, 1))
 CHECK (latest IN (0, 1))

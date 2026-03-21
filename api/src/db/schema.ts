@@ -164,7 +164,6 @@ export const entries = sqliteTable(
 		date: text("date").notNull(),
 		label: text("label").notNull(),
 		memo: text("memo"),
-		version: integer("version").notNull().default(1),
 		originalId: text("original_id")
 			.notNull()
 			.references((): AnySQLiteColumn => entries.id),
@@ -200,7 +199,6 @@ export const entries = sqliteTable(
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,
 		),
 		check("entries_amount_check", sql`${table.amount} >= 0`),
-		check("entries_version_check", sql`${table.version} >= 1`),
 	],
 );
 
@@ -213,7 +211,6 @@ export const settlements = sqliteTable(
 			.references(() => user.id),
 		amount: integer("amount").notNull(),
 		date: text("date").notNull(),
-		version: integer("version").notNull().default(1),
 		originalId: text("original_id")
 			.notNull()
 			.references((): AnySQLiteColumn => settlements.id),
@@ -240,7 +237,6 @@ export const settlements = sqliteTable(
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,
 		),
 		check("settlements_amount_check", sql`${table.amount} >= 0`),
-		check("settlements_version_check", sql`${table.version} >= 1`),
 	],
 );
 

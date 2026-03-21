@@ -61,7 +61,7 @@ export function findVersions(db: DrizzleD1Database, originalId: string) {
 		.select()
 		.from(entries)
 		.where(eq(entries.originalId, originalId))
-		.orderBy(desc(entries.version))
+		.orderBy(desc(entries.createdAt))
 		.all();
 }
 
@@ -106,7 +106,6 @@ export function createModification(
 		originalId: string;
 		category: "advance" | "deposit";
 		date: string;
-		currentVersion: number;
 	},
 	input: ModifyEntryInput,
 ) {
@@ -132,7 +131,6 @@ export function createModification(
 				date: original.date,
 				label: input.label,
 				memo: input.memo || null,
-				version: original.currentVersion + 1,
 				originalId: original.originalId,
 				cancelled: false,
 				latest: true,
@@ -156,7 +154,6 @@ export function createCancellation(
 		date: string;
 		label: string;
 		memo: string | null;
-		version: number;
 	},
 ) {
 	const newId = crypto.randomUUID();
@@ -181,7 +178,6 @@ export function createCancellation(
 				date: latestEntry.date,
 				label: latestEntry.label,
 				memo: latestEntry.memo,
-				version: latestEntry.version + 1,
 				originalId: latestEntry.originalId,
 				cancelled: true,
 				latest: true,

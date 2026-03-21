@@ -82,7 +82,7 @@ export default function EntryDetailScreen() {
 			>
 				<EntryInfoCard
 					category={entry.category}
-					version={entry.version}
+					isOriginal={entry.id === entry.originalId}
 					cancelled={entry.cancelled}
 					amount={entry.amount}
 					date={entry.date}

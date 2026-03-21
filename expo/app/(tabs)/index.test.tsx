@@ -45,7 +45,6 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		date: "2026-03-15",
 		label: "スーパー買い物",
 		memo: null,
-		version: 1,
 		originalId: "entry-1",
 		cancelled: false,
 		latest: true,
@@ -202,7 +201,6 @@ describe("TimelineScreen", () => {
 			data: [
 				makeEntry({
 					id: "mod-1",
-					version: 2,
 					originalId: "entry-1",
 					latest: true,
 					amount: 9000,
@@ -225,7 +223,6 @@ describe("TimelineScreen", () => {
 			data: [
 				makeEntry({
 					id: "cancel-1",
-					version: 2,
 					originalId: "entry-1",
 					cancelled: true,
 					latest: true,
@@ -282,7 +279,6 @@ describe("TimelineScreen", () => {
 			data: [
 				makeEntry({
 					id: "mod-1",
-					version: 2,
 					originalId: "entry-1",
 					amount: 9000,
 					latest: true,

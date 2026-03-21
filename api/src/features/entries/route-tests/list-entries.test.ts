@@ -234,8 +234,10 @@ describe("GET /api/entries", () => {
 		expect(res.ok).toBe(true);
 		if (!res.ok) return;
 		const body = await res.json();
-		const modification = body.data.find((e) => e.version === 2);
-		expect(modification?.latest).toBe(true);
+		const modification = body.data.find(
+			(e) => e.latest && e.id !== e.originalId,
+		);
+		expect(modification).toBeDefined();
 		expect(modification?.groupCancelled).toBe(false);
 	});
 });

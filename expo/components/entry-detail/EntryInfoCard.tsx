@@ -19,7 +19,7 @@ const versionBadgeBg = {
 
 type EntryInfoCardProps = {
 	category: "advance" | "deposit";
-	version: number;
+	isOriginal: boolean;
 	cancelled: boolean;
 	amount: number;
 	date: string;
@@ -30,7 +30,7 @@ type EntryInfoCardProps = {
 
 export function EntryInfoCard({
 	category,
-	version,
+	isOriginal,
 	cancelled,
 	amount,
 	date,
@@ -38,7 +38,7 @@ export function EntryInfoCard({
 	memo,
 	isCancelled,
 }: EntryInfoCardProps) {
-	const isV1 = version === 1;
+	const isV1 = isOriginal;
 
 	return (
 		<View className="rounded-xl bg-card px-5 py-5">

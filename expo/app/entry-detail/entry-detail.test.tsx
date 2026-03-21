@@ -48,7 +48,6 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			date: "2026-03-15",
 			label: "スーパー買い物",
 			memo: "夕食の材料",
-			version: 1,
 			originalId: "entry-1",
 			cancelled: false,
 			latest: true,
@@ -61,7 +60,6 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			versions: [
 				{
 					id: "entry-1",
-					version: 1,
 					latest: true,
 					cancelled: false,
 					amount: 4280,
@@ -179,10 +177,9 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
-					{ id: "entry-1", version: 1, latest: false, cancelled: false },
+					{ id: "entry-1", latest: false, cancelled: false },
 					{
 						id: "cancel-1",
-						version: 2,
 						latest: true,
 						cancelled: true,
 						amount: 4280,
@@ -203,12 +200,11 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				id: "v2-entry",
-				version: 2,
 				originalId: "entry-1",
 				latest: true,
 				versions: [
-					{ id: "entry-1", version: 1, latest: false, cancelled: false },
-					{ id: "v2-entry", version: 2, latest: true, cancelled: false },
+					{ id: "entry-1", latest: false, cancelled: false },
+					{ id: "v2-entry", latest: true, cancelled: false },
 				],
 				original: { id: "entry-1", label: "元の記録" },
 			}),
@@ -223,11 +219,10 @@ describe("EntryDetailScreen", () => {
 	it("修正バージョンに「修正」バッジが表示される", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
-				version: 2,
 				originalId: "parent-1",
 				versions: [
-					{ id: "parent-1", version: 1, latest: false, cancelled: false },
-					{ id: "entry-1", version: 2, latest: true, cancelled: false },
+					{ id: "parent-1", latest: false, cancelled: false },
+					{ id: "entry-1", latest: true, cancelled: false },
 				],
 				original: { id: "parent-1" },
 			}),
@@ -242,14 +237,12 @@ describe("EntryDetailScreen", () => {
 	it("取消バージョンに「取消」バッジが表示される", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
-				version: 2,
 				cancelled: true,
 				originalId: "parent-1",
 				versions: [
-					{ id: "parent-1", version: 1, latest: false, cancelled: false },
+					{ id: "parent-1", latest: false, cancelled: false },
 					{
 						id: "entry-1",
-						version: 2,
 						latest: true,
 						cancelled: true,
 					},

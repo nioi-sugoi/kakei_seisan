@@ -1,5 +1,5 @@
 -- バージョン管理方式への移行: entries テーブル
--- operation/parent_id → version/original_id/cancelled/latest
+-- operation/parent_id → original_id/cancelled/latest
 
 -- 1. entries テーブルの再作成
 CREATE TABLE "entries_new" (
@@ -10,7 +10,6 @@ CREATE TABLE "entries_new" (
 	"date" text NOT NULL,
 	"label" text NOT NULL,
 	"memo" text,
-	"version" integer NOT NULL DEFAULT 1,
 	"original_id" text NOT NULL REFERENCES "entries_new"("id"),
 	"cancelled" integer NOT NULL DEFAULT 0,
 	"latest" integer NOT NULL DEFAULT 1,
@@ -22,20 +21,19 @@ CREATE TABLE "entries_new" (
 	"updated_at" integer NOT NULL,
 	CHECK ("category" IN ('advance', 'deposit')),
 	CHECK ("status" IN ('approved', 'pending', 'rejected')),
-	CHECK ("amount" >= 0),
-	CHECK ("version" >= 1)
+	CHECK ("amount" >= 0)
 );--> statement-breakpoint
 
 -- 2. 既存データの移行（original レコードのみ、original_id = 自身の id）
 INSERT INTO "entries_new" (
 	"id", "user_id", "category", "amount", "date", "label", "memo",
-	"version", "original_id", "cancelled", "latest",
+	"original_id", "cancelled", "latest",
 	"status", "approved_by", "approved_at", "approval_comment",
 	"created_at", "updated_at"
 )
 SELECT
 	"id", "user_id", "category", "amount", "date", "label", "memo",
-	1, "id", 0, 1,
+	"id", 0, 1,
 	"status", "approved_by", "approved_at", "approval_comment",
 	"created_at", "updated_at"
 FROM "entries"
@@ -58,7 +56,6 @@ CREATE TABLE "settlements_new" (
 	"user_id" text NOT NULL REFERENCES "user"("id"),
 	"amount" integer NOT NULL,
 	"date" text NOT NULL,
-	"version" integer NOT NULL DEFAULT 1,
 	"original_id" text NOT NULL REFERENCES "settlements_new"("id"),
 	"cancelled" integer NOT NULL DEFAULT 0,
 	"latest" integer NOT NULL DEFAULT 1,
@@ -69,19 +66,18 @@ CREATE TABLE "settlements_new" (
 	"created_at" integer NOT NULL,
 	"updated_at" integer NOT NULL,
 	CHECK ("status" IN ('approved', 'pending', 'rejected')),
-	CHECK ("amount" >= 0),
-	CHECK ("version" >= 1)
+	CHECK ("amount" >= 0)
 );--> statement-breakpoint
 
 INSERT INTO "settlements_new" (
 	"id", "user_id", "amount", "date",
-	"version", "original_id", "cancelled", "latest",
+	"original_id", "cancelled", "latest",
 	"status", "approved_by", "approved_at", "approval_comment",
 	"created_at", "updated_at"
 )
 SELECT
 	"id", "user_id", "amount", "date",
-	1, "id", 0, 1,
+	"id", 0, 1,
 	"status", "approved_by", "approved_at", "approval_comment",
 	"created_at", "updated_at"
 FROM "settlements"
