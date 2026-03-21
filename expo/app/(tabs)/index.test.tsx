@@ -202,7 +202,7 @@ describe("TimelineScreen", () => {
 					originalId: "entry-1",
 					latest: true,
 					amount: 9000,
-					label: "食費修正",
+					label: "食費",
 				}),
 			],
 			nextCursor: null,
@@ -212,7 +212,7 @@ describe("TimelineScreen", () => {
 		await waitFor(() => {
 			expect(screen.getByText("修正")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("食費修正")).toBeOnTheScreen();
+		expect(screen.getByText("食費")).toBeOnTheScreen();
 		expect(screen.getByText("¥9,000")).toBeOnTheScreen();
 	});
 
@@ -249,25 +249,6 @@ describe("TimelineScreen", () => {
 
 		await waitFor(() => {
 			expect(screen.getByText("修正済み")).toBeOnTheScreen();
-		});
-	});
-
-	it("金額は常に正の値で表示される（バージョン管理方式）", async () => {
-		mockApiResponse({
-			data: [
-				makeEntry({
-					id: "mod-1",
-					originalId: "entry-1",
-					amount: 9000,
-					latest: true,
-				}),
-			],
-			nextCursor: null,
-		});
-		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
-
-		await waitFor(() => {
-			expect(screen.getByText("¥9,000")).toBeOnTheScreen();
 		});
 	});
 });
