@@ -61,18 +61,14 @@ export default function EntryDetailScreen() {
 	};
 
 	const handleCancel = () => {
-		Alert.alert(
-			"記録の取り消し",
-			"この記録を取り消しますか？取り消しレコードが作成されます。",
-			[
-				{ text: "キャンセル", style: "cancel" },
-				{
-					text: "取り消す",
-					style: "destructive",
-					onPress: () => cancelMutation.mutate(),
-				},
-			],
-		);
+		Alert.alert("記録の取り消し", "この記録を取り消しますか？", [
+			{ text: "キャンセル", style: "cancel" },
+			{
+				text: "取り消す",
+				style: "destructive",
+				onPress: () => cancelMutation.mutate(),
+			},
+		]);
 	};
 
 	const handleRestore = () => {

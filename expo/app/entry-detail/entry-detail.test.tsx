@@ -170,7 +170,7 @@ describe("EntryDetailScreen", () => {
 
 		expect(alertSpy).toHaveBeenCalledWith(
 			"記録の取り消し",
-			"この記録を取り消しますか？取り消しレコードが作成されます。",
+			"この記録を取り消しますか？",
 			expect.arrayContaining([
 				expect.objectContaining({ text: "キャンセル" }),
 				expect.objectContaining({ text: "取り消す" }),
