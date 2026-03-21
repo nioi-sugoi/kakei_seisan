@@ -158,7 +158,7 @@ describe("GET /api/entries", () => {
 		expect(body.data[0].label).toBe("古い記録");
 	});
 
-	it("修正されていないオリジナル記録は isLatest が true になる", async () => {
+	it("修正されていないオリジナル記録は latest が true になる", async () => {
 		await insertEntry(TEST_USER.id, { label: "未修正の記録" });
 
 		const res = await client.api.entries.$get(
@@ -169,10 +169,10 @@ describe("GET /api/entries", () => {
 		expect(res.ok).toBe(true);
 		if (!res.ok) return;
 		const body = await res.json();
-		expect(body.data[0].isLatest).toBe(true);
+		expect(body.data[0].latest).toBe(true);
 	});
 
-	it("修正済みの旧バージョンは isLatest が false になる", async () => {
+	it("修正済みの旧バージョンは latest が false になる", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			label: "食費",
 			amount: 1000,
@@ -196,10 +196,10 @@ describe("GET /api/entries", () => {
 		if (!res.ok) return;
 		const body = await res.json();
 		// createdAt DESC なので先頭が最新
-		const latest = body.data.find((e) => e.id !== entry.id);
+		const latestEntry = body.data.find((e) => e.id !== entry.id);
 		const old = body.data.find((e) => e.id === entry.id);
-		expect(latest?.isLatest).toBe(true);
-		expect(old?.isLatest).toBe(false);
+		expect(latestEntry?.latest).toBe(true);
+		expect(old?.latest).toBe(false);
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {

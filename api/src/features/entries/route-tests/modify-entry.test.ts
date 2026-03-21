@@ -45,6 +45,7 @@ describe("POST /api/entries/:id/modify", () => {
 			category: "advance",
 			originalId: entry.id,
 			cancelled: false,
+			latest: true,
 		});
 
 		// DB状態: 2レコード、最新は修正バージョン
@@ -53,6 +54,8 @@ describe("POST /api/entries/:id/modify", () => {
 		// createdAt DESC なので先頭が最新
 		expect(dbVersions[0].id).not.toBe(entry.id);
 		expect(dbVersions[0].amount).toBe(9000);
+		expect(dbVersions[0].latest).toBe(true);
+		expect(dbVersions[1].latest).toBe(false);
 	});
 
 	it("ラベルのみの修正でも新バージョンが作成される", async () => {

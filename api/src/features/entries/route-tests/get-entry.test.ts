@@ -45,6 +45,7 @@ describe("GET /api/entries/:id", () => {
 			label: "交通費",
 			userId: TEST_USER.id,
 			cancelled: false,
+			latest: true,
 			status: "approved",
 		});
 	});

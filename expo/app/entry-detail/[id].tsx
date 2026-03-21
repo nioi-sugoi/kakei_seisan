@@ -53,8 +53,7 @@ export default function EntryDetailScreen() {
 	}
 
 	// 最新バージョンを特定（メイン表示用）
-	// versions は createdAt DESC でソート済みなので先頭が最新
-	const latestVersion = entry.versions[0] ?? entry;
+	const latestVersion = entry.versions.find((v) => v.latest) ?? entry;
 	const canModify = !latestVersion.cancelled;
 
 	const handleModify = () => {

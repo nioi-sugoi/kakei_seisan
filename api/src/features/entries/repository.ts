@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -37,7 +37,7 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 		.get();
 }
 
-export async function listByUser(
+export function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
 	options: { limit: number; cursor?: number },
@@ -47,36 +47,13 @@ export async function listByUser(
 		conditions.push(lt(entries.createdAt, options.cursor));
 	}
 
-	const items = await db
+	return db
 		.select()
 		.from(entries)
 		.where(and(...conditions))
 		.orderBy(desc(entries.createdAt))
 		.limit(options.limit)
 		.all();
-
-	if (items.length === 0) return [];
-
-	// 各 originalId グループの最大 createdAt を DB から取得（ページ外のバージョンも考慮）
-	const originalIds = [...new Set(items.map((i) => i.originalId))];
-	const maxRows = await db
-		.select({
-			originalId: entries.originalId,
-			maxCreatedAt: sql<number>`MAX(${entries.createdAt})`,
-		})
-		.from(entries)
-		.where(inArray(entries.originalId, originalIds))
-		.groupBy(entries.originalId)
-		.all();
-
-	const maxCreatedByOriginal = new Map(
-		maxRows.map((r) => [r.originalId, r.maxCreatedAt]),
-	);
-
-	return items.map((item) => ({
-		...item,
-		isLatest: item.createdAt === maxCreatedByOriginal.get(item.originalId),
-	}));
 }
 
 /** 同じ original_id グループの全バージョンを取得 */
@@ -98,9 +75,13 @@ export function findMyLatestVersion(
 	return db
 		.select()
 		.from(entries)
-		.where(and(eq(entries.originalId, originalId), eq(entries.userId, userId)))
-		.orderBy(desc(entries.createdAt))
-		.limit(1)
+		.where(
+			and(
+				eq(entries.originalId, originalId),
+				eq(entries.userId, userId),
+				eq(entries.latest, true),
+			),
+		)
 		.get();
 }
 
@@ -120,22 +101,33 @@ export function createModification(
 ) {
 	const newId = crypto.randomUUID();
 	const now = Date.now();
-	return db
-		.insert(entries)
-		.values({
-			id: newId,
-			userId,
-			category: original.category,
-			amount: input.amount,
-			date: original.date,
-			label: input.label,
-			memo: input.memo || null,
-			originalId: original.originalId,
-			cancelled: false,
-			createdAt: now,
-		})
-		.returning()
-		.get();
+	return db.batch([
+		db
+			.update(entries)
+			.set({ latest: false })
+			.where(
+				and(
+					eq(entries.originalId, original.originalId),
+					eq(entries.latest, true),
+				),
+			),
+		db
+			.insert(entries)
+			.values({
+				id: newId,
+				userId,
+				category: original.category,
+				amount: input.amount,
+				date: original.date,
+				label: input.label,
+				memo: input.memo || null,
+				originalId: original.originalId,
+				cancelled: false,
+				latest: true,
+				createdAt: now,
+			})
+			.returning(),
+	]);
 }
 
 /**
@@ -156,22 +148,33 @@ export function createRestoration(
 ) {
 	const newId = crypto.randomUUID();
 	const now = Date.now();
-	return db
-		.insert(entries)
-		.values({
-			id: newId,
-			userId,
-			category: latestEntry.category,
-			amount: latestEntry.amount,
-			date: latestEntry.date,
-			label: latestEntry.label,
-			memo: latestEntry.memo,
-			originalId: latestEntry.originalId,
-			cancelled: false,
-			createdAt: now,
-		})
-		.returning()
-		.get();
+	return db.batch([
+		db
+			.update(entries)
+			.set({ latest: false })
+			.where(
+				and(
+					eq(entries.originalId, latestEntry.originalId),
+					eq(entries.latest, true),
+				),
+			),
+		db
+			.insert(entries)
+			.values({
+				id: newId,
+				userId,
+				category: latestEntry.category,
+				amount: latestEntry.amount,
+				date: latestEntry.date,
+				label: latestEntry.label,
+				memo: latestEntry.memo,
+				originalId: latestEntry.originalId,
+				cancelled: false,
+				latest: true,
+				createdAt: now,
+			})
+			.returning(),
+	]);
 }
 
 /**
@@ -191,20 +194,31 @@ export function createCancellation(
 ) {
 	const newId = crypto.randomUUID();
 	const now = Date.now();
-	return db
-		.insert(entries)
-		.values({
-			id: newId,
-			userId,
-			category: latestEntry.category,
-			amount: latestEntry.amount,
-			date: latestEntry.date,
-			label: latestEntry.label,
-			memo: latestEntry.memo,
-			originalId: latestEntry.originalId,
-			cancelled: true,
-			createdAt: now,
-		})
-		.returning()
-		.get();
+	return db.batch([
+		db
+			.update(entries)
+			.set({ latest: false })
+			.where(
+				and(
+					eq(entries.originalId, latestEntry.originalId),
+					eq(entries.latest, true),
+				),
+			),
+		db
+			.insert(entries)
+			.values({
+				id: newId,
+				userId,
+				category: latestEntry.category,
+				amount: latestEntry.amount,
+				date: latestEntry.date,
+				label: latestEntry.label,
+				memo: latestEntry.memo,
+				originalId: latestEntry.originalId,
+				cancelled: true,
+				latest: true,
+				createdAt: now,
+			})
+			.returning(),
+	]);
 }

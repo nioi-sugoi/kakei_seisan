@@ -58,7 +58,7 @@ interface EntryCardProps {
 export function EntryCard({ entry, onPress }: EntryCardProps) {
 	const isDeposit = entry.category === "deposit";
 	const isV1 = entry.id === entry.originalId;
-	const isLatest = entry.isLatest;
+	const isLatest = entry.latest;
 	const isCancelled = entry.cancelled;
 
 	return (

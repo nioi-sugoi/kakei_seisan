@@ -43,6 +43,7 @@ describe("POST /api/entries/:id/cancel", () => {
 			label: "交通費",
 			originalId: entry.id,
 			cancelled: true,
+			latest: true,
 		});
 
 		// DB状態: originalId グループに2レコード、最新は取消バージョン
@@ -50,7 +51,9 @@ describe("POST /api/entries/:id/cancel", () => {
 		expect(dbVersions).toHaveLength(2);
 		// createdAt DESC なので先頭が最新
 		expect(dbVersions[0].cancelled).toBe(true);
+		expect(dbVersions[0].latest).toBe(true);
 		expect(dbVersions[0].id).not.toBe(entry.id);
+		expect(dbVersions[1].latest).toBe(false);
 	});
 
 	it("deposit カテゴリの記録も取り消せる", async () => {

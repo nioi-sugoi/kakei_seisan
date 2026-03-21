@@ -251,8 +251,7 @@ function ModifyFormLoader({ entryId }: { entryId: string }) {
 		);
 	}
 
-	// versions は createdAt DESC でソート済みなので先頭が最新
-	const latestVersion = entry.versions[0] ?? entry;
+	const latestVersion = entry.versions.find((v) => v.latest) ?? entry;
 
 	return (
 		<ModifyEntryScreen

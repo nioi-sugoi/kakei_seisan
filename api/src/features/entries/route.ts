@@ -115,7 +115,7 @@ const entriesApp = new Hono<{
 				return c.json({ error: "変更がありません" as const }, 400);
 			}
 
-			const inserted = await entriesRepository.createModification(
+			const [, insertedRows] = await entriesRepository.createModification(
 				db,
 				user.id,
 				{
@@ -126,7 +126,7 @@ const entriesApp = new Hono<{
 				input,
 			);
 
-			return c.json(inserted, 201);
+			return c.json(insertedRows[0], 201);
 		},
 	)
 	.post("/:originalId/cancel", requireAuth, async (c) => {
@@ -146,13 +146,13 @@ const entriesApp = new Hono<{
 			return c.json({ error: "既に取り消し済みです" as const }, 400);
 		}
 
-		const inserted = await entriesRepository.createCancellation(
+		const [, insertedRows] = await entriesRepository.createCancellation(
 			db,
 			user.id,
 			latestEntry,
 		);
 
-		return c.json(inserted, 201);
+		return c.json(insertedRows[0], 201);
 	})
 	.post("/:originalId/restore", requireAuth, async (c) => {
 		const user = c.get("user");
@@ -174,13 +174,13 @@ const entriesApp = new Hono<{
 			);
 		}
 
-		const inserted = await entriesRepository.createRestoration(
+		const [, insertedRows] = await entriesRepository.createRestoration(
 			db,
 			user.id,
 			latestEntry,
 		);
 
-		return c.json(inserted, 201);
+		return c.json(insertedRows[0], 201);
 	});
 
 export { entriesApp };

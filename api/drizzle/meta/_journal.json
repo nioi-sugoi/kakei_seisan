@@ -43,6 +43,13 @@
 			"when": 1774082021033,
 			"tag": "0005_exotic_ben_grimm",
 			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "6",
+			"when": 1774086086522,
+			"tag": "0006_gigantic_brother_voodoo",
+			"breakpoints": true
 		}
 	]
 }
