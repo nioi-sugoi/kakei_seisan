@@ -44,7 +44,8 @@ describe("GET /api/entries/:id", () => {
 			date: "2024-03-15",
 			label: "交通費",
 			userId: TEST_USER.id,
-			operation: "original",
+			cancelled: false,
+			latest: true,
 			status: "approved",
 		});
 	});
@@ -88,6 +89,36 @@ describe("GET /api/entries/:id", () => {
 		expect(res.status).toBe(404);
 		const body = await res.json();
 		expect(body).toHaveProperty("error", "記録が見つかりません");
+	});
+
+	it("versions にバージョン一覧が含まれる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 5000,
+			label: "食費",
+		});
+
+		await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: { amount: 4000, label: "食費" },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.versions).toHaveLength(2);
+		// createdAt DESC なので先頭が最新
+		expect(body.versions[0].amount).toBe(4000);
+		expect(body.versions[0].createdAt).toBeGreaterThan(
+			body.versions[1].createdAt,
+		);
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {

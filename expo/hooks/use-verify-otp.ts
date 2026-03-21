@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import { compactOtp } from "@/components/auth/otp-form";
+import { authClient } from "@/lib/auth-client";
 
 export function useVerifyOtp() {
 	const { email } = useLocalSearchParams<{ email: string }>();
@@ -55,11 +55,12 @@ export function useVerifyOtp() {
 		setError("");
 		setLoading(true);
 		try {
-			const { error: apiError } =
-				await authClient.emailOtp.sendVerificationOtp({
+			const { error: apiError } = await authClient.emailOtp.sendVerificationOtp(
+				{
 					email: safeEmail,
 					type: "sign-in",
-				});
+				},
+			);
 			if (apiError) {
 				setError(apiError.message ?? "再送信に失敗しました");
 				return;

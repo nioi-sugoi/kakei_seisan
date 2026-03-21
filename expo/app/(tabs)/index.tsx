@@ -59,10 +59,18 @@ export default function TimelineScreen() {
 					}}
 					onEndReached={handleEndReached}
 					onEndReachedThreshold={0.5}
+					ListHeaderComponent={
+						<View className="border-b border-border bg-card px-4 py-3 pt-14">
+							<Text className="text-lg font-bold text-foreground">
+								タイムライン
+							</Text>
+						</View>
+					}
 					ListFooterComponent={
 						isFetchingNextPage ? <ActivityIndicator className="py-4" /> : null
 					}
 					contentContainerClassName="pb-24"
+					stickyHeaderIndices={[0]}
 				/>
 			)}
 

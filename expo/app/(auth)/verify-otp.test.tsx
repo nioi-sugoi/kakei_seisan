@@ -6,11 +6,9 @@ import {
 	waitFor,
 } from "@testing-library/react-native";
 
-const mockReplace = jest.fn();
-
 jest.mock("expo-router", () => ({
 	useLocalSearchParams: jest.fn(),
-	useRouter: () => ({ replace: mockReplace, back: jest.fn() }),
+	useRouter: jest.fn(() => ({ replace: jest.fn(), back: jest.fn() })),
 }));
 
 jest.mock("@/lib/auth-client", () => ({
@@ -20,15 +18,16 @@ jest.mock("@/lib/auth-client", () => ({
 	},
 }));
 
-import VerifyOtpScreen from "./verify-otp";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { authClient } from "@/lib/auth-client";
-import { useLocalSearchParams } from "expo-router";
+import VerifyOtpScreen from "./verify-otp";
 
 const mockSignInEmailOtp = jest.mocked(authClient.signIn.emailOtp);
 const mockSendVerificationOtp = jest.mocked(
 	authClient.emailOtp.sendVerificationOtp,
 );
 const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
+const mockUseRouter = jest.mocked(useRouter);
 
 /** 指定桁に数字のみのOTPを入力し、状態反映を待つ */
 async function fillOtpAt(index: number, code: string) {
@@ -44,9 +43,15 @@ async function fillOtpAt(index: number, code: string) {
 	}
 }
 
+const mockReplace = jest.fn();
+
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockUseLocalSearchParams.mockReturnValue({ email: "test@example.com" });
+	mockUseRouter.mockReturnValue({
+		replace: mockReplace,
+		back: jest.fn(),
+	} as unknown as ReturnType<typeof useRouter>);
 	mockSignInEmailOtp.mockResolvedValue({ error: null });
 	mockSendVerificationOtp.mockResolvedValue({ error: null });
 });
@@ -177,9 +182,7 @@ describe("VerifyOtpScreen", () => {
 		await user.press(screen.getByText("認証する"));
 
 		await waitFor(() => {
-			expect(
-				screen.getByText("コードが正しくありません"),
-			).toBeOnTheScreen();
+			expect(screen.getByText("コードが正しくありません")).toBeOnTheScreen();
 		});
 	});
 

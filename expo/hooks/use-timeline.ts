@@ -35,7 +35,7 @@ export function useTimeline() {
 	const items = buildTimelineItems(allEntries);
 
 	const handleEntryPress = (entry: Entry) => {
-		router.push(`/entry-detail/${entry.id}`);
+		router.push(`/entry-detail/${entry.originalId}`);
 	};
 
 	const handleEndReached = () => {

@@ -41,18 +41,18 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		id: "entry-1",
 		userId: "user-1",
 		category: "advance",
-		operation: "original",
 		amount: 1500,
 		date: "2026-03-15",
 		label: "スーパー買い物",
 		memo: null,
+		originalId: "entry-1",
+		cancelled: false,
+		latest: true,
 		status: "approved",
-		parentId: null,
 		approvedBy: null,
 		approvedAt: null,
 		approvalComment: null,
 		createdAt: 1773676800000,
-		updatedAt: 1773676800000,
 		...overrides,
 	};
 }
@@ -109,7 +109,7 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("預り")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
-		expect(screen.getByText("-¥3,000")).toBeOnTheScreen();
+		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
 
 	it("月ごとのセクションヘッダーが表示される", async () => {
@@ -143,18 +143,15 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
 		});
 
-		// 3月のカードが2枚、2月のカードが1枚表示される
 		expect(screen.getByText("3月の記録A")).toBeOnTheScreen();
 		expect(screen.getByText("3月の記録B")).toBeOnTheScreen();
 		expect(screen.getByText("2月の記録")).toBeOnTheScreen();
 
-		// 3月ヘッダーが2月ヘッダーより先に表示される（FlatListの順序）
 		const marchHeader = screen.getByText("2026年3月");
 		const febHeader = screen.getByText("2026年2月");
 		const marchRecord = screen.getByText("3月の記録A");
 		const febRecord = screen.getByText("2月の記録");
 
-		// 3月のヘッダー → 3月の記録 → 2月のヘッダー → 2月の記録 の順序を検証
 		const allTexts = screen.root.findAll(
 			(node: { props: Record<string, unknown> }) => node.props.children,
 		);
@@ -170,7 +167,7 @@ describe("TimelineScreen", () => {
 
 	it("記録カードをタップすると詳細画面に遷移する", async () => {
 		mockApiResponse({
-			data: [makeEntry({ id: "abc-123" })],
+			data: [makeEntry({ id: "abc-123", originalId: "abc-123" })],
 			nextCursor: null,
 		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
@@ -193,5 +190,48 @@ describe("TimelineScreen", () => {
 		await user.press(fab);
 
 		expect(mockPush).toHaveBeenCalledWith("/entry-form");
+	});
+
+	// --- バージョン管理バッジのテスト ---
+
+	it("修正バージョン(v2)に「修正」バッジが表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "mod-1",
+					originalId: "entry-1",
+					latest: true,
+					amount: 9000,
+					label: "食費",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("修正")).toBeOnTheScreen();
+		});
+		expect(screen.getByText("食費")).toBeOnTheScreen();
+		expect(screen.getByText("¥9,000")).toBeOnTheScreen();
+	});
+
+	it("取消バージョンに「取消」バッジが表示される", async () => {
+		mockApiResponse({
+			data: [
+				makeEntry({
+					id: "cancel-1",
+					originalId: "entry-1",
+					cancelled: true,
+					latest: true,
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("取消")).toBeOnTheScreen();
+		});
 	});
 });

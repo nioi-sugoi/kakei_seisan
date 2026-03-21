@@ -16,6 +16,12 @@ const createEntrySchema = v.object({
 	memo: v.optional(v.string()),
 });
 
+const modifyEntrySchema = v.object({
+	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
+	label: v.pipe(v.string(), v.minLength(1)),
+	memo: v.optional(v.string()),
+});
+
 const entriesApp = new Hono<{
 	Bindings: Env;
 	Variables: AppVariables;
@@ -59,7 +65,9 @@ const entriesApp = new Hono<{
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
 
-		return c.json(entry, 200);
+		const versions = await entriesRepository.findVersions(db, entry.originalId);
+
+		return c.json({ ...entry, versions }, 200);
 	})
 	.post(
 		"/",
@@ -73,6 +81,106 @@ const entriesApp = new Hono<{
 
 			return c.json(entry, 201);
 		},
-	);
+	)
+	.post(
+		"/:originalId/modify",
+		requireAuth,
+		vValidator("json", modifyEntrySchema, handleValidationError),
+		async (c) => {
+			const user = c.get("user");
+			const originalId = c.req.param("originalId");
+			const input = c.req.valid("json");
+			const db = drizzle(c.env.DB);
+
+			const latestEntry = await entriesRepository.findMyLatestVersion(
+				db,
+				originalId,
+				user.id,
+			);
+			if (!latestEntry) {
+				return c.json({ error: "記録が見つかりません" as const }, 404);
+			}
+			if (latestEntry.cancelled) {
+				return c.json(
+					{ error: "取り消し済みの記録は修正できません" as const },
+					400,
+				);
+			}
+
+			if (
+				input.amount === latestEntry.amount &&
+				input.label === latestEntry.label &&
+				(input.memo ?? null) === latestEntry.memo
+			) {
+				return c.json({ error: "変更がありません" as const }, 400);
+			}
+
+			const [, insertedRows] = await entriesRepository.createModification(
+				db,
+				user.id,
+				{
+					originalId,
+					category: latestEntry.category,
+					date: latestEntry.date,
+				},
+				input,
+			);
+
+			return c.json(insertedRows[0], 201);
+		},
+	)
+	.post("/:originalId/cancel", requireAuth, async (c) => {
+		const user = c.get("user");
+		const originalId = c.req.param("originalId");
+		const db = drizzle(c.env.DB);
+
+		const latestEntry = await entriesRepository.findMyLatestVersion(
+			db,
+			originalId,
+			user.id,
+		);
+		if (!latestEntry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		if (latestEntry.cancelled) {
+			return c.json({ error: "既に取り消し済みです" as const }, 400);
+		}
+
+		const [, insertedRows] = await entriesRepository.createCancellation(
+			db,
+			user.id,
+			latestEntry,
+		);
+
+		return c.json(insertedRows[0], 201);
+	})
+	.post("/:originalId/restore", requireAuth, async (c) => {
+		const user = c.get("user");
+		const originalId = c.req.param("originalId");
+		const db = drizzle(c.env.DB);
+
+		const latestEntry = await entriesRepository.findMyLatestVersion(
+			db,
+			originalId,
+			user.id,
+		);
+		if (!latestEntry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		if (!latestEntry.cancelled) {
+			return c.json(
+				{ error: "取り消しされていない記録は復元できません" as const },
+				400,
+			);
+		}
+
+		const [, insertedRows] = await entriesRepository.createRestoration(
+			db,
+			user.id,
+			latestEntry,
+		);
+
+		return c.json(insertedRows[0], 201);
+	});
 
 export { entriesApp };

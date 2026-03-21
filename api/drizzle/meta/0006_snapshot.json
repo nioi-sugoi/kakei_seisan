@@ -1,8 +1,8 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "a717636c-83bf-45f9-b0af-d70306b2570b",
-	"prevId": "050992fe-5f75-4666-8964-35d9a58fbcc6",
+	"id": "75ca0831-8844-43cc-a119-5689ff843c66",
+	"prevId": "fd8d91a4-8d14-40b4-aeaa-167a63c9ab23",
 	"tables": {
 		"account": {
 			"name": "account",
@@ -146,14 +146,6 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"operation": {
-					"name": "operation",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false,
-					"default": "'original'"
-				},
 				"amount": {
 					"name": "amount",
 					"type": "integer",
@@ -182,6 +174,29 @@
 					"notNull": false,
 					"autoincrement": false
 				},
+				"original_id": {
+					"name": "original_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cancelled": {
+					"name": "cancelled",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": false
+				},
+				"latest": {
+					"name": "latest",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": true
+				},
 				"status": {
 					"name": "status",
 					"type": "text",
@@ -189,13 +204,6 @@
 					"notNull": true,
 					"autoincrement": false,
 					"default": "'approved'"
-				},
-				"parent_id": {
-					"name": "parent_id",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
 				},
 				"approved_by": {
 					"name": "approved_by",
@@ -224,13 +232,6 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
-				},
-				"updated_at": {
-					"name": "updated_at",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
 				}
 			},
 			"indexes": {
@@ -249,9 +250,19 @@
 					"columns": ["user_id", "created_at"],
 					"isUnique": false
 				},
-				"entries_parent_idx": {
-					"name": "entries_parent_idx",
-					"columns": ["parent_id"],
+				"entries_original_idx": {
+					"name": "entries_original_idx",
+					"columns": ["original_id"],
+					"isUnique": false
+				},
+				"entries_original_created_idx": {
+					"name": "entries_original_created_idx",
+					"columns": ["original_id", "created_at"],
+					"isUnique": false
+				},
+				"entries_user_latest_idx": {
+					"name": "entries_user_latest_idx",
+					"columns": ["user_id", "latest"],
 					"isUnique": false
 				}
 			},
@@ -265,11 +276,11 @@
 					"onDelete": "no action",
 					"onUpdate": "no action"
 				},
-				"entries_parent_id_entries_id_fk": {
-					"name": "entries_parent_id_entries_id_fk",
+				"entries_original_id_entries_id_fk": {
+					"name": "entries_original_id_entries_id_fk",
 					"tableFrom": "entries",
 					"tableTo": "entries",
-					"columnsFrom": ["parent_id"],
+					"columnsFrom": ["original_id"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
 					"onUpdate": "no action"
@@ -291,21 +302,13 @@
 					"name": "entries_category_check",
 					"value": "\"entries\".\"category\" IN ('advance', 'deposit')"
 				},
-				"entries_operation_check": {
-					"name": "entries_operation_check",
-					"value": "\"entries\".\"operation\" IN ('original', 'modification', 'cancellation')"
-				},
 				"entries_status_check": {
 					"name": "entries_status_check",
 					"value": "\"entries\".\"status\" IN ('approved', 'pending', 'rejected')"
 				},
-				"entries_parent_check": {
-					"name": "entries_parent_check",
-					"value": "(\"entries\".\"operation\" = 'original' AND \"entries\".\"parent_id\" IS NULL) OR (\"entries\".\"operation\" != 'original' AND \"entries\".\"parent_id\" IS NOT NULL)"
-				},
 				"entries_amount_check": {
 					"name": "entries_amount_check",
-					"value": "\"entries\".\"operation\" = 'original' AND \"entries\".\"amount\" >= 0 OR \"entries\".\"operation\" != 'original'"
+					"value": "\"entries\".\"amount\" >= 0"
 				}
 			}
 		},
@@ -435,7 +438,7 @@
 			"checkConstraints": {
 				"partner_invitations_status_check": {
 					"name": "partner_invitations_status_check",
-					"value": "\"partner_invitations\".\"status\" IN ('pending', 'accepted', 'expired')"
+					"value": "\"partner_invitations\".\"status\" IN ('pending', 'accepted', 'expired', 'cancelled')"
 				}
 			}
 		},
@@ -695,14 +698,6 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"operation": {
-					"name": "operation",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false,
-					"default": "'original'"
-				},
 				"amount": {
 					"name": "amount",
 					"type": "integer",
@@ -717,6 +712,29 @@
 					"notNull": true,
 					"autoincrement": false
 				},
+				"original_id": {
+					"name": "original_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cancelled": {
+					"name": "cancelled",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": false
+				},
+				"latest": {
+					"name": "latest",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": true
+				},
 				"status": {
 					"name": "status",
 					"type": "text",
@@ -724,13 +742,6 @@
 					"notNull": true,
 					"autoincrement": false,
 					"default": "'approved'"
-				},
-				"parent_id": {
-					"name": "parent_id",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
 				},
 				"approved_by": {
 					"name": "approved_by",
@@ -759,13 +770,6 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
-				},
-				"updated_at": {
-					"name": "updated_at",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
 				}
 			},
 			"indexes": {
@@ -779,9 +783,19 @@
 					"columns": ["user_id", "date"],
 					"isUnique": false
 				},
-				"settlements_parent_idx": {
-					"name": "settlements_parent_idx",
-					"columns": ["parent_id"],
+				"settlements_original_idx": {
+					"name": "settlements_original_idx",
+					"columns": ["original_id"],
+					"isUnique": false
+				},
+				"settlements_user_latest_idx": {
+					"name": "settlements_user_latest_idx",
+					"columns": ["user_id", "latest"],
+					"isUnique": false
+				},
+				"settlements_original_created_idx": {
+					"name": "settlements_original_created_idx",
+					"columns": ["original_id", "created_at"],
 					"isUnique": false
 				}
 			},
@@ -795,11 +809,11 @@
 					"onDelete": "no action",
 					"onUpdate": "no action"
 				},
-				"settlements_parent_id_settlements_id_fk": {
-					"name": "settlements_parent_id_settlements_id_fk",
+				"settlements_original_id_settlements_id_fk": {
+					"name": "settlements_original_id_settlements_id_fk",
 					"tableFrom": "settlements",
 					"tableTo": "settlements",
-					"columnsFrom": ["parent_id"],
+					"columnsFrom": ["original_id"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
 					"onUpdate": "no action"
@@ -817,21 +831,13 @@
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {
-				"settlements_operation_check": {
-					"name": "settlements_operation_check",
-					"value": "\"settlements\".\"operation\" IN ('original', 'modification', 'cancellation')"
-				},
 				"settlements_status_check": {
 					"name": "settlements_status_check",
 					"value": "\"settlements\".\"status\" IN ('approved', 'pending', 'rejected')"
 				},
-				"settlements_parent_check": {
-					"name": "settlements_parent_check",
-					"value": "(\"settlements\".\"operation\" = 'original' AND \"settlements\".\"parent_id\" IS NULL) OR (\"settlements\".\"operation\" != 'original' AND \"settlements\".\"parent_id\" IS NOT NULL)"
-				},
 				"settlements_amount_check": {
 					"name": "settlements_amount_check",
-					"value": "\"settlements\".\"operation\" = 'original' AND \"settlements\".\"amount\" >= 0 OR \"settlements\".\"operation\" != 'original'"
+					"value": "\"settlements\".\"amount\" >= 0"
 				}
 			}
 		},

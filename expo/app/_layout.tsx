@@ -54,6 +54,13 @@ export default function RootLayout() {
 						}}
 					/>
 					<Stack.Screen
+						name="modify-entry/[id]"
+						options={{
+							headerShown: false,
+							presentation: "modal",
+						}}
+					/>
+					<Stack.Screen
 						name="entry-detail/[id]"
 						options={{
 							headerShown: false,

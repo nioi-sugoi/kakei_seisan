@@ -25,9 +25,7 @@ export function AmountInput({ value, onChange, error }: AmountInputProps) {
 					placeholderTextColor="#9ca3af"
 				/>
 			</View>
-			{error ? (
-				<Text className="text-sm text-destructive">{error}</Text>
-			) : null}
+			{error ? <Text className="text-sm text-destructive">{error}</Text> : null}
 		</View>
 	);
 }

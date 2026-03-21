@@ -4,8 +4,8 @@ import {
 	Pressable,
 	Text,
 	TextInput,
-	View,
 	type TextInput as TextInputType,
+	View,
 } from "react-native";
 
 const OTP_LENGTH = 6;
@@ -116,12 +116,16 @@ export function OtpForm({
 					{digits.map((digit, index) => (
 						<TextInput
 							key={index}
-							ref={(ref) => { inputRefs.current[index] = ref; }}
+							ref={(ref) => {
+								inputRefs.current[index] = ref;
+							}}
 							testID={`otp-input-${index}`}
 							className="border border-border rounded-xl w-12 h-14 text-center text-2xl text-foreground bg-card"
 							value={digit}
 							onChangeText={(value) => handleChange(index, value)}
-							onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
+							onKeyPress={({ nativeEvent }) =>
+								handleKeyPress(index, nativeEvent.key)
+							}
 							keyboardType="number-pad"
 							autoFocus={index === 0}
 							editable={!loading}
@@ -148,7 +152,11 @@ export function OtpForm({
 			</View>
 
 			<View className="flex-row gap-4 mt-2">
-				<Pressable onPress={onResend} disabled={loading} className="active:opacity-80">
+				<Pressable
+					onPress={onResend}
+					disabled={loading}
+					className="active:opacity-80"
+				>
 					<Text className="text-primary text-sm font-medium">
 						コードを再送信
 					</Text>
