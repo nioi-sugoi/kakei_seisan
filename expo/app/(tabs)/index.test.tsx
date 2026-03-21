@@ -234,21 +234,4 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("取消")).toBeOnTheScreen();
 		});
 	});
-
-	it("修正済みの v1 エントリに「修正済み」バッジが表示される", async () => {
-		mockApiResponse({
-			data: [
-				makeEntry({
-					id: "entry-1",
-					latest: false,
-				}),
-			],
-			nextCursor: null,
-		});
-		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
-
-		await waitFor(() => {
-			expect(screen.getByText("修正済み")).toBeOnTheScreen();
-		});
-	});
 });

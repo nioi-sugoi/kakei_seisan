@@ -103,11 +103,11 @@ export default function EntryDetailScreen() {
 					isCancelled={latestVersion.cancelled}
 				/>
 
-				{/* バージョン履歴 */}
+				{/* 操作履歴 */}
 				{entry.versions.length > 1 ? (
 					<View className="rounded-xl bg-card px-4 py-4">
 						<Text className="mb-3 text-sm font-bold text-foreground">
-							バージョン履歴
+							操作履歴
 						</Text>
 						{entry.versions.map((v, i) => (
 							<View

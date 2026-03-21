@@ -97,7 +97,9 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				category: "deposit",
 				amount: 3000,
-				versions: [{ id: "entry-1", latest: true, cancelled: false, amount: 3000 }],
+				versions: [
+					{ id: "entry-1", latest: true, cancelled: false, amount: 3000 },
+				],
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
@@ -199,7 +201,7 @@ describe("EntryDetailScreen", () => {
 		expect(screen.queryByText("取り消す")).not.toBeOnTheScreen();
 	});
 
-	it("複数バージョンがある場合はバージョン履歴が表示される", async () => {
+	it("複数バージョンがある場合は操作履歴が表示される", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
@@ -211,7 +213,7 @@ describe("EntryDetailScreen", () => {
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("バージョン履歴")).toBeOnTheScreen();
+			expect(screen.getByText("操作履歴")).toBeOnTheScreen();
 		});
 	});
 

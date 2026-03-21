@@ -50,17 +50,6 @@ function VersionBadge({ type }: { type: "modified" | "cancelled" }) {
 	);
 }
 
-function StatusBadge({ status }: { status: "modified" | "cancelled" }) {
-	const isCancel = status === "cancelled";
-	return (
-		<View style={badgeBg.muted} className="rounded px-2 py-0.5">
-			<Text className="text-xs font-medium text-gray-500">
-				{isCancel ? "取消済み" : "修正済み"}
-			</Text>
-		</View>
-	);
-}
-
 interface EntryCardProps {
 	entry: Entry;
 	onPress: (entry: Entry) => void;
@@ -85,13 +74,8 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 						<CategoryBadge category={entry.category} />
 						{!isV1 && !isCancelled && <VersionBadge type="modified" />}
 						{isCancelled && <VersionBadge type="cancelled" />}
-						{isV1 && !isLatest && (
-							<StatusBadge status="modified" />
-						)}
 					</View>
-					<Text
-						className="text-sm font-medium text-foreground"
-					>
+					<Text className="text-sm font-medium text-foreground">
 						{entry.label}
 					</Text>
 					<Text className="text-xs text-muted-foreground">
