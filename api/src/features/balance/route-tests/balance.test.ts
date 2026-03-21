@@ -1,0 +1,201 @@
+import { env } from "cloudflare:test";
+import { drizzle } from "drizzle-orm/d1";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { entries, settlements } from "../../../db/schema";
+import { client } from "../../../testing/app-helper";
+import {
+	authCookie,
+	OTHER_USER,
+	seedOtherUser,
+	seedTestUser,
+	setupAuth,
+	TEST_USER,
+} from "../../../testing/auth-helper";
+import { cleanAllTables, setupDB } from "../../../testing/db-helper";
+
+beforeAll(async () => {
+	await setupDB();
+	await setupAuth();
+});
+
+async function insertEntry(
+	userId: string,
+	overrides: Partial<typeof entries.$inferInsert>,
+) {
+	const db = drizzle(env.DB);
+	const id = crypto.randomUUID();
+	await db.insert(entries).values({
+		id,
+		userId,
+		category: "advance",
+		amount: 0,
+		occurredOn: "2024-03-15",
+		label: "テスト",
+		originalId: id,
+		...overrides,
+	});
+}
+
+async function insertSettlement(
+	userId: string,
+	overrides: Partial<typeof settlements.$inferInsert>,
+) {
+	const db = drizzle(env.DB);
+	const id = crypto.randomUUID();
+	await db.insert(settlements).values({
+		id,
+		userId,
+		amount: 0,
+		occurredOn: "2024-03-15",
+		originalId: id,
+		createdAt: Date.now(),
+		...overrides,
+	});
+}
+
+describe("GET /api/balance", () => {
+	beforeEach(async () => {
+		await cleanAllTables();
+		await seedTestUser();
+	});
+
+	it("記録も精算もない場合は全て 0 を返す", async () => {
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body).toEqual({
+			advanceTotal: 0,
+			depositTotal: 0,
+			settlementTotal: 0,
+			balance: 0,
+		});
+	});
+
+	it("立替のみの場合、残高 = 立替合計", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 3000 });
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 2000 });
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body).toEqual({
+			advanceTotal: 5000,
+			depositTotal: 0,
+			settlementTotal: 0,
+			balance: 5000,
+		});
+	});
+
+	it("残高 = 立替合計 − 預り合計 − 精算合計", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
+		await insertEntry(TEST_USER.id, { category: "deposit", amount: 3000 });
+		await insertSettlement(TEST_USER.id, { amount: 2000 });
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body).toEqual({
+			advanceTotal: 10000,
+			depositTotal: 3000,
+			settlementTotal: 2000,
+			balance: 5000,
+		});
+	});
+
+	it("預り超過の場合は残高がマイナスになる", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 1000 });
+		await insertEntry(TEST_USER.id, { category: "deposit", amount: 5000 });
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.balance).toBe(-4000);
+	});
+
+	it("cancelled=true の記録は集計に含まれない", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 5000 });
+		await insertEntry(TEST_USER.id, {
+			category: "advance",
+			amount: 3000,
+			cancelled: true,
+		});
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.advanceTotal).toBe(5000);
+	});
+
+	it("latest=false の記録は集計に含まれない", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 5000 });
+		await insertEntry(TEST_USER.id, {
+			category: "advance",
+			amount: 3000,
+			latest: false,
+		});
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.advanceTotal).toBe(5000);
+	});
+
+	it("cancelled=true の精算は集計に含まれない", async () => {
+		await insertSettlement(TEST_USER.id, { amount: 5000 });
+		await insertSettlement(TEST_USER.id, { amount: 3000, cancelled: true });
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.settlementTotal).toBe(5000);
+	});
+
+	it("他ユーザーのデータは集計に含まれない", async () => {
+		await seedOtherUser();
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 5000 });
+		await insertEntry(OTHER_USER.id, { category: "advance", amount: 9999 });
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.advanceTotal).toBe(5000);
+	});
+
+	it("認証なしでリクエストすると 401 を返す", async () => {
+		const res = await client.api.balance.$get({});
+
+		expect(res.status).toBe(401);
+	});
+});
