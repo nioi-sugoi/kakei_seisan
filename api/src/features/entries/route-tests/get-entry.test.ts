@@ -91,6 +91,62 @@ describe("GET /api/entries/:id", () => {
 		expect(body).toHaveProperty("error", "記録が見つかりません");
 	});
 
+	it("versions にバージョン一覧が含まれる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 5000,
+			label: "食費",
+		});
+
+		await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: { amount: 4000, label: "食費" },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.versions).toHaveLength(2);
+		expect(body.versions[0].latest).toBe(true);
+		expect(body.versions[0].amount).toBe(4000);
+		expect(body.versions[1].latest).toBe(false);
+	});
+
+	it("修正バージョンを取得すると original が含まれる", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 5000,
+			label: "食費",
+		});
+
+		const modRes = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: { amount: 4000, label: "食費" },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const modified = await modRes.json();
+		if ("error" in modified) throw new Error("unexpected error");
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: modified.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.original).toBeDefined();
+		expect(body.original?.id).toBe(entry.id);
+	});
+
 	it("認証なしでリクエストすると 401 を返す", async () => {
 		const entry = await insertEntry(TEST_USER.id);
 
