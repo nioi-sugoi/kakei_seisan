@@ -159,7 +159,7 @@ describe("EntryDetailScreen", () => {
 
 		await user.press(screen.getByText("修正する"));
 
-		expect(mockPush).toHaveBeenCalledWith("/entry-form?modifyId=entry-1");
+		expect(mockPush).toHaveBeenCalledWith("/modify-entry/entry-1");
 	});
 
 	it("「取り消す」を押すと確認ダイアログが表示される", async () => {

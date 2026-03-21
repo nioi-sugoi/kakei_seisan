@@ -57,7 +57,7 @@ export default function EntryDetailScreen() {
 	const canModify = !latestVersion.cancelled;
 
 	const handleModify = () => {
-		router.push(`/entry-form?modifyId=${entry.originalId}`);
+		router.push(`/modify-entry/${entry.originalId}`);
 	};
 
 	const handleCancel = () => {
