@@ -6,6 +6,7 @@ import {
 	client,
 	insertEntry,
 	OTHER_USER,
+	queryVersionsByOriginalId,
 	seedOtherUser,
 	setupAuth,
 } from "./helpers";
@@ -44,6 +45,15 @@ describe("POST /api/entries/:id/modify", () => {
 			cancelled: false,
 			latest: true,
 		});
+
+		// DB状態: 2レコード、latest は修正バージョンのみ
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(2);
+		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
+		const dbModified = dbVersions.find((v) => v.id !== entry.id);
+		expect(dbOriginal?.latest).toBe(false);
+		expect(dbModified?.latest).toBe(true);
+		expect(dbModified?.amount).toBe(9000);
 	});
 
 	it("ラベルのみの修正でも新バージョンが作成される", async () => {
@@ -83,13 +93,9 @@ describe("POST /api/entries/:id/modify", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const getRes = await client.api.entries[":id"].$get(
-			{ param: { id: entry.id } },
-			{ headers: { Cookie: authCookie } },
-		);
-		const original = await getRes.json();
-		if ("error" in original) throw new Error("unexpected error");
-		expect(original.latest).toBe(false);
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
+		expect(dbOriginal?.latest).toBe(false);
 	});
 
 	it("既に修正済みのエントリをさらに修正できる", async () => {
@@ -120,6 +126,13 @@ describe("POST /api/entries/:id/modify", () => {
 			amount: 8000,
 			originalId: entry.id,
 		});
+
+		// DB状態: 3バージョン、latest は最新修正のみ
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(3);
+		const latestVersions = dbVersions.filter((v) => v.latest);
+		expect(latestVersions).toHaveLength(1);
+		expect(latestVersions[0].amount).toBe(8000);
 	});
 
 	it("変更がない場合は 400 を返す", async () => {

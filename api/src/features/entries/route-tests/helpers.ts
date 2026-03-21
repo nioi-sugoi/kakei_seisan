@@ -1,4 +1,5 @@
 import { applyD1Migrations, env } from "cloudflare:test";
+import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { testClient } from "hono/testing";
 import { entries, user } from "../../../db/schema";
@@ -53,4 +54,15 @@ export async function insertEntry(
 		})
 		.returning();
 	return entry;
+}
+
+/** originalId でグルーピングした全バージョンをDB直接取得（createdAt降順） */
+export function queryVersionsByOriginalId(originalId: string) {
+	const db = drizzle(env.DB);
+	return db
+		.select()
+		.from(entries)
+		.where(eq(entries.originalId, originalId))
+		.orderBy(desc(entries.createdAt))
+		.all();
 }

@@ -6,6 +6,7 @@ import {
 	client,
 	insertEntry,
 	OTHER_USER,
+	queryVersionsByOriginalId,
 	seedOtherUser,
 	setupAuth,
 } from "./helpers";
@@ -42,6 +43,15 @@ describe("POST /api/entries/:id/cancel", () => {
 			cancelled: true,
 			latest: true,
 		});
+
+		// DB状態: originalId グループに2レコード、latest は取消バージョンのみ
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(2);
+		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
+		const dbCancelled = dbVersions.find((v) => v.id !== entry.id);
+		expect(dbOriginal?.latest).toBe(false);
+		expect(dbCancelled?.latest).toBe(true);
+		expect(dbCancelled?.cancelled).toBe(true);
 	});
 
 	it("deposit カテゴリの記録も取り消せる", async () => {
@@ -90,6 +100,14 @@ describe("POST /api/entries/:id/cancel", () => {
 			amount: 9000,
 			cancelled: true,
 		});
+
+		// DB状態: 3バージョン（初版 + 修正 + 取消）、latest は取消のみ
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(3);
+		const latestVersions = dbVersions.filter((v) => v.latest);
+		expect(latestVersions).toHaveLength(1);
+		expect(latestVersions[0].cancelled).toBe(true);
+		expect(latestVersions[0].amount).toBe(9000);
 	});
 
 	it("取り消し後、旧バージョンの latest が false になる", async () => {
@@ -103,13 +121,9 @@ describe("POST /api/entries/:id/cancel", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
-		const getRes = await client.api.entries[":id"].$get(
-			{ param: { id: entry.id } },
-			{ headers: { Cookie: authCookie } },
-		);
-		const original = await getRes.json();
-		if ("error" in original) throw new Error("unexpected error");
-		expect(original.latest).toBe(false);
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		const dbOriginal = dbVersions.find((v) => v.id === entry.id);
+		expect(dbOriginal?.latest).toBe(false);
 	});
 
 	it("既に取り消し済みのエントリは再取り消しできない", async () => {
