@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -37,7 +37,7 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 		.get();
 }
 
-export function listByUser(
+export async function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
 	options: { limit: number; cursor?: number },
@@ -46,36 +46,37 @@ export function listByUser(
 	if (options.cursor) {
 		conditions.push(lt(entries.createdAt, options.cursor));
 	}
-	const isLatest = sql<boolean>`(
-		${entries.createdAt} = (
-			SELECT MAX(e2.created_at) FROM entries e2
-			WHERE e2.original_id = ${entries.originalId}
-		)
-	)`.mapWith(Boolean);
 
-	return db
-		.select({
-			id: entries.id,
-			userId: entries.userId,
-			category: entries.category,
-			amount: entries.amount,
-			date: entries.date,
-			label: entries.label,
-			memo: entries.memo,
-			originalId: entries.originalId,
-			cancelled: entries.cancelled,
-			status: entries.status,
-			approvedBy: entries.approvedBy,
-			approvedAt: entries.approvedAt,
-			approvalComment: entries.approvalComment,
-			createdAt: entries.createdAt,
-			isLatest,
-		})
+	const items = await db
+		.select()
 		.from(entries)
 		.where(and(...conditions))
 		.orderBy(desc(entries.createdAt))
 		.limit(options.limit)
 		.all();
+
+	if (items.length === 0) return [];
+
+	// 各 originalId グループの最大 createdAt を DB から取得（ページ外のバージョンも考慮）
+	const originalIds = [...new Set(items.map((i) => i.originalId))];
+	const maxRows = await db
+		.select({
+			originalId: entries.originalId,
+			maxCreatedAt: sql<number>`MAX(${entries.createdAt})`,
+		})
+		.from(entries)
+		.where(inArray(entries.originalId, originalIds))
+		.groupBy(entries.originalId)
+		.all();
+
+	const maxCreatedByOriginal = new Map(
+		maxRows.map((r) => [r.originalId, r.maxCreatedAt]),
+	);
+
+	return items.map((item) => ({
+		...item,
+		isLatest: item.createdAt === maxCreatedByOriginal.get(item.originalId),
+	}));
 }
 
 /** 同じ original_id グループの全バージョンを取得 */
