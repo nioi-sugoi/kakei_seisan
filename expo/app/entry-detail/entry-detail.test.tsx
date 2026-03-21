@@ -139,7 +139,7 @@ describe("EntryDetailScreen", () => {
 		});
 	});
 
-	it("元の記録には「修正する」「取り消す」ボタンが表示される", async () => {
+	it("取消されていない記録には「修正する」「取り消す」ボタンが表示される", async () => {
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
