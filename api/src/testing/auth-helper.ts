@@ -71,3 +71,33 @@ export async function buildAuthCookie(): Promise<string> {
 	);
 	return setCookie.split(";")[0];
 }
+
+export async function seedOtherUser() {
+	await seedUser(OTHER_USER);
+}
+
+export async function seedThirdUser() {
+	await seedUser(THIRD_USER);
+}
+
+/**
+ * OTHER_USER としてログインするための認証クッキーを作成する。
+ * OTHER_USER 用のセッションをDBに挿入して署名付きクッキーを返す。
+ */
+export async function buildOtherUserAuthCookie(): Promise<string> {
+	const db = drizzle(env.DB);
+	const token = "other-user-session-token";
+	await db.insert(session).values({
+		id: "other-user-session-id",
+		expiresAt: new Date(Date.now() + 86_400_000),
+		token,
+		updatedAt: new Date(),
+		userId: OTHER_USER.id,
+	});
+	const setCookie = await serializeSigned(
+		"better-auth.session_token",
+		token,
+		env.BETTER_AUTH_SECRET,
+	);
+	return setCookie.split(";")[0];
+}

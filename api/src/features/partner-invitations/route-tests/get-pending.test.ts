@@ -7,7 +7,9 @@ import {
 	insertInvitation,
 	OTHER_USER,
 	seedOtherUser,
+	seedThirdUser,
 	setupAuth,
+	THIRD_USER,
 } from "./helpers";
 
 beforeAll(async () => {
@@ -39,6 +41,21 @@ describe("GET /api/partner-invitations/pending", () => {
 			inviterName: OTHER_USER.name,
 			inviterEmail: OTHER_USER.email,
 		});
+	});
+
+	it("複数の招待がある場合は配列に複数要素が含まれる", async () => {
+		await seedThirdUser();
+		await insertInvitation(OTHER_USER.id, TEST_USER.email);
+		await insertInvitation(THIRD_USER.id, TEST_USER.email);
+
+		const res = await client.api["partner-invitations"].pending.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toHaveLength(2);
 	});
 
 	it("有効期限切れの招待は取得されない", async () => {
