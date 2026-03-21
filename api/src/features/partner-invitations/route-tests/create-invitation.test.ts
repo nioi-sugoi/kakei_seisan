@@ -8,10 +8,13 @@ import { cleanAllTables } from "../../../testing/db-helper";
 import {
 	authCookie,
 	client,
+	insertInvitation,
 	insertPartnership,
 	OTHER_USER,
 	seedOtherUser,
+	seedThirdUser,
 	setupAuth,
+	THIRD_USER,
 } from "./helpers";
 
 beforeAll(async () => {
@@ -101,6 +104,65 @@ describe("POST /api/partner-invitations", () => {
 		expect(res.status).toBe(409);
 		const body = await res.json();
 		expect(body).toHaveProperty("error", "すでにパートナーが登録されています");
+	});
+
+	it("指定したメールアドレスに紐づくアカウントがなくても招待を送信できる", async () => {
+		const res = await client.api["partner-invitations"].$post(
+			{ json: { inviteeEmail: "unregistered@example.com" } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toMatchObject({
+			inviterId: TEST_USER.id,
+			inviteeEmail: "unregistered@example.com",
+			status: "pending",
+		});
+	});
+
+	it("相手にすでにパートナーがいる場合は招待できない", async () => {
+		await seedOtherUser();
+		await seedThirdUser();
+		await insertPartnership(OTHER_USER.id, THIRD_USER.id);
+
+		const res = await client.api["partner-invitations"].$post(
+			{ json: { inviteeEmail: OTHER_USER.email } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(409);
+		const body = await res.json();
+		expect(body).toHaveProperty(
+			"error",
+			"招待先のユーザーは既にパートナーが登録されています",
+		);
+	});
+
+	it("すでに有効期限内の招待を送信済みの場合は招待を送信できない", async () => {
+		await insertInvitation(TEST_USER.id, "first@example.com");
+
+		const res = await client.api["partner-invitations"].$post(
+			{ json: { inviteeEmail: "second@example.com" } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(409);
+		const body = await res.json();
+		expect(body).toHaveProperty("error", "すでに有効な招待があります");
+	});
+
+	it("有効期限切れの招待がある場合は新しい招待を送信できる", async () => {
+		await insertInvitation(TEST_USER.id, "first@example.com", {
+			expiresAt: Date.now() - 1000,
+		});
+
+		const res = await client.api["partner-invitations"].$post(
+			{ json: { inviteeEmail: "second@example.com" } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
 	});
 
 	it("メールアドレスの形式が不正な場合 400 を返す", async () => {

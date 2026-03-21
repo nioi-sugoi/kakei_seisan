@@ -46,6 +46,36 @@ const partnerInvitationsApp = new Hono<{
 				);
 			}
 
+			// 相手が登録済みユーザーで既にパートナーがいる場合は招待不可
+			const invitee = await repository.findUserByEmail(db, inviteeEmail);
+			if (invitee) {
+				const inviteePartnership = await repository.findPartnershipByUser(
+					db,
+					invitee.id,
+				);
+				if (inviteePartnership) {
+					return c.json(
+						{
+							error: "招待先のユーザーは既にパートナーが登録されています" as const,
+						},
+						409,
+					);
+				}
+			}
+
+			// 既に有効期限内の招待がある場合は送信不可
+			const existingInvitation = await repository.findPendingByInviter(
+				db,
+				user.id,
+				Date.now(),
+			);
+			if (existingInvitation) {
+				return c.json(
+					{ error: "すでに有効な招待があります" as const },
+					409,
+				);
+			}
+
 			const invitation = await repository.createInvitation(
 				db,
 				user.id,
@@ -67,6 +97,34 @@ const partnerInvitationsApp = new Hono<{
 		);
 
 		return c.json({ data: invitations });
+	})
+	// ── DELETE /:id — 送信した招待を解除 ──────────────────────
+	.delete("/:id", requireAuth, async (c) => {
+		const user = c.get("user");
+		const invitationId = c.req.param("id");
+		const db = drizzle(c.env.DB);
+
+		const invitation = await repository.findById(db, invitationId);
+		if (!invitation) {
+			return c.json({ error: "招待が見つかりません" as const }, 404);
+		}
+
+		// 自分が送信した招待かチェック
+		if (invitation.inviterId !== user.id) {
+			return c.json({ error: "招待が見つかりません" as const }, 404);
+		}
+
+		// pending 状態のみ解除可能
+		if (invitation.status !== "pending") {
+			return c.json(
+				{ error: "この招待は既に処理されています" as const },
+				409,
+			);
+		}
+
+		await repository.deleteInvitation(db, invitationId);
+
+		return c.json({ success: true });
 	})
 	// ── POST /:id/accept — 招待を承認 ─────────────────────────
 	.post("/:id/accept", requireAuth, async (c) => {

@@ -75,6 +75,36 @@ export function updateStatus(
 		.get();
 }
 
+export function findPendingByInviter(
+	db: DrizzleD1Database,
+	inviterId: string,
+	now: number,
+) {
+	return db
+		.select()
+		.from(partnerInvitations)
+		.where(
+			and(
+				eq(partnerInvitations.inviterId, inviterId),
+				eq(partnerInvitations.status, "pending"),
+				gt(partnerInvitations.expiresAt, now),
+			),
+		)
+		.get();
+}
+
+export function findUserByEmail(db: DrizzleD1Database, email: string) {
+	return db.select().from(user).where(eq(user.email, email)).get();
+}
+
+export function deleteInvitation(db: DrizzleD1Database, id: string) {
+	return db
+		.delete(partnerInvitations)
+		.where(eq(partnerInvitations.id, id))
+		.returning()
+		.get();
+}
+
 // ── partnerships ────────────────────────────────────────────────
 
 export function findPartnershipByUser(db: DrizzleD1Database, userId: string) {
