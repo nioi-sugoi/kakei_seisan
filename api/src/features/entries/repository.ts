@@ -56,7 +56,7 @@ export function listByUser(
 }
 
 /** 同じ original_id グループの全バージョンを取得 */
-export function listVersions(db: DrizzleD1Database, originalId: string) {
+export function findVersions(db: DrizzleD1Database, originalId: string) {
 	return db
 		.select()
 		.from(entries)

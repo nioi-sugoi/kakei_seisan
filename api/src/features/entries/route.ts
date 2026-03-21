@@ -87,7 +87,7 @@ const entriesApp = new Hono<{
 
 		// バージョン一覧と元エントリを並行取得
 		const [versions, original] = await Promise.all([
-			entriesRepository.listVersions(db, entry.originalId),
+			entriesRepository.findVersions(db, entry.originalId),
 			entry.id !== entry.originalId
 				? entriesRepository
 						.findById(db, entry.originalId)
