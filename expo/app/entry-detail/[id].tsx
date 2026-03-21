@@ -85,6 +85,9 @@ export default function EntryDetailScreen() {
 		]);
 	};
 
+	// 操作履歴: 最新バージョンは上部に表示済みなので、2番目以降のみ表示
+	const pastVersions = entry.versions.slice(1);
+
 	return (
 		<View className="flex-1 bg-background">
 			<Header onBack={() => router.back()} />
@@ -104,17 +107,15 @@ export default function EntryDetailScreen() {
 				/>
 
 				{/* 操作履歴 */}
-				{entry.versions.length > 1 ? (
+				{pastVersions.length > 0 ? (
 					<View className="rounded-xl bg-card px-4 py-4">
 						<Text className="mb-3 text-sm font-bold text-foreground">
 							操作履歴
 						</Text>
-						{entry.versions.map((v, i) => (
+						{pastVersions.map((v, i) => (
 							<View
 								key={v.id}
-								className={`flex-row items-center justify-between py-2 ${
-									i < entry.versions.length - 1 ? "border-b border-border" : ""
-								} ${!v.latest ? "opacity-50" : ""}`}
+								className={`flex-row items-center justify-between py-2 ${i < pastVersions.length - 1 ? "border-b border-border" : ""} opacity-50`}
 							>
 								<View className="flex-1 gap-0.5">
 									<View className="flex-row items-center gap-2">
@@ -124,16 +125,9 @@ export default function EntryDetailScreen() {
 										{v.cancelled && (
 											<Text className="text-xs text-destructive">取消</Text>
 										)}
-										{!v.cancelled &&
-											i > 0 &&
-											entry.versions[i - 1]?.cancelled && (
-												<Text className="text-xs text-green-600">復元</Text>
-											)}
-										{v.latest &&
-											!v.cancelled &&
-											!(i > 0 && entry.versions[i - 1]?.cancelled) && (
-												<Text className="text-xs text-primary">最新</Text>
-											)}
+										{!v.cancelled && entry.versions[i]?.cancelled && (
+											<Text className="text-xs text-green-600">復元</Text>
+										)}
 									</View>
 									{v.date ? (
 										<Text className="text-xs text-muted-foreground">

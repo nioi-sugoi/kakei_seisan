@@ -109,7 +109,7 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("預り")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
-		expect(screen.getByText("-¥3,000")).toBeOnTheScreen();
+		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
 
 	it("月ごとのセクションヘッダーが表示される", async () => {

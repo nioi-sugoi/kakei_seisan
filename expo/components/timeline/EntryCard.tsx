@@ -91,7 +91,6 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 								: "text-foreground"
 					}`}
 				>
-					{isDeposit ? "-" : ""}
 					{formatAmount(entry.amount)}
 				</Text>
 			</View>

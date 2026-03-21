@@ -82,7 +82,6 @@ export function EntryInfoCard({
 								: "text-foreground"
 					}`}
 				>
-					{category === "deposit" ? "-" : ""}
 					{formatAmount(amount)}
 				</Text>
 			</View>

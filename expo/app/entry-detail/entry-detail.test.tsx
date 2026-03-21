@@ -92,7 +92,7 @@ describe("EntryDetailScreen", () => {
 		expect(screen.getByText("夕食の材料")).toBeOnTheScreen();
 	});
 
-	it("預りカテゴリの場合はマイナス符号付きで金額が表示される", async () => {
+	it("預りカテゴリの場合も金額はプラスで表示される", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				category: "deposit",
@@ -105,7 +105,7 @@ describe("EntryDetailScreen", () => {
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("-¥3,000")).toBeOnTheScreen();
+			expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("預り")).toBeOnTheScreen();
 	});
