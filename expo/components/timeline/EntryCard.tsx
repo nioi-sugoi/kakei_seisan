@@ -76,7 +76,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 	return (
 		<Pressable
 			onPress={() => onPress(entry)}
-			className={`rounded-xl bg-card px-4 py-3 active:opacity-80 ${groupCancelled ? "opacity-50" : ""}`}
+			className={`rounded-xl bg-card px-4 py-3 active:opacity-80 ${!isLatest ? "opacity-50" : ""}`}
 			accessibilityRole="button"
 			accessibilityLabel={`${isDeposit ? "預り" : "立替"} ${entry.label} ${formatAmount(entry.amount)}`}
 		>
@@ -94,7 +94,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 						)}
 					</View>
 					<Text
-						className={`text-sm font-medium text-foreground ${groupCancelled ? "line-through" : ""}`}
+						className="text-sm font-medium text-foreground"
 					>
 						{entry.label}
 					</Text>
@@ -104,11 +104,7 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 				</View>
 				<Text
 					className={`text-lg font-bold ${
-						groupCancelled
-							? "line-through text-muted-foreground"
-							: isDeposit
-								? "text-warning"
-								: "text-foreground"
+						isDeposit ? "text-warning" : "text-foreground"
 					}`}
 				>
 					{isDeposit ? "-" : ""}
