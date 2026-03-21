@@ -14,38 +14,75 @@ import { DateInput } from "@/components/entry-form/DateInput";
 import { LabelInput } from "@/components/entry-form/LabelInput";
 import { MemoInput } from "@/components/entry-form/MemoInput";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
-import { useEntryForm } from "@/hooks/use-entry-form";
+import { useCreateEntryForm, useModifyEntryForm } from "@/hooks/use-entry-form";
 
-function EntryFormContent({
-	modifyTarget,
+function FormHeader({
+	isModifyMode,
+	goBack,
 }: {
-	modifyTarget?: {
-		id: string;
-		category: "advance" | "deposit";
-		amount: number;
-		date: string;
-		label: string;
-		memo: string | null;
-	};
+	isModifyMode: boolean;
+	goBack: () => void;
 }) {
-	const { form, isModifyMode, serverError, loading, goBack } =
-		useEntryForm(modifyTarget);
+	return (
+		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
+			<Pressable onPress={goBack} className="active:opacity-60">
+				<Text className="text-base text-primary">戻る</Text>
+			</Pressable>
+			<Text className="flex-1 text-lg font-bold text-foreground">
+				{isModifyMode ? "記録を修正" : "記録を登録"}
+			</Text>
+		</View>
+	);
+}
+
+function FormError({ message }: { message: string }) {
+	return (
+		<View
+			style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+			className="rounded-xl px-4 py-3"
+		>
+			<Text className="text-sm text-destructive">{message}</Text>
+		</View>
+	);
+}
+
+function SubmitButton({
+	label,
+	loading,
+	onPress,
+}: {
+	label: string;
+	loading: boolean;
+	onPress: () => void;
+}) {
+	return (
+		<Pressable
+			onPress={onPress}
+			disabled={loading}
+			className={`mt-2 items-center rounded-xl py-3.5 bg-primary ${
+				loading ? "opacity-60" : "active:opacity-80"
+			}`}
+		>
+			{loading ? (
+				<ActivityIndicator color="white" />
+			) : (
+				<Text className="text-base font-semibold text-primary-foreground">
+					{label}
+				</Text>
+			)}
+		</Pressable>
+	);
+}
+
+function CreateEntryScreen() {
+	const { form, serverError, loading, goBack } = useCreateEntryForm();
 
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === "ios" ? "padding" : "height"}
 			className="flex-1 bg-background"
 		>
-			{/* Header */}
-			<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
-				<Pressable onPress={goBack} className="active:opacity-60">
-					<Text className="text-base text-primary">戻る</Text>
-				</Pressable>
-				<Text className="flex-1 text-lg font-bold text-foreground">
-					{isModifyMode ? "記録を修正" : "記録を登録"}
-				</Text>
-			</View>
-
+			<FormHeader isModifyMode={false} goBack={goBack} />
 			<ScrollView
 				className="flex-1"
 				contentContainerClassName="px-4 py-5 gap-5"
@@ -56,11 +93,9 @@ function EntryFormContent({
 						<CategorySelector
 							value={field.state.value}
 							onChange={field.handleChange}
-							disabled={isModifyMode}
 						/>
 					)}
 				</form.Field>
-
 				<form.Field name="amount">
 					{(field) => (
 						<AmountInput
@@ -70,7 +105,6 @@ function EntryFormContent({
 						/>
 					)}
 				</form.Field>
-
 				<form.Field name="date">
 					{(field) => (
 						<DateInput
@@ -79,7 +113,6 @@ function EntryFormContent({
 						/>
 					)}
 				</form.Field>
-
 				<form.Field name="label">
 					{(field) => (
 						<LabelInput
@@ -89,7 +122,6 @@ function EntryFormContent({
 						/>
 					)}
 				</form.Field>
-
 				<form.Field name="memo">
 					{(field) => (
 						<MemoInput
@@ -98,33 +130,91 @@ function EntryFormContent({
 						/>
 					)}
 				</form.Field>
-
-				{/* Error */}
-				{serverError ? (
-					<View
-						style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
-						className="rounded-xl px-4 py-3"
-					>
-						<Text className="text-sm text-destructive">{serverError}</Text>
-					</View>
-				) : null}
-
-				{/* Submit */}
-				<Pressable
+				{serverError ? <FormError message={serverError} /> : null}
+				<SubmitButton
+					label="登録する"
+					loading={loading}
 					onPress={() => form.handleSubmit()}
-					disabled={loading}
-					className={`mt-2 items-center rounded-xl py-3.5 bg-primary ${
-						loading ? "opacity-60" : "active:opacity-80"
-					}`}
-				>
-					{loading ? (
-						<ActivityIndicator color="white" />
-					) : (
-						<Text className="text-base font-semibold text-primary-foreground">
-							{isModifyMode ? "修正する" : "登録する"}
-						</Text>
+				/>
+			</ScrollView>
+		</KeyboardAvoidingView>
+	);
+}
+
+function ModifyEntryScreen({
+	target,
+}: {
+	target: {
+		id: string;
+		category: "advance" | "deposit";
+		amount: number;
+		date: string;
+		label: string;
+		memo: string | null;
+	};
+}) {
+	const { form, serverError, loading, goBack } = useModifyEntryForm(target);
+
+	return (
+		<KeyboardAvoidingView
+			behavior={Platform.OS === "ios" ? "padding" : "height"}
+			className="flex-1 bg-background"
+		>
+			<FormHeader isModifyMode goBack={goBack} />
+			<ScrollView
+				className="flex-1"
+				contentContainerClassName="px-4 py-5 gap-5"
+				keyboardShouldPersistTaps="handled"
+			>
+				<form.Field name="category">
+					{(field) => (
+						<CategorySelector
+							value={field.state.value}
+							onChange={field.handleChange}
+							disabled
+						/>
 					)}
-				</Pressable>
+				</form.Field>
+				<form.Field name="amount">
+					{(field) => (
+						<AmountInput
+							value={field.state.value}
+							onChange={field.handleChange}
+							error={field.state.meta.errors[0]?.message}
+						/>
+					)}
+				</form.Field>
+				<form.Field name="date">
+					{(field) => (
+						<DateInput
+							value={field.state.value}
+							onChange={field.handleChange}
+						/>
+					)}
+				</form.Field>
+				<form.Field name="label">
+					{(field) => (
+						<LabelInput
+							value={field.state.value}
+							onChange={field.handleChange}
+							error={field.state.meta.errors[0]?.message}
+						/>
+					)}
+				</form.Field>
+				<form.Field name="memo">
+					{(field) => (
+						<MemoInput
+							value={field.state.value ?? ""}
+							onChange={field.handleChange}
+						/>
+					)}
+				</form.Field>
+				{serverError ? <FormError message={serverError} /> : null}
+				<SubmitButton
+					label="修正する"
+					loading={loading}
+					onPress={() => form.handleSubmit()}
+				/>
 			</ScrollView>
 		</KeyboardAvoidingView>
 	);
@@ -134,7 +224,7 @@ export default function EntryFormScreen() {
 	const { modifyId } = useLocalSearchParams<{ modifyId?: string }>();
 
 	if (!modifyId) {
-		return <EntryFormContent />;
+		return <CreateEntryScreen />;
 	}
 
 	return <ModifyFormLoader entryId={modifyId} />;
@@ -161,13 +251,12 @@ function ModifyFormLoader({ entryId }: { entryId: string }) {
 		);
 	}
 
-	// 最新バージョンの値をそのまま使う（バージョン管理方式ではフルスナップショット）
 	// versions は createdAt DESC でソート済みなので先頭が最新
 	const latestVersion = entry.versions[0] ?? entry;
 
 	return (
-		<EntryFormContent
-			modifyTarget={{
+		<ModifyEntryScreen
+			target={{
 				id: entry.originalId,
 				category: latestVersion.category,
 				amount: latestVersion.amount,

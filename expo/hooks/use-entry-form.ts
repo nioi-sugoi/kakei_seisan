@@ -7,7 +7,7 @@ import * as v from "valibot";
 import { client } from "@/lib/api-client";
 import { useModifyEntry } from "./use-modify-entry";
 
-const createEntrySchema = v.object({
+const entryFieldSchema = {
 	category: v.picklist(["advance", "deposit"]),
 	amount: v.pipe(
 		v.string(),
@@ -28,7 +28,9 @@ const createEntrySchema = v.object({
 			v.transform((s) => s || undefined),
 		),
 	),
-});
+};
+
+const createEntrySchema = v.object(entryFieldSchema);
 
 type ModifyTarget = {
 	id: string;
@@ -39,12 +41,11 @@ type ModifyTarget = {
 	memo: string | null;
 };
 
-export function useEntryForm(modifyTarget?: ModifyTarget) {
+export function useCreateEntryForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const isModifyMode = !!modifyTarget;
 
-	const createMutation = useMutation({
+	const mutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
 			parseResponse(client.api.entries.$post({ json: input })),
 		onSuccess: () => {
@@ -53,23 +54,13 @@ export function useEntryForm(modifyTarget?: ModifyTarget) {
 		},
 	});
 
-	const modifyMutation = useModifyEntry(modifyTarget?.id ?? "");
-
-	const defaultValues: v.InferInput<typeof createEntrySchema> = modifyTarget
-		? {
-				category: modifyTarget.category,
-				amount: String(modifyTarget.amount),
-				date: modifyTarget.date,
-				label: modifyTarget.label,
-				memo: modifyTarget.memo ?? "",
-			}
-		: {
-				category: "advance",
-				amount: "",
-				date: format(new Date(), "yyyy-MM-dd"),
-				label: "",
-				memo: "",
-			};
+	const defaultValues: v.InferInput<typeof createEntrySchema> = {
+		category: "advance",
+		amount: "",
+		date: format(new Date(), "yyyy-MM-dd"),
+		label: "",
+		memo: "",
+	};
 
 	const form = useForm({
 		defaultValues,
@@ -78,29 +69,51 @@ export function useEntryForm(modifyTarget?: ModifyTarget) {
 		},
 		onSubmit: ({ value }) => {
 			const parsed = v.parse(createEntrySchema, value);
-			if (isModifyMode) {
-				modifyMutation.mutate({
-					amount: parsed.amount,
-					label: parsed.label,
-					memo: parsed.memo,
-				});
-			} else {
-				createMutation.mutate(parsed);
-			}
+			mutation.mutate(parsed);
 		},
 	});
 
-	const activeMutation = isModifyMode ? modifyMutation : createMutation;
+	return {
+		form,
+		isModifyMode: false as const,
+		serverError: mutation.error ? "エラーが発生しました" : "",
+		loading: mutation.isPending,
+		goBack: () => router.back(),
+	};
+}
+
+export function useModifyEntryForm(target: ModifyTarget) {
+	const router = useRouter();
+	const modifyMutation = useModifyEntry(target.id);
+
+	const defaultValues: v.InferInput<typeof createEntrySchema> = {
+		category: target.category,
+		amount: String(target.amount),
+		date: target.date,
+		label: target.label,
+		memo: target.memo ?? "",
+	};
+
+	const form = useForm({
+		defaultValues,
+		validators: {
+			onSubmit: createEntrySchema,
+		},
+		onSubmit: ({ value }) => {
+			const parsed = v.parse(createEntrySchema, value);
+			modifyMutation.mutate({
+				amount: parsed.amount,
+				label: parsed.label,
+				memo: parsed.memo,
+			});
+		},
+	});
 
 	return {
 		form,
-		isModifyMode,
-		serverError: activeMutation.error
-			? isModifyMode
-				? activeMutation.error.message
-				: "エラーが発生しました"
-			: "",
-		loading: activeMutation.isPending,
+		isModifyMode: true as const,
+		serverError: modifyMutation.error ? modifyMutation.error.message : "",
+		loading: modifyMutation.isPending,
 		goBack: () => router.back(),
 	};
 }
