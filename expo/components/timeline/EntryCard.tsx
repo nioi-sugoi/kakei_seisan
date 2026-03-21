@@ -71,7 +71,6 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 	const isV1 = entry.id === entry.originalId;
 	const isLatest = entry.latest;
 	const isCancelled = entry.cancelled;
-	const groupCancelled = entry.groupCancelled;
 
 	return (
 		<Pressable
@@ -86,11 +85,8 @@ export function EntryCard({ entry, onPress }: EntryCardProps) {
 						<CategoryBadge category={entry.category} />
 						{!isV1 && !isCancelled && <VersionBadge type="modified" />}
 						{isCancelled && <VersionBadge type="cancelled" />}
-						{isV1 && !isLatest && !groupCancelled && (
+						{isV1 && !isLatest && (
 							<StatusBadge status="modified" />
-						)}
-						{isV1 && !isLatest && groupCancelled && (
-							<StatusBadge status="cancelled" />
 						)}
 					</View>
 					<Text

@@ -51,8 +51,7 @@ export default function EntryDetailScreen() {
 
 	// グループの最新バージョンが取消済みかチェック
 	const latestVersion = entry.versions.find((v) => v.latest);
-	const groupCancelled = latestVersion?.cancelled ?? false;
-	const canModify = !groupCancelled;
+	const canModify = !(latestVersion?.cancelled ?? false);
 
 	const handleModify = () => {
 		router.push(`/entry-form?modifyId=${entry.originalId}`);
@@ -88,7 +87,7 @@ export default function EntryDetailScreen() {
 					date={entry.date}
 					label={entry.label}
 					memo={entry.memo}
-					isCancelled={groupCancelled}
+					isCancelled={latestVersion?.cancelled ?? false}
 				/>
 
 				{/* 元の記録へのリンク（v2+ の場合） */}

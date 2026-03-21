@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lt } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -82,27 +82,6 @@ export function findMyLatestVersion(
 			),
 		)
 		.get();
-}
-
-/**
- * 非最新エントリの original_id 群に対し、最新バージョンの cancelled 状態を取得。
- * タイムラインで旧バージョンに「修正済み」「取消済み」を表示するために使用。
- */
-export function getGroupCancelledStatus(
-	db: DrizzleD1Database,
-	originalIds: string[],
-) {
-	if (originalIds.length === 0) return Promise.resolve([]);
-	return db
-		.select({
-			originalId: entries.originalId,
-			cancelled: entries.cancelled,
-		})
-		.from(entries)
-		.where(
-			and(inArray(entries.originalId, originalIds), eq(entries.latest, true)),
-		)
-		.all();
 }
 
 /**

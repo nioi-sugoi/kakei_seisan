@@ -52,27 +52,7 @@ const entriesApp = new Hono<{
 			const data = hasMore ? items.slice(0, limit) : items;
 			const nextCursor = hasMore ? data[data.length - 1].createdAt : null;
 
-			// 非最新エントリのグループが取消済みかどうかを取得
-			const nonLatestOriginalIds = [
-				...new Set(data.filter((e) => !e.latest).map((e) => e.originalId)),
-			];
-			const cancelledStatuses = await entriesRepository.getGroupCancelledStatus(
-				db,
-				nonLatestOriginalIds,
-			);
-
-			const cancelledMap = new Map(
-				cancelledStatuses.map((s) => [s.originalId, s.cancelled]),
-			);
-
-			const augmented = data.map((entry) => ({
-				...entry,
-				groupCancelled: entry.latest
-					? entry.cancelled
-					: (cancelledMap.get(entry.originalId) ?? false),
-			}));
-
-			return c.json({ data: augmented, nextCursor });
+			return c.json({ data, nextCursor });
 		},
 	)
 	.get("/:id", requireAuth, async (c) => {

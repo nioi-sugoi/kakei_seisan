@@ -54,7 +54,6 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		approvalComment: null,
 		createdAt: 1773676800000,
 		updatedAt: 1773676800000,
-		groupCancelled: false,
 		...overrides,
 	};
 }
@@ -226,7 +225,6 @@ describe("TimelineScreen", () => {
 					originalId: "entry-1",
 					cancelled: true,
 					latest: true,
-					groupCancelled: true,
 				}),
 			],
 			nextCursor: null,
@@ -244,7 +242,6 @@ describe("TimelineScreen", () => {
 				makeEntry({
 					id: "entry-1",
 					latest: false,
-					groupCancelled: false,
 				}),
 			],
 			nextCursor: null,
@@ -253,24 +250,6 @@ describe("TimelineScreen", () => {
 
 		await waitFor(() => {
 			expect(screen.getByText("修正済み")).toBeOnTheScreen();
-		});
-	});
-
-	it("取消済みの v1 エントリに「取消済み」バッジが表示される", async () => {
-		mockApiResponse({
-			data: [
-				makeEntry({
-					id: "entry-1",
-					latest: false,
-					groupCancelled: true,
-				}),
-			],
-			nextCursor: null,
-		});
-		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
-
-		await waitFor(() => {
-			expect(screen.getByText("取消済み")).toBeOnTheScreen();
 		});
 	});
 
