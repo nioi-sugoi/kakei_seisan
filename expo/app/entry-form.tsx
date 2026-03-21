@@ -49,18 +49,21 @@ function FormError({ message }: { message: string }) {
 function SubmitButton({
 	label,
 	loading,
+	disabled,
 	onPress,
 }: {
 	label: string;
 	loading: boolean;
+	disabled?: boolean;
 	onPress: () => void;
 }) {
+	const isDisabled = loading || disabled;
 	return (
 		<Pressable
 			onPress={onPress}
-			disabled={loading}
+			disabled={isDisabled}
 			className={`mt-2 items-center rounded-xl py-3.5 bg-primary ${
-				loading ? "opacity-60" : "active:opacity-80"
+				isDisabled ? "opacity-60" : "active:opacity-80"
 			}`}
 		>
 			{loading ? (
@@ -210,11 +213,16 @@ function ModifyEntryScreen({
 					)}
 				</form.Field>
 				{serverError ? <FormError message={serverError} /> : null}
-				<SubmitButton
-					label="修正する"
-					loading={loading}
-					onPress={() => form.handleSubmit()}
-				/>
+				<form.Subscribe selector={(state) => state.isDirty}>
+					{(isDirty) => (
+						<SubmitButton
+							label="修正する"
+							loading={loading}
+							disabled={!isDirty}
+							onPress={() => form.handleSubmit()}
+						/>
+					)}
+				</form.Subscribe>
 			</ScrollView>
 		</KeyboardAvoidingView>
 	);

@@ -270,6 +270,79 @@ describe("EntryDetailScreen", () => {
 		});
 	});
 
+	it("取消済みの操作履歴で元の記録に「復元」ラベルが表示されない", async () => {
+		mockGet.mockResolvedValue(
+			mockEntryResponse({
+				versions: [
+					{
+						id: "cancel-1",
+						cancelled: true,
+						amount: 4280,
+						latest: true,
+						createdAt: 1742000100000,
+					},
+					{
+						id: "entry-1",
+						cancelled: false,
+						amount: 4280,
+						latest: false,
+						createdAt: 1742000000000,
+					},
+				],
+			}),
+		);
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("操作履歴")).toBeOnTheScreen();
+		});
+		expect(screen.queryByText("復元")).not.toBeOnTheScreen();
+	});
+
+	it("復元バージョンの操作履歴に「復元」ラベルが表示される", async () => {
+		mockGet.mockResolvedValue(
+			mockEntryResponse({
+				originalId: "entry-1",
+				versions: [
+					{
+						id: "modify-1",
+						cancelled: false,
+						amount: 5000,
+						latest: true,
+						createdAt: 1742000300000,
+					},
+					{
+						id: "restore-1",
+						cancelled: false,
+						amount: 4280,
+						latest: false,
+						createdAt: 1742000200000,
+					},
+					{
+						id: "cancel-1",
+						cancelled: true,
+						amount: 4280,
+						latest: false,
+						createdAt: 1742000100000,
+					},
+					{
+						id: "entry-1",
+						cancelled: false,
+						amount: 4280,
+						latest: false,
+						createdAt: 1742000000000,
+					},
+				],
+			}),
+		);
+		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("操作履歴")).toBeOnTheScreen();
+		});
+		expect(screen.getByText("復元")).toBeOnTheScreen();
+	});
+
 	it("取消バージョンに「取消」バッジが表示される", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({

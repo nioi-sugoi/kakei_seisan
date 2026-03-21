@@ -342,6 +342,95 @@ describe("EntryFormScreen", () => {
 		expect(depositButton).toBeDisabled();
 	});
 
+	it("修正モードでは変更がない場合「修正する」ボタンが無効になる", async () => {
+		mockSearchParams = { modifyId: "entry-1" };
+		mockGet.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					id: "entry-1",
+					userId: "user-1",
+					category: "advance",
+					amount: 1000,
+					date: "2026-03-15",
+					label: "テスト",
+					memo: null,
+					originalId: "entry-1",
+					cancelled: false,
+					createdAt: 1742000000000,
+					versions: [
+						{
+							id: "entry-1",
+							category: "advance",
+							amount: 1000,
+							date: "2026-03-15",
+							label: "テスト",
+							memo: null,
+							cancelled: false,
+							latest: true,
+							createdAt: 1742000000000,
+						},
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			),
+		);
+
+		render(<EntryFormScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("修正する")).toBeOnTheScreen();
+		});
+
+		expect(screen.getByText("修正する")).toBeDisabled();
+	});
+
+	it("修正モードで値を変更すると「修正する」ボタンが有効になる", async () => {
+		mockSearchParams = { modifyId: "entry-1" };
+		mockGet.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					id: "entry-1",
+					userId: "user-1",
+					category: "advance",
+					amount: 1000,
+					date: "2026-03-15",
+					label: "テスト",
+					memo: null,
+					originalId: "entry-1",
+					cancelled: false,
+					createdAt: 1742000000000,
+					versions: [
+						{
+							id: "entry-1",
+							category: "advance",
+							amount: 1000,
+							date: "2026-03-15",
+							label: "テスト",
+							memo: null,
+							cancelled: false,
+							latest: true,
+							createdAt: 1742000000000,
+						},
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			),
+		);
+
+		render(<EntryFormScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("修正する")).toBeOnTheScreen();
+		});
+
+		await user.clear(screen.getByLabelText("金額"));
+		await user.type(screen.getByLabelText("金額"), "2000");
+
+		await waitFor(() => {
+			expect(screen.getByText("修正する")).toBeEnabled();
+		});
+	});
+
 	// --- APIエラー ---
 
 	it("APIエラー時にエラーメッセージが表示される", async () => {

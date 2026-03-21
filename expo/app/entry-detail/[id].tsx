@@ -121,7 +121,7 @@ export default function EntryDetailScreen() {
 										{v.cancelled && (
 											<Text className="text-xs text-destructive">取消</Text>
 										)}
-										{!v.cancelled && entry.versions[i]?.cancelled && (
+										{!v.cancelled && pastVersions[i + 1]?.cancelled && (
 											<Text className="text-xs text-green-600">復元</Text>
 										)}
 									</View>
