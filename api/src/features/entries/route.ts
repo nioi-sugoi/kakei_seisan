@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
+import { handleValidationError } from "../../middleware/validation-error-handler";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
@@ -63,20 +64,7 @@ const entriesApp = new Hono<{
 	.post(
 		"/",
 		requireAuth,
-		vValidator("json", createEntrySchema, (result, c) => {
-			if (!result.success) {
-				return c.json(
-					{
-						error: "バリデーションエラー" as const,
-						issues: result.issues.map((issue) => ({
-							field: String(issue.path?.[0]?.key ?? "unknown"),
-							message: issue.message,
-						})),
-					},
-					400,
-				);
-			}
-		}),
+		vValidator("json", createEntrySchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
 			const input = c.req.valid("json");

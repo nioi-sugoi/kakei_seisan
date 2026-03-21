@@ -8,9 +8,11 @@ import {
 	OTHER_USER,
 	seedOtherUser,
 	setupAuth,
+	setupDB,
 } from "./helpers";
 
 beforeAll(async () => {
+	await setupDB();
 	await setupAuth();
 });
 
