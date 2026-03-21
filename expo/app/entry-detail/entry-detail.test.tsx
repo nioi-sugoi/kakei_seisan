@@ -95,7 +95,11 @@ describe("EntryDetailScreen", () => {
 
 	it("預りカテゴリの場合はマイナス符号付きで金額が表示される", async () => {
 		mockGet.mockResolvedValue(
-			mockEntryResponse({ category: "deposit", amount: 3000 }),
+			mockEntryResponse({
+				category: "deposit",
+				amount: 3000,
+				versions: [{ id: "entry-1", latest: true, cancelled: false, amount: 3000 }],
+			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
@@ -190,29 +194,25 @@ describe("EntryDetailScreen", () => {
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("¥4,280")).toBeOnTheScreen();
+			expect(screen.getAllByText("¥4,280").length).toBeGreaterThan(0);
 		});
 		expect(screen.queryByText("修正する")).not.toBeOnTheScreen();
 		expect(screen.queryByText("取り消す")).not.toBeOnTheScreen();
 	});
 
-	it("修正バージョン(v2+)の場合は「元の記録を見る」リンクが表示される", async () => {
+	it("複数バージョンがある場合はバージョン履歴が表示される", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
-				id: "v2-entry",
-				originalId: "entry-1",
-				latest: true,
 				versions: [
-					{ id: "entry-1", latest: false, cancelled: false },
-					{ id: "v2-entry", latest: true, cancelled: false },
+					{ id: "entry-1", latest: false, cancelled: false, amount: 4280 },
+					{ id: "v2-entry", latest: true, cancelled: false, amount: 3000 },
 				],
-				original: { id: "entry-1", label: "元の記録" },
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("元の記録を見る →")).toBeOnTheScreen();
+			expect(screen.getByText("バージョン履歴")).toBeOnTheScreen();
 		});
 	});
 
@@ -221,8 +221,8 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				originalId: "parent-1",
 				versions: [
-					{ id: "parent-1", latest: false, cancelled: false },
-					{ id: "entry-1", latest: true, cancelled: false },
+					{ id: "parent-1", latest: false, cancelled: false, amount: 4280 },
+					{ id: "entry-1", latest: true, cancelled: false, amount: 4280 },
 				],
 				original: { id: "parent-1" },
 			}),
@@ -240,12 +240,8 @@ describe("EntryDetailScreen", () => {
 				cancelled: true,
 				originalId: "parent-1",
 				versions: [
-					{ id: "parent-1", latest: false, cancelled: false },
-					{
-						id: "entry-1",
-						latest: true,
-						cancelled: true,
-					},
+					{ id: "parent-1", latest: false, cancelled: false, amount: 4280 },
+					{ id: "entry-1", latest: true, cancelled: true, amount: 4280 },
 				],
 				original: { id: "parent-1" },
 			}),
@@ -253,7 +249,7 @@ describe("EntryDetailScreen", () => {
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("取消")).toBeOnTheScreen();
+			expect(screen.getAllByText("取消").length).toBeGreaterThan(0);
 		});
 	});
 });

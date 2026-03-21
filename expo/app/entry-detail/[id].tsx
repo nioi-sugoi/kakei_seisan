@@ -10,6 +10,7 @@ import {
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
+import { formatAmount, formatDateFull } from "@/lib/format";
 
 function Header({ onBack }: { onBack: () => void }) {
 	return (
@@ -49,9 +50,9 @@ export default function EntryDetailScreen() {
 		);
 	}
 
-	// グループの最新バージョンが取消済みかチェック
-	const latestVersion = entry.versions.find((v) => v.latest);
-	const canModify = !(latestVersion?.cancelled ?? false);
+	// 最新バージョンを特定（メイン表示用）
+	const latestVersion = entry.versions.find((v) => v.latest) ?? entry;
+	const canModify = !latestVersion.cancelled;
 
 	const handleModify = () => {
 		router.push(`/entry-form?modifyId=${entry.originalId}`);
@@ -82,22 +83,48 @@ export default function EntryDetailScreen() {
 				<EntryInfoCard
 					category={entry.category}
 					isOriginal={entry.id === entry.originalId}
-					cancelled={entry.cancelled}
-					amount={entry.amount}
+					cancelled={latestVersion.cancelled}
+					amount={latestVersion.amount ?? entry.amount}
 					date={entry.date}
-					label={entry.label}
-					memo={entry.memo}
-					isCancelled={latestVersion?.cancelled ?? false}
+					label={latestVersion.label ?? entry.label}
+					memo={latestVersion.memo ?? entry.memo}
+					isCancelled={latestVersion.cancelled}
 				/>
 
-				{/* 元の記録へのリンク（v2+ の場合） */}
-				{entry.original ? (
-					<Pressable
-						onPress={() => router.push(`/entry-detail/${entry.original?.id}`)}
-						className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
-					>
-						<Text className="text-sm text-primary">元の記録を見る →</Text>
-					</Pressable>
+				{/* バージョン履歴 */}
+				{entry.versions.length > 1 ? (
+					<View className="rounded-xl bg-card px-4 py-4">
+						<Text className="mb-3 text-sm font-bold text-foreground">
+							バージョン履歴
+						</Text>
+						{entry.versions.map((v, i) => (
+							<View
+								key={v.id}
+								className={`flex-row items-center justify-between py-2 ${
+									i < entry.versions.length - 1 ? "border-b border-border" : ""
+								} ${!v.latest ? "opacity-50" : ""}`}
+							>
+								<View className="flex-1 gap-0.5">
+									<View className="flex-row items-center gap-2">
+										<Text className="text-sm text-foreground">
+											{v.amount != null ? formatAmount(v.amount) : ""}
+										</Text>
+										{v.cancelled && (
+											<Text className="text-xs text-destructive">取消</Text>
+										)}
+										{v.latest && !v.cancelled && (
+											<Text className="text-xs text-primary">最新</Text>
+										)}
+									</View>
+									{v.date ? (
+										<Text className="text-xs text-muted-foreground">
+											{formatDateFull(v.date)}{v.label ? ` · ${v.label}` : ""}
+										</Text>
+									) : null}
+								</View>
+							</View>
+						))}
+					</View>
 				) : null}
 
 				{/* 取消エラー */}
