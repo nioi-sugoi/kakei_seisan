@@ -1,4 +1,4 @@
-import { and, count, desc, eq, lt } from "drizzle-orm";
+import { and, count, desc, eq, lt, max, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries, entryImages } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -227,27 +227,40 @@ export function createCancellation(
 // 画像関連
 // ============================================================
 
-/** エントリーに紐づく画像メタデータを作成する */
-export function createImage(
+/**
+ * エントリーに紐づく画像メタデータを作成する。
+ * 単一の INSERT ... SELECT で枚数制限チェックと displayOrder 算出を
+ * アトミックに行い、レースコンディションを防止する。
+ * 挿入成功時は挿入行を返し、枚数制限超過時は null を返す。
+ */
+export async function createImage(
 	db: DrizzleD1Database,
 	input: {
 		entryId: string;
 		storagePath: string;
-		displayOrder: number;
 	},
-) {
+): Promise<typeof entryImages.$inferSelect | null> {
 	const id = crypto.randomUUID();
-	return db
-		.insert(entryImages)
-		.values({
-			id,
-			entryId: input.entryId,
-			storagePath: input.storagePath,
-			displayOrder: input.displayOrder,
-			createdAt: Date.now(),
-		})
-		.returning()
+	const now = Date.now();
+	// INSERT ... SELECT で COUNT < 2 の場合のみ挿入（アトミック）
+	// displayOrder は MAX+1 を使い、削除後の重複を防止
+	const result = await db.run(sql`
+		INSERT INTO entry_images (id, entry_id, storage_path, display_order, created_at)
+		SELECT ${id}, ${input.entryId}, ${input.storagePath},
+			COALESCE(MAX(display_order) + 1, 0), ${now}
+		FROM entry_images
+		WHERE entry_id = ${input.entryId}
+		HAVING COUNT(*) < 2
+	`);
+	if (!result.meta.rows_written || result.meta.rows_written === 0) {
+		return null;
+	}
+	const row = await db
+		.select()
+		.from(entryImages)
+		.where(eq(entryImages.id, id))
 		.get();
+	return row ?? null;
 }
 
 /** エントリーに紐づく画像一覧を取得する（displayOrder 昇順） */

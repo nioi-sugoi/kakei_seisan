@@ -51,20 +51,20 @@ export function useCreateEntryForm() {
 	const uploadImages = useUploadEntryImages();
 
 	const mutation = useMutation({
-		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
-			const entry = await parseResponse(
-				client.api.entries.$post({ json: input }),
-			);
-			// エントリー作成後に画像をアップロード
+		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
+			parseResponse(client.api.entries.$post({ json: input })),
+		onSuccess: async (entry) => {
+			// 画像アップロードは best-effort（失敗してもエントリーは残す）
 			if (selectedImages.length > 0) {
-				await uploadImages.mutateAsync({
-					entryId: entry.id,
-					images: selectedImages,
-				});
+				try {
+					await uploadImages.mutateAsync({
+						entryId: entry.id,
+						images: selectedImages,
+					});
+				} catch {
+					// 画像アップロード失敗は無視（詳細画面から再添付可能）
+				}
 			}
-			return entry;
-		},
-		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
 			router.replace("/(tabs)");
 		},

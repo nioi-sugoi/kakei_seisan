@@ -209,12 +209,6 @@ const entriesApp = new Hono<{
 		}
 		const targetId = entry.originalId;
 
-		// 最大2枚チェック
-		const imageCount = await entriesRepository.countImagesByEntry(db, targetId);
-		if (imageCount >= 2) {
-			return c.json({ error: "画像は最大2枚までです" as const }, 400);
-		}
-
 		// マルチパートボディをパース
 		const body = await c.req.parseBody();
 		const file = body.image;
@@ -254,19 +248,29 @@ const entriesApp = new Hono<{
 		const ext = extMap[file.type] ?? "jpg";
 		const storagePath = `receipts/${user.id}/${targetId}/${crypto.randomUUID()}.${ext}`;
 
+		// DB にメタデータを保存（アトミックに枚数制限チェック）
+		const image = await entriesRepository.createImage(db, {
+			entryId: targetId,
+			storagePath,
+		});
+		if (!image) {
+			return c.json({ error: "画像は最大2枚までです" as const }, 400);
+		}
+
 		// R2 にアップロード
 		await c.env.RECEIPTS.put(storagePath, file.stream(), {
 			httpMetadata: { contentType: file.type },
 		});
 
-		// DB にメタデータを保存
-		const image = await entriesRepository.createImage(db, {
-			entryId: targetId,
-			storagePath,
-			displayOrder: imageCount,
-		});
-
-		return c.json(image, 201);
+		return c.json(
+			{
+				id: image.id,
+				entryId: image.entryId,
+				displayOrder: image.displayOrder,
+				createdAt: image.createdAt,
+			},
+			201,
+		);
 	})
 	.get("/:entryId/images/:imageId", requireAuth, async (c) => {
 		const user = c.get("user");

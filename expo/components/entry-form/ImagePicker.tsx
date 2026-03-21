@@ -12,6 +12,8 @@ export type SelectedImage = {
 type ImagePickerProps = {
 	images: SelectedImage[];
 	onChange: (images: SelectedImage[]) => void;
+	/** 選択可能な最大枚数。省略時はデフォルト MAX_IMAGES */
+	maxImages?: number;
 };
 
 function pickResultToImages(
@@ -25,8 +27,12 @@ function pickResultToImages(
 	}));
 }
 
-export function ImagePicker({ images, onChange }: ImagePickerProps) {
-	const canAdd = images.length < MAX_IMAGES;
+export function ImagePicker({
+	images,
+	onChange,
+	maxImages = MAX_IMAGES,
+}: ImagePickerProps) {
+	const canAdd = images.length < maxImages;
 
 	const handleCamera = async () => {
 		const permission = await ExpoImagePicker.requestCameraPermissionsAsync();
@@ -45,7 +51,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
 
 		const picked = pickResultToImages(result);
 		if (picked.length > 0) {
-			const remaining = MAX_IMAGES - images.length;
+			const remaining = maxImages - images.length;
 			onChange([...images, ...picked.slice(0, remaining)]);
 		}
 	};
@@ -61,7 +67,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
 			return;
 		}
 
-		const remaining = MAX_IMAGES - images.length;
+		const remaining = maxImages - images.length;
 		const result = await ExpoImagePicker.launchImageLibraryAsync({
 			mediaTypes: ["images"],
 			quality: 0.8,
@@ -85,7 +91,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
 				レシート画像
 				<Text className="text-xs text-muted-foreground">
 					{" "}
-					任意・最大{MAX_IMAGES}枚
+					任意・最大{maxImages}枚
 				</Text>
 			</Text>
 

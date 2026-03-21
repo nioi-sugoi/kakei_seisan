@@ -163,7 +163,11 @@ export default function EntryDetailScreen() {
 						) : null}
 						{canModify && entry.images.length < 2 ? (
 							<View className="mt-3">
-								<ImagePicker images={newImages} onChange={setNewImages} />
+								<ImagePicker
+									images={newImages}
+									onChange={setNewImages}
+									maxImages={2 - entry.images.length}
+								/>
 								{newImages.length > 0 ? (
 									<Pressable
 										onPress={() => {

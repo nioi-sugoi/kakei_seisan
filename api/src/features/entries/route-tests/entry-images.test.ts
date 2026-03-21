@@ -68,7 +68,7 @@ describe("POST /api/entries/:entryId/images", () => {
 			displayOrder: 0,
 		});
 		expect(body).toHaveProperty("id");
-		expect(body).toHaveProperty("storagePath");
+		expect(body).not.toHaveProperty("storagePath");
 	});
 
 	it("2枚目の画像をアップロードできる", async () => {
@@ -195,10 +195,7 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 			createTestFile("receipt.jpg", "image/jpeg", 2048),
 			authCookie,
 		);
-		const uploaded = (await uploadRes.json()) as {
-			id: string;
-			storagePath: string;
-		};
+		const uploaded = (await uploadRes.json()) as { id: string };
 
 		const res = await app.request(
 			`/api/entries/${entry.id}/images/${uploaded.id}`,
@@ -249,10 +246,17 @@ describe("DELETE /api/entries/:entryId/images/:imageId", () => {
 			createTestFile("receipt.jpg", "image/jpeg"),
 			authCookie,
 		);
-		const uploaded = (await uploadRes.json()) as {
-			id: string;
-			storagePath: string;
-		};
+		const uploaded = (await uploadRes.json()) as { id: string };
+
+		// DB から storagePath を取得（APIレスポンスにはリークしない）
+		const db = drizzle(env.DB);
+		const imagesBefore = await db
+			.select()
+			.from(entryImages)
+			.where(eq(entryImages.entryId, entry.originalId))
+			.all();
+		expect(imagesBefore).toHaveLength(1);
+		const storagePath = imagesBefore[0].storagePath;
 
 		const res = await app.request(
 			`/api/entries/${entry.id}/images/${uploaded.id}`,
@@ -262,15 +266,14 @@ describe("DELETE /api/entries/:entryId/images/:imageId", () => {
 
 		expect(res.status).toBe(200);
 
-		const db = drizzle(env.DB);
-		const images = await db
+		const imagesAfter = await db
 			.select()
 			.from(entryImages)
 			.where(eq(entryImages.entryId, entry.originalId))
 			.all();
-		expect(images).toHaveLength(0);
+		expect(imagesAfter).toHaveLength(0);
 
-		const r2Object = await env.RECEIPTS.get(uploaded.storagePath);
+		const r2Object = await env.RECEIPTS.get(storagePath);
 		expect(r2Object).toBeNull();
 	});
 
