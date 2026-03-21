@@ -77,7 +77,7 @@ describe("POST /api/entries/:id/cancel", () => {
 		});
 	});
 
-	it("修正済みエントリを取り消すと最新バージョンの値が保持される", async () => {
+	it("修正済み記録を取り消すと最新バージョンの値が保持される", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 10000,
 			label: "食費",
@@ -128,7 +128,7 @@ describe("POST /api/entries/:id/cancel", () => {
 		expect(dbOriginal?.latest).toBe(false);
 	});
 
-	it("既に取り消し済みのエントリは再取り消しできない", async () => {
+	it("既に取り消し済みの記録は再取り消しできない", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -149,7 +149,7 @@ describe("POST /api/entries/:id/cancel", () => {
 		expect(body).toHaveProperty("error", "既に取り消し済みです");
 	});
 
-	it("他ユーザーのエントリは取り消せない", async () => {
+	it("他ユーザーの記録は取り消せない", async () => {
 		await seedOtherUser();
 		const entry = await insertEntry(OTHER_USER.id);
 

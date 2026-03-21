@@ -100,7 +100,7 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(dbOriginal?.latest).toBe(false);
 	});
 
-	it("既に修正済みのエントリをさらに修正できる", async () => {
+	it("既に修正済みの記録をさらに修正できる", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 10000,
 			label: "食費",
@@ -156,7 +156,7 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(body).toHaveProperty("error", "変更がありません");
 	});
 
-	it("取り消し済みのエントリは修正できない", async () => {
+	it("取り消し済みの記録は修正できない", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -180,7 +180,7 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(body).toHaveProperty("error", "取り消し済みの記録は修正できません");
 	});
 
-	it("他ユーザーのエントリは修正できない", async () => {
+	it("他ユーザーの記録は修正できない", async () => {
 		await seedOtherUser();
 		const entry = await insertEntry(OTHER_USER.id);
 
