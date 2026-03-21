@@ -42,7 +42,7 @@ export default function CreateEntryScreen() {
 						/>
 					)}
 				</form.Field>
-				<form.Field name="date">
+				<form.Field name="occurredOn">
 					{(field) => (
 						<DateInput
 							value={field.state.value}

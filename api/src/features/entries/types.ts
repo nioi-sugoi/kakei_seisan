@@ -4,7 +4,7 @@ export type Status = "approved" | "pending" | "rejected";
 export type CreateEntryInput = {
 	category: Category;
 	amount: number;
-	date: string;
+	occurredOn: string;
 	label: string;
 	memo?: string;
 };

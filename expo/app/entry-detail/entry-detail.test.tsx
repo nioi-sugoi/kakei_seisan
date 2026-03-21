@@ -45,7 +45,7 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			userId: "user-1",
 			category: "advance",
 			amount: 4280,
-			date: "2026-03-15",
+			occurredOn: "2026-03-15",
 			label: "スーパー買い物",
 			memo: "夕食の材料",
 			originalId: "entry-1",

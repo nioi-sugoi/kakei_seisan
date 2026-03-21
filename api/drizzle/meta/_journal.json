@@ -50,6 +50,13 @@
 			"when": 1774086086522,
 			"tag": "0006_gigantic_brother_voodoo",
 			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "6",
+			"when": 1774101957760,
+			"tag": "0007_whole_sumo",
+			"breakpoints": true
 		}
 	]
 }

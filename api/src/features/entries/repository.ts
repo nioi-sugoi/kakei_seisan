@@ -16,7 +16,7 @@ export function createEntry(
 			userId,
 			category: input.category,
 			amount: input.amount,
-			date: input.date,
+			occurredOn: input.occurredOn,
 			label: input.label,
 			memo: input.memo || null,
 			originalId: id,
@@ -95,7 +95,7 @@ export function createModification(
 	original: {
 		originalId: string;
 		category: "advance" | "deposit";
-		date: string;
+		occurredOn: string;
 	},
 	input: ModifyEntryInput,
 ) {
@@ -118,7 +118,7 @@ export function createModification(
 				userId,
 				category: original.category,
 				amount: input.amount,
-				date: original.date,
+				occurredOn: original.occurredOn,
 				label: input.label,
 				memo: input.memo || null,
 				originalId: original.originalId,
@@ -141,7 +141,7 @@ export function createRestoration(
 		originalId: string;
 		category: "advance" | "deposit";
 		amount: number;
-		date: string;
+		occurredOn: string;
 		label: string;
 		memo: string | null;
 	},
@@ -165,7 +165,7 @@ export function createRestoration(
 				userId,
 				category: latestEntry.category,
 				amount: latestEntry.amount,
-				date: latestEntry.date,
+				occurredOn: latestEntry.occurredOn,
 				label: latestEntry.label,
 				memo: latestEntry.memo,
 				originalId: latestEntry.originalId,
@@ -187,7 +187,7 @@ export function createCancellation(
 		originalId: string;
 		category: "advance" | "deposit";
 		amount: number;
-		date: string;
+		occurredOn: string;
 		label: string;
 		memo: string | null;
 	},
@@ -211,7 +211,7 @@ export function createCancellation(
 				userId,
 				category: latestEntry.category,
 				amount: latestEntry.amount,
-				date: latestEntry.date,
+				occurredOn: latestEntry.occurredOn,
 				label: latestEntry.label,
 				memo: latestEntry.memo,
 				originalId: latestEntry.originalId,

@@ -26,7 +26,7 @@ describe("GET /api/entries/:id", () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			category: "advance",
 			amount: 1500,
-			date: "2024-03-15",
+			occurredOn: "2024-03-15",
 			label: "交通費",
 		});
 
@@ -41,7 +41,7 @@ describe("GET /api/entries/:id", () => {
 			id: entry.id,
 			category: "advance",
 			amount: 1500,
-			date: "2024-03-15",
+			occurredOn: "2024-03-15",
 			label: "交通費",
 			userId: TEST_USER.id,
 			cancelled: false,
@@ -144,7 +144,7 @@ describe("POST → GET の結合テスト", () => {
 				json: {
 					category: "advance",
 					amount: 3000,
-					date: "2024-04-01",
+					occurredOn: "2024-04-01",
 					label: "会議費",
 					memo: "チームミーティング",
 				},
@@ -168,7 +168,7 @@ describe("POST → GET の結合テスト", () => {
 			id: created.id,
 			category: "advance",
 			amount: 3000,
-			date: "2024-04-01",
+			occurredOn: "2024-04-01",
 			label: "会議費",
 			memo: "チームミーティング",
 		});

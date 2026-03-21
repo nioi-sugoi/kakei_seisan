@@ -161,7 +161,7 @@ export const entries = sqliteTable(
 			.references(() => user.id),
 		category: text("category", { enum: ["advance", "deposit"] }).notNull(),
 		amount: integer("amount").notNull(),
-		date: text("date").notNull(),
+		occurredOn: text("occurred_on").notNull(),
 		label: text("label").notNull(),
 		memo: text("memo"),
 		originalId: text("original_id")
@@ -183,7 +183,7 @@ export const entries = sqliteTable(
 	},
 	(table) => [
 		index("entries_user_status_idx").on(table.userId, table.status),
-		index("entries_user_date_idx").on(table.userId, table.date),
+		index("entries_user_occurred_on_idx").on(table.userId, table.occurredOn),
 		index("entries_user_created_idx").on(table.userId, table.createdAt),
 		index("entries_original_idx").on(table.originalId),
 		index("entries_original_created_idx").on(table.originalId, table.createdAt),
@@ -208,7 +208,7 @@ export const settlements = sqliteTable(
 			.notNull()
 			.references(() => user.id),
 		amount: integer("amount").notNull(),
-		date: text("date").notNull(),
+		occurredOn: text("occurred_on").notNull(),
 		originalId: text("original_id")
 			.notNull()
 			.references((): AnySQLiteColumn => settlements.id),
@@ -226,7 +226,10 @@ export const settlements = sqliteTable(
 	},
 	(table) => [
 		index("settlements_user_status_idx").on(table.userId, table.status),
-		index("settlements_user_date_idx").on(table.userId, table.date),
+		index("settlements_user_occurred_on_idx").on(
+			table.userId,
+			table.occurredOn,
+		),
 		index("settlements_original_idx").on(table.originalId),
 		index("settlements_user_latest_idx").on(table.userId, table.latest),
 		index("settlements_original_created_idx").on(

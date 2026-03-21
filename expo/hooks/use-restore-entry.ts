@@ -13,9 +13,7 @@ export function useRestoreEntry(entryId: string) {
 			});
 			if (!res.ok) {
 				const body = await res.json();
-				throw new Error(
-					"error" in body ? body.error : "復元に失敗しました",
-				);
+				throw new Error("error" in body ? body.error : "復元に失敗しました");
 			}
 			return res.json();
 		},

@@ -3,13 +3,13 @@ import { drizzle } from "drizzle-orm/d1";
 import { partnerInvitations, partnerships } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
-	OTHER_USER,
-	THIRD_USER,
 	authCookie,
 	buildOtherUserAuthCookie,
+	OTHER_USER,
 	seedOtherUser,
 	seedThirdUser,
 	setupAuth,
+	THIRD_USER,
 } from "../../../testing/auth-helper";
 import { setupDB } from "../../../testing/db-helper";
 

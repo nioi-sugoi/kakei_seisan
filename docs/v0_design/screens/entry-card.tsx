@@ -83,7 +83,7 @@ export function EntryCard({ entry, showApproval = false, onTap }: EntryCardProps
               <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{formatDate(entry.date)}</span>
+          <span className="text-xs text-muted-foreground">{formatDate(entry.occurredOn)}</span>
           {entry.status !== "active" && entry.relatedEntryId && (
             <button className="flex items-center gap-1 text-xs text-primary">
               {"元の記録を見る"}

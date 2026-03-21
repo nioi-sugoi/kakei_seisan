@@ -16,7 +16,7 @@ const entryFieldSchema = {
 		v.integer("0以上の整数を入力してください"),
 		v.minValue(0, "0以上の整数を入力してください"),
 	),
-	date: v.pipe(v.string(), v.isoDate("日付を選択してください")),
+	occurredOn: v.pipe(v.string(), v.isoDate("日付を選択してください")),
 	label: v.pipe(
 		v.string(),
 		v.transform((s: string) => s.trim()),
@@ -36,7 +36,7 @@ type ModifyTarget = {
 	id: string;
 	category: "advance" | "deposit";
 	amount: number;
-	date: string;
+	occurredOn: string;
 	label: string;
 	memo: string | null;
 };
@@ -57,7 +57,7 @@ export function useCreateEntryForm() {
 	const defaultValues: v.InferInput<typeof createEntrySchema> = {
 		category: "advance",
 		amount: "",
-		date: format(new Date(), "yyyy-MM-dd"),
+		occurredOn: format(new Date(), "yyyy-MM-dd"),
 		label: "",
 		memo: "",
 	};
@@ -89,7 +89,7 @@ export function useModifyEntryForm(target: ModifyTarget) {
 	const defaultValues: v.InferInput<typeof createEntrySchema> = {
 		category: target.category,
 		amount: String(target.amount),
-		date: target.date,
+		occurredOn: target.occurredOn,
 		label: target.label,
 		memo: target.memo ?? "",
 	};
