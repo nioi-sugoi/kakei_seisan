@@ -33,6 +33,10 @@ GitHubアカウントはすべて `nioi-sugoi` だが、実態としては **開
 
 ## 3. 未対応コメントのフィルタリング
 
+**2つのソース**を並行して確認する。どちらか一方だけでは見逃しが発生する。
+
+### 3a. レビュースレッド（ファイル差分コメント）
+
 GraphQL `reviewThreads` で `isResolved: false` のスレッドのみ対象とする（`pageInfo.hasNextPage` でページネーション確認）。
 
 ```graphql
@@ -57,6 +61,15 @@ query($owner: String!, $repo: String!, $pr: Int!) {
 - `isResolved: false` のスレッドであること
 - スレッド内の最新コメントがClaude Codeの返信ではないこと（内容で判断。対応報告的な文面ならClaude Codeの返信とみなす）
 - 開発者本人からの新しい指摘・質問・フィードバックが、Claude Codeの最後の返信より後に存在すること
+
+### 3b. Conversationコメント（issueコメント）
+
+`issues/{pr}/comments` で取得したコメントも確認する。これらは `reviewThreads` に含まれないため、**別途チェックが必要**。
+
+未対応の条件:
+- 最新のConversationコメントがClaude Codeの対応報告ではないこと
+- 開発者本人からの新しい指摘・質問・フィードバックが、Claude Codeの最後の返信より後に存在すること
+- Conversationコメントへの返信は同じく `issues/{pr}/comments` に POST する
 
 ## 4. 各コメントの処理
 
