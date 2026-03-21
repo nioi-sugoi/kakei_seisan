@@ -4,6 +4,7 @@ import { cleanAllTables } from "../../../testing/db-helper";
 import {
 	authCookie,
 	client,
+	insertInvitation,
 	insertPartnership,
 	OTHER_USER,
 	seedOtherUser,
@@ -71,6 +72,19 @@ describe("GET /api/partner-invitations/partnership", () => {
 		expect(body.data).toBeNull();
 	});
 
+	it("招待が承認されていない場合は null を返す", async () => {
+		await insertInvitation(TEST_USER.id, OTHER_USER.email);
+
+		const res = await client.api["partner-invitations"].partnership.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toBeNull();
+	});
+
 	it("他のユーザー同士のパートナー関係は取得されない", async () => {
 		await seedThirdUser();
 		await insertPartnership(OTHER_USER.id, THIRD_USER.id);
@@ -86,8 +100,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {
-		const res =
-			await client.api["partner-invitations"].partnership.$get({});
+		const res = await client.api["partner-invitations"].partnership.$get({});
 
 		expect(res.status).toBe(401);
 	});
