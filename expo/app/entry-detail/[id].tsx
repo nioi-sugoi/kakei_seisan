@@ -111,7 +111,7 @@ export default function EntryDetailScreen() {
 						{pastVersions.map((v, i) => (
 							<View
 								key={v.id}
-								className={`flex-row items-center justify-between py-2 ${i < pastVersions.length - 1 ? "border-b border-border" : ""} opacity-50`}
+								className={`flex-row items-center justify-between py-2 ${i < pastVersions.length - 1 ? "border-b border-border" : ""}`}
 							>
 								<View className="flex-1 gap-0.5">
 									<View className="flex-row items-center gap-2">
