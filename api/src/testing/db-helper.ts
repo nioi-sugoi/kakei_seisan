@@ -1,6 +1,4 @@
 import { applyD1Migrations, env } from "cloudflare:test";
-import { drizzle } from "drizzle-orm/d1";
-import { partnerships } from "../db/schema";
 
 /**
  * D1マイグレーションを適用してテストDBをセットアップする。
@@ -24,18 +22,4 @@ export async function cleanAllTables() {
 	for (const { name } of results.reverse()) {
 		await env.DB.exec(`DELETE FROM "${name}"`);
 	}
-}
-
-export async function insertPartnership(inviterId: string, inviteeId: string) {
-	const db = drizzle(env.DB);
-	const [partnership] = await db
-		.insert(partnerships)
-		.values({
-			id: crypto.randomUUID(),
-			inviterId,
-			inviteeId,
-			createdAt: Date.now(),
-		})
-		.returning();
-	return partnership;
 }

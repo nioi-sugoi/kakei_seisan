@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
-import { partnerInvitations } from "../../../db/schema";
+import { partnerInvitations, partnerships } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	OTHER_USER,
@@ -11,13 +11,12 @@ import {
 	seedThirdUser,
 	setupAuth,
 } from "../../../testing/auth-helper";
-import { insertPartnership, setupDB } from "../../../testing/db-helper";
+import { setupDB } from "../../../testing/db-helper";
 
 export {
 	authCookie,
 	buildOtherUserAuthCookie,
 	client,
-	insertPartnership,
 	OTHER_USER,
 	seedOtherUser,
 	seedThirdUser,
@@ -48,4 +47,18 @@ export async function insertInvitation(
 		})
 		.returning();
 	return invitation;
+}
+
+export async function insertPartnership(inviterId: string, inviteeId: string) {
+	const db = drizzle(env.DB);
+	const [partnership] = await db
+		.insert(partnerships)
+		.values({
+			id: crypto.randomUUID(),
+			inviterId,
+			inviteeId,
+			createdAt: Date.now(),
+		})
+		.returning();
+	return partnership;
 }
