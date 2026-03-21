@@ -56,7 +56,8 @@ const partnerInvitationsApp = new Hono<{
 				if (inviteePartnership) {
 					return c.json(
 						{
-							error: "招待先のユーザーは既にパートナーが登録されています" as const,
+							error:
+								"招待先のユーザーは既にパートナーが登録されています" as const,
 						},
 						409,
 					);
@@ -70,10 +71,7 @@ const partnerInvitationsApp = new Hono<{
 				Date.now(),
 			);
 			if (existingInvitation) {
-				return c.json(
-					{ error: "すでに有効な招待があります" as const },
-					409,
-				);
+				return c.json({ error: "すでに有効な招待があります" as const }, 409);
 			}
 
 			const invitation = await repository.createInvitation(
@@ -85,6 +83,31 @@ const partnerInvitationsApp = new Hono<{
 			return c.json(invitation, 201);
 		},
 	)
+	// ── GET /sent — 自分が送った有効な招待を取得 ────────────────
+	.get("/sent", requireAuth, async (c) => {
+		const user = c.get("user");
+		const db = drizzle(c.env.DB);
+
+		const invitation = await repository.findPendingByInviter(
+			db,
+			user.id,
+			Date.now(),
+		);
+
+		return c.json({ data: invitation ?? null });
+	})
+	// ── GET /partnership — 自分のパートナー関係を取得 ────────────
+	.get("/partnership", requireAuth, async (c) => {
+		const user = c.get("user");
+		const db = drizzle(c.env.DB);
+
+		const partnership = await repository.findPartnershipWithPartnerInfo(
+			db,
+			user.id,
+		);
+
+		return c.json({ data: partnership ?? null });
+	})
 	// ── GET /pending — 自分宛の pending 招待を取得 ─────────────
 	.get("/pending", requireAuth, async (c) => {
 		const user = c.get("user");
@@ -116,10 +139,7 @@ const partnerInvitationsApp = new Hono<{
 
 		// pending 状態のみ解除可能
 		if (invitation.status !== "pending") {
-			return c.json(
-				{ error: "この招待は既に処理されています" as const },
-				409,
-			);
+			return c.json({ error: "この招待は既に処理されています" as const }, 409);
 		}
 
 		const cancelled = await repository.cancelInvitation(db, invitationId);
