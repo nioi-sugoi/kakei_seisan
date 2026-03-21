@@ -13,7 +13,7 @@ const balanceApp = new Hono<{
 	const user = c.get("user");
 	const db = drizzle(c.env.DB);
 
-	// 有効な記録の集計（latest=true, cancelled=false, status=approved）
+	// 有効な記録の集計（latest=true, cancelled=false）
 	const entryResult = await db
 		.select({
 			advanceTotal: sum(
@@ -29,12 +29,11 @@ const balanceApp = new Hono<{
 				eq(entries.userId, user.id),
 				eq(entries.latest, true),
 				eq(entries.cancelled, false),
-				eq(entries.status, "approved"),
 			),
 		)
 		.get();
 
-	// 有効な精算の集計（latest=true, cancelled=false, status=approved）
+	// 有効な精算の集計（latest=true, cancelled=false）
 	const settlementResult = await db
 		.select({
 			settlementTotal: sum(settlements.amount),
@@ -45,7 +44,6 @@ const balanceApp = new Hono<{
 				eq(settlements.userId, user.id),
 				eq(settlements.latest, true),
 				eq(settlements.cancelled, false),
-				eq(settlements.status, "approved"),
 			),
 		)
 		.get();
