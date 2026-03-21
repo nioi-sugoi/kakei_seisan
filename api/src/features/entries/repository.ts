@@ -1,4 +1,4 @@
-import { and, count, desc, eq, lt, max, sql } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries, entryImages } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -276,19 +276,6 @@ export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
 /** 画像 ID で1件取得する */
 export function findImageById(db: DrizzleD1Database, imageId: string) {
 	return db.select().from(entryImages).where(eq(entryImages.id, imageId)).get();
-}
-
-/** エントリーに紐づく画像数を取得する */
-export async function countImagesByEntry(
-	db: DrizzleD1Database,
-	entryId: string,
-): Promise<number> {
-	const result = await db
-		.select({ value: count() })
-		.from(entryImages)
-		.where(eq(entryImages.entryId, entryId))
-		.get();
-	return result?.value ?? 0;
 }
 
 /** 画像メタデータを削除する */
