@@ -178,6 +178,20 @@ describe("GET /api/balance", () => {
 		expect(body.settlementTotal).toBe(5000);
 	});
 
+	it("latest=false の精算は集計に含まれない", async () => {
+		await insertSettlement(TEST_USER.id, { amount: 5000 });
+		await insertSettlement(TEST_USER.id, { amount: 3000, latest: false });
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.settlementTotal).toBe(5000);
+	});
+
 	it("他ユーザーのデータは集計に含まれない", async () => {
 		await seedOtherUser();
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 5000 });
