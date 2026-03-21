@@ -1,2 +1,2 @@
 export { partnerInvitationsApp } from "./route";
-export type { InvitationStatus } from "./types";
+export type { InvitationStatus, PartnerInvitation } from "./types";
