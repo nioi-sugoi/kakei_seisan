@@ -2,13 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { InferResponseType } from "hono/client";
 import { client } from "@/lib/api-client";
 
+type PartnerApi = (typeof client.api)["partner"];
 type PartnerInvitationsApi = (typeof client.api)["partner-invitations"];
 
-type PartnershipResponse = InferResponseType<
-	PartnerInvitationsApi["partnership"]["$get"],
-	200
->;
-export type Partnership = NonNullable<PartnershipResponse["data"]>;
+type PartnerResponse = InferResponseType<PartnerApi["$get"], 200>;
+export type Partnership = NonNullable<PartnerResponse["data"]>;
 
 type SentInvitationsResponse = InferResponseType<
 	PartnerInvitationsApi["sent"]["$get"],
@@ -24,9 +22,9 @@ export type ReceivedInvitation = PendingInvitationsResponse["data"][number];
 
 export function usePartnership() {
 	return useQuery({
-		queryKey: ["partner-invitations", "partnership"],
+		queryKey: ["partner"],
 		queryFn: async () => {
-			const res = await client.api["partner-invitations"].partnership.$get();
+			const res = await client.api.partner.$get();
 			if (!res.ok) throw new Error("パートナー情報の取得に失敗しました");
 			const json = await res.json();
 			return json.data;

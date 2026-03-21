@@ -6,6 +6,7 @@ import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import { handleValidationError } from "../../middleware/validation-error-handler";
 import type { AppVariables } from "../../types";
+import { findPartnershipByUser } from "../partner/repository";
 import * as repository from "./repository";
 
 const createInvitationSchema = v.object({
@@ -35,10 +36,7 @@ const partnerInvitationsApp = new Hono<{
 			}
 
 			// 既にパートナーがいる場合は招待不可
-			const existingPartnership = await repository.findPartnershipByUser(
-				db,
-				user.id,
-			);
+			const existingPartnership = await findPartnershipByUser(db, user.id);
 			if (existingPartnership) {
 				return c.json(
 					{ error: "すでにパートナーが登録されています" as const },
@@ -49,10 +47,7 @@ const partnerInvitationsApp = new Hono<{
 			// 相手が登録済みユーザーで既にパートナーがいる場合は招待不可
 			const invitee = await repository.findUserByEmail(db, inviteeEmail);
 			if (invitee) {
-				const inviteePartnership = await repository.findPartnershipByUser(
-					db,
-					invitee.id,
-				);
+				const inviteePartnership = await findPartnershipByUser(db, invitee.id);
 				if (inviteePartnership) {
 					return c.json(
 						{
@@ -91,18 +86,6 @@ const partnerInvitationsApp = new Hono<{
 		const invitations = await repository.findAllByInviter(db, user.id);
 
 		return c.json({ data: invitations });
-	})
-	// ── GET /partnership — 自分のパートナー関係を取得 ────────────
-	.get("/partnership", requireAuth, async (c) => {
-		const user = c.get("user");
-		const db = drizzle(c.env.DB);
-
-		const partnership = await repository.findPartnershipWithPartnerInfo(
-			db,
-			user.id,
-		);
-
-		return c.json({ data: partnership ?? null });
 	})
 	// ── GET /pending — 自分宛の pending 招待を取得 ─────────────
 	.get("/pending", requireAuth, async (c) => {
@@ -171,8 +154,8 @@ const partnerInvitationsApp = new Hono<{
 
 		// 双方のパートナーシップを並列チェック
 		const [inviteePartnership, inviterPartnership] = await Promise.all([
-			repository.findPartnershipByUser(db, user.id),
-			repository.findPartnershipByUser(db, invitation.inviterId),
+			findPartnershipByUser(db, user.id),
+			findPartnershipByUser(db, invitation.inviterId),
 		]);
 
 		if (inviteePartnership) {

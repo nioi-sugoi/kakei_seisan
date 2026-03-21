@@ -19,7 +19,7 @@ beforeAll(async () => {
 	await setupAuth();
 });
 
-describe("GET /api/partner-invitations/partnership", () => {
+describe("GET /api/partner", () => {
 	beforeEach(async () => {
 		await cleanAllTables();
 		await seedTestUser();
@@ -29,7 +29,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 	it("inviter としてのパートナー関係を取得できる", async () => {
 		await insertPartnership(TEST_USER.id, OTHER_USER.id);
 
-		const res = await client.api["partner-invitations"].partnership.$get(
+		const res = await client.api.partner.$get(
 			{},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -47,7 +47,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 	it("invitee としてのパートナー関係を取得できる", async () => {
 		await insertPartnership(OTHER_USER.id, TEST_USER.id);
 
-		const res = await client.api["partner-invitations"].partnership.$get(
+		const res = await client.api.partner.$get(
 			{},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -62,7 +62,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 	});
 
 	it("パートナー関係がない場合は null を返す", async () => {
-		const res = await client.api["partner-invitations"].partnership.$get(
+		const res = await client.api.partner.$get(
 			{},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -75,7 +75,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 	it("招待が承認されていない場合は null を返す", async () => {
 		await insertInvitation(TEST_USER.id, OTHER_USER.email);
 
-		const res = await client.api["partner-invitations"].partnership.$get(
+		const res = await client.api.partner.$get(
 			{},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -89,7 +89,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 		await seedThirdUser();
 		await insertPartnership(OTHER_USER.id, THIRD_USER.id);
 
-		const res = await client.api["partner-invitations"].partnership.$get(
+		const res = await client.api.partner.$get(
 			{},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -100,7 +100,7 @@ describe("GET /api/partner-invitations/partnership", () => {
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {
-		const res = await client.api["partner-invitations"].partnership.$get({});
+		const res = await client.api.partner.$get({});
 
 		expect(res.status).toBe(401);
 	});
