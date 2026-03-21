@@ -270,7 +270,7 @@ describe("EntryDetailScreen", () => {
 		});
 	});
 
-	it("取消済みの操作履歴で元の記録に「復元」ラベルが表示されない", async () => {
+	it("取消済みの操作履歴で元の記録にはラベルがつかない", async () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
@@ -297,6 +297,7 @@ describe("EntryDetailScreen", () => {
 			expect(screen.getByText("操作履歴")).toBeOnTheScreen();
 		});
 		expect(screen.queryByText("復元")).not.toBeOnTheScreen();
+		expect(screen.queryByText("修正")).not.toBeOnTheScreen();
 	});
 
 	it("復元バージョンの操作履歴に「復元」ラベルが表示される", async () => {
