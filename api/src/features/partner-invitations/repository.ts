@@ -1,4 +1,4 @@
-import { and, eq, gt, or } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { partnerInvitations, partnerships, user } from "../../db/schema";
 
@@ -80,6 +80,15 @@ export function findPendingByInviter(
 		.get();
 }
 
+export function findAllByInviter(db: DrizzleD1Database, inviterId: string) {
+	return db
+		.select()
+		.from(partnerInvitations)
+		.where(eq(partnerInvitations.inviterId, inviterId))
+		.orderBy(sql`${partnerInvitations.createdAt} desc`)
+		.all();
+}
+
 export function findUserByEmail(db: DrizzleD1Database, email: string) {
 	return db.select().from(user).where(eq(user.email, email)).get();
 }
@@ -94,19 +103,6 @@ export function cancelInvitation(db: DrizzleD1Database, id: string) {
 }
 
 // ── partnerships ────────────────────────────────────────────────
-
-export function findPartnershipByUser(db: DrizzleD1Database, userId: string) {
-	return db
-		.select()
-		.from(partnerships)
-		.where(
-			or(
-				eq(partnerships.inviterId, userId),
-				eq(partnerships.inviteeId, userId),
-			),
-		)
-		.get();
-}
 
 /**
  * 招待を accepted に更新し、パートナー関係を作成する。

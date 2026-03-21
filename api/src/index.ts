@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { createAuth } from "./auth";
 import type { Env } from "./bindings";
 import { entriesApp } from "./features/entries";
+import { partnerApp } from "./features/partner";
 import { partnerInvitationsApp } from "./features/partner-invitations";
 import type { AppVariables } from "./types";
 
@@ -53,6 +54,7 @@ const routes = app
 		return c.json({ status: "ok" });
 	})
 	.route("/entries", entriesApp)
+	.route("/partner", partnerApp)
 	.route("/partner-invitations", partnerInvitationsApp);
 
 export default app;

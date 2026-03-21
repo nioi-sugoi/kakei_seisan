@@ -1,0 +1,1 @@
+export { partnerApp } from "./route";
