@@ -83,18 +83,14 @@ const partnerInvitationsApp = new Hono<{
 			return c.json(invitation, 201);
 		},
 	)
-	// ── GET /sent — 自分が送った有効な招待を取得 ────────────────
+	// ── GET /sent — 自分が送った招待を全件取得 ──────────────────
 	.get("/sent", requireAuth, async (c) => {
 		const user = c.get("user");
 		const db = drizzle(c.env.DB);
 
-		const invitation = await repository.findPendingByInviter(
-			db,
-			user.id,
-			Date.now(),
-		);
+		const invitations = await repository.findAllByInviter(db, user.id);
 
-		return c.json({ data: invitation ?? null });
+		return c.json({ data: invitations });
 	})
 	// ── GET /partnership — 自分のパートナー関係を取得 ────────────
 	.get("/partnership", requireAuth, async (c) => {

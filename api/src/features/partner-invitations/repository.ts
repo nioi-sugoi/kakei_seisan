@@ -80,6 +80,15 @@ export function findPendingByInviter(
 		.get();
 }
 
+export function findAllByInviter(db: DrizzleD1Database, inviterId: string) {
+	return db
+		.select()
+		.from(partnerInvitations)
+		.where(eq(partnerInvitations.inviterId, inviterId))
+		.orderBy(sql`${partnerInvitations.createdAt} desc`)
+		.all();
+}
+
 export function findUserByEmail(db: DrizzleD1Database, email: string) {
 	return db.select().from(user).where(eq(user.email, email)).get();
 }

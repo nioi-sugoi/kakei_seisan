@@ -5,7 +5,7 @@ import { useCancelInvitation } from "@/hooks/use-cancel-invitation";
 import {
 	usePartnership,
 	useReceivedInvitations,
-	useSentInvitation,
+	useSentInvitations,
 } from "@/hooks/use-partner-status";
 import { useSendInvitation } from "@/hooks/use-send-invitation";
 import { InvitationForm } from "./InvitationForm";
@@ -19,7 +19,7 @@ type PartnerSectionProps = {
 
 export function PartnerSection({ userEmail }: PartnerSectionProps) {
 	const partnership = usePartnership();
-	const sentInvitation = useSentInvitation();
+	const sentInvitations = useSentInvitations();
 	const receivedInvitations = useReceivedInvitations();
 
 	const sendMutation = useSendInvitation();
@@ -31,8 +31,12 @@ export function PartnerSection({ userEmail }: PartnerSectionProps) {
 
 	const isLoading =
 		partnership.isPending ||
-		sentInvitation.isPending ||
+		sentInvitations.isPending ||
 		receivedInvitations.isPending;
+
+	const hasActivePendingInvitation = sentInvitations.data?.some(
+		(inv) => inv.status === "pending" && inv.expiresAt > Date.now(),
+	);
 
 	if (isLoading) {
 		return (
@@ -47,7 +51,6 @@ export function PartnerSection({ userEmail }: PartnerSectionProps) {
 		);
 	}
 
-	// パートナー連携済み
 	if (partnership.data) {
 		return (
 			<View className="gap-3">
@@ -108,14 +111,8 @@ export function PartnerSection({ userEmail }: PartnerSectionProps) {
 				/>
 			))}
 
-			{/* 送信済み招待 */}
-			{sentInvitation.data ? (
-				<SentInvitationCard
-					invitation={sentInvitation.data}
-					isCancelling={cancelMutation.isPending}
-					onCancel={handleCancel}
-				/>
-			) : (
+			{/* 招待フォーム（有効なpending招待がない場合に表示） */}
+			{hasActivePendingInvitation ? null : (
 				<InvitationForm
 					userEmail={userEmail}
 					isPending={sendMutation.isPending}
@@ -123,6 +120,16 @@ export function PartnerSection({ userEmail }: PartnerSectionProps) {
 					onSend={handleSend}
 				/>
 			)}
+
+			{/* 送信済み招待一覧 */}
+			{sentInvitations.data?.map((invitation) => (
+				<SentInvitationCard
+					key={invitation.id}
+					invitation={invitation}
+					isCancelling={cancelMutation.isPending}
+					onCancel={handleCancel}
+				/>
+			))}
 		</View>
 	);
 }

@@ -10,11 +10,11 @@ type PartnershipResponse = InferResponseType<
 >;
 export type Partnership = NonNullable<PartnershipResponse["data"]>;
 
-type SentInvitationResponse = InferResponseType<
+type SentInvitationsResponse = InferResponseType<
 	PartnerInvitationsApi["sent"]["$get"],
 	200
 >;
-export type SentInvitation = NonNullable<SentInvitationResponse["data"]>;
+export type SentInvitation = SentInvitationsResponse["data"][number];
 
 type PendingInvitationsResponse = InferResponseType<
 	PartnerInvitationsApi["pending"]["$get"],
@@ -34,7 +34,7 @@ export function usePartnership() {
 	});
 }
 
-export function useSentInvitation() {
+export function useSentInvitations() {
 	return useQuery({
 		queryKey: ["partner-invitations", "sent"],
 		queryFn: async () => {
