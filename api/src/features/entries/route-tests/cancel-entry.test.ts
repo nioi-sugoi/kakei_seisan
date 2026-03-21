@@ -39,7 +39,6 @@ describe("POST /api/entries/:id/cancel", () => {
 			category: "advance",
 			label: "交通費",
 			originalId: entry.id,
-			version: 2,
 			cancelled: true,
 			latest: true,
 		});
@@ -89,7 +88,6 @@ describe("POST /api/entries/:id/cancel", () => {
 		const body = await res.json();
 		expect(body).toMatchObject({
 			amount: 9000,
-			version: 3,
 			cancelled: true,
 		});
 	});

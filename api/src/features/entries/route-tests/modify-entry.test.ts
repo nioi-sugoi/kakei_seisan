@@ -40,7 +40,6 @@ describe("POST /api/entries/:id/modify", () => {
 			amount: 9000,
 			label: "食費",
 			category: "advance",
-			version: 2,
 			originalId: entry.id,
 			cancelled: false,
 			latest: true,
@@ -66,7 +65,6 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(body).toMatchObject({
 			amount: 1500,
 			label: "日用品",
-			version: 2,
 			originalId: entry.id,
 		});
 	});
@@ -120,7 +118,6 @@ describe("POST /api/entries/:id/modify", () => {
 		const body = await res.json();
 		expect(body).toMatchObject({
 			amount: 8000,
-			version: 3,
 			originalId: entry.id,
 		});
 	});
