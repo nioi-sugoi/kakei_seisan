@@ -1,20 +1,14 @@
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { type Entry, useEntries } from "./use-entries";
-import { type Settlement, useSettlements } from "./use-settlements";
+import type { InferResponseType } from "hono/client";
+import { client } from "@/lib/api-client";
 
-type TimelineRecord =
-	| { kind: "entry"; occurredOn: string; createdAt: number; entry: Entry }
-	| {
-			kind: "settlement";
-			occurredOn: string;
-			createdAt: number;
-			settlement: Settlement;
-	  };
+type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
+type TimelineRecord = TimelineResponse["data"][number];
 
 export type TimelineItem =
 	| { type: "header"; title: string }
-	| { type: "entry"; entry: Entry }
-	| { type: "settlement"; settlement: Settlement };
+	| { type: "record"; record: TimelineRecord };
 
 function toMonthLabel(date: string) {
 	const d = new Date(date);
@@ -31,14 +25,7 @@ function buildTimelineItems(records: TimelineRecord[]): TimelineItem[] {
 			currentMonth = month;
 			items.push({ type: "header", title: month });
 		}
-		if (record.kind === "entry") {
-			items.push({ type: "entry", entry: record.entry });
-		} else {
-			items.push({
-				type: "settlement",
-				settlement: record.settlement,
-			});
-		}
+		items.push({ type: "record", record });
 	}
 
 	return items;
@@ -46,56 +33,33 @@ function buildTimelineItems(records: TimelineRecord[]): TimelineItem[] {
 
 export function useTimeline() {
 	const router = useRouter();
-	const entriesQuery = useEntries();
-	const settlementsQuery = useSettlements();
+	const query = useInfiniteQuery({
+		queryKey: ["timeline"],
+		queryFn: async ({ pageParam }: { pageParam: number | undefined }) => {
+			const res = await client.api.timeline.$get({
+				query: { cursor: pageParam ? String(pageParam) : undefined },
+			});
+			if (!res.ok) throw new Error("タイムラインの取得に失敗しました");
+			return res.json();
+		},
+		initialPageParam: undefined,
+		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+	});
 
-	const allEntries =
-		entriesQuery.data?.pages.flatMap((page) => page.data) ?? [];
-	const allSettlements =
-		settlementsQuery.data?.pages.flatMap((page) => page.data) ?? [];
+	const allRecords = query.data?.pages.flatMap((page) => page.data) ?? [];
+	const items = buildTimelineItems(allRecords);
 
-	// entries と settlements を createdAt 降順でマージ
-	const records: TimelineRecord[] = [
-		...allEntries.map(
-			(entry) =>
-				({
-					kind: "entry",
-					occurredOn: entry.occurredOn,
-					createdAt: entry.createdAt,
-					entry,
-				}) as const,
-		),
-		...allSettlements.map(
-			(settlement) =>
-				({
-					kind: "settlement",
-					occurredOn: settlement.occurredOn,
-					createdAt: settlement.createdAt,
-					settlement,
-				}) as const,
-		),
-	].sort((a, b) => b.createdAt - a.createdAt);
-
-	const items = buildTimelineItems(records);
-
-	const isLoading = entriesQuery.isLoading || settlementsQuery.isLoading;
-	const isFetchingNextPage =
-		entriesQuery.isFetchingNextPage || settlementsQuery.isFetchingNextPage;
-
-	const handleEntryPress = (entry: Entry) => {
-		router.push(`/entry-detail/${entry.originalId}`);
-	};
-
-	const handleSettlementPress = (settlement: Settlement) => {
-		router.push(`/settlement-detail/${settlement.originalId}`);
+	const handleRecordPress = (record: TimelineRecord) => {
+		if (record.type === "entry") {
+			router.push(`/entry-detail/${record.originalId}`);
+		} else {
+			router.push(`/settlement-detail/${record.originalId}`);
+		}
 	};
 
 	const handleEndReached = () => {
-		if (entriesQuery.hasNextPage && !entriesQuery.isFetchingNextPage) {
-			entriesQuery.fetchNextPage();
-		}
-		if (settlementsQuery.hasNextPage && !settlementsQuery.isFetchingNextPage) {
-			settlementsQuery.fetchNextPage();
+		if (query.hasNextPage && !query.isFetchingNextPage) {
+			query.fetchNextPage();
 		}
 	};
 
@@ -105,11 +69,10 @@ export function useTimeline() {
 
 	return {
 		items,
-		isLoading,
-		isEmpty: allEntries.length === 0 && allSettlements.length === 0,
-		isFetchingNextPage,
-		handleEntryPress,
-		handleSettlementPress,
+		isLoading: query.isLoading,
+		isEmpty: allRecords.length === 0,
+		isFetchingNextPage: query.isFetchingNextPage,
+		handleRecordPress,
 		handleEndReached,
 		handleAddPress,
 	};

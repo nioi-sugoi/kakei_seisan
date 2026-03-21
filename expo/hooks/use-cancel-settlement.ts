@@ -22,6 +22,7 @@ export function useCancelSettlement(settlementId: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["settlements"] });
 			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
 			router.back();
 		},
 	});

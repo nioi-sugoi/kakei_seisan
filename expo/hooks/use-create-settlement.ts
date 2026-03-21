@@ -18,6 +18,7 @@ export function useCreateSettlement() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["settlements"] });
 			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
 			router.replace("/(tabs)");
 		},
 	});

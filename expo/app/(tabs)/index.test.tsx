@@ -12,13 +12,17 @@ jest.mock("expo-router", () => ({
 	useRouter: () => ({ push: mockPush }),
 }));
 
-const mockGet = jest.fn();
+const mockTimelineGet = jest.fn();
+const mockBalanceGet = jest.fn();
 
 jest.mock("@/lib/api-client", () => ({
 	client: {
 		api: {
-			entries: {
-				$get: (...args: unknown[]) => mockGet(...args),
+			timeline: {
+				$get: (...args: unknown[]) => mockTimelineGet(...args),
+			},
+			balance: {
+				$get: (...args: unknown[]) => mockBalanceGet(...args),
 			},
 		},
 	},
@@ -26,8 +30,8 @@ jest.mock("@/lib/api-client", () => ({
 
 import TimelineScreen from "./index";
 
-function mockApiResponse(body: unknown) {
-	mockGet.mockImplementation(() =>
+function mockTimelineResponse(body: unknown) {
+	mockTimelineGet.mockImplementation(() =>
 		Promise.resolve(
 			new Response(JSON.stringify(body), {
 				headers: { "Content-Type": "application/json" },
@@ -36,10 +40,11 @@ function mockApiResponse(body: unknown) {
 	);
 }
 
-function makeEntry(overrides: Record<string, unknown> = {}) {
+function makeRecord(overrides: Record<string, unknown> = {}) {
 	return {
 		id: "entry-1",
 		userId: "user-1",
+		type: "entry",
 		category: "advance",
 		amount: 1500,
 		occurredOn: "2026-03-15",
@@ -49,9 +54,6 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		cancelled: false,
 		latest: true,
 		status: "approved",
-		approvedBy: null,
-		approvedAt: null,
-		approvalComment: null,
 		createdAt: 1773676800000,
 		...overrides,
 	};
@@ -59,6 +61,19 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
 	jest.clearAllMocks();
+	mockBalanceGet.mockImplementation(() =>
+		Promise.resolve(
+			new Response(
+				JSON.stringify({
+					advanceTotal: 0,
+					depositTotal: 0,
+					settlementTotal: 0,
+					balance: 0,
+				}),
+				{ headers: { "Content-Type": "application/json" } },
+			),
+		),
+	);
 });
 
 describe("TimelineScreen", () => {
@@ -69,7 +84,7 @@ describe("TimelineScreen", () => {
 	});
 
 	it("記録がない場合に空の状態メッセージが表示される", async () => {
-		mockApiResponse({ data: [], nextCursor: null });
+		mockTimelineResponse({ data: [], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -80,7 +95,7 @@ describe("TimelineScreen", () => {
 	});
 
 	it("立替の記録カードが正しく表示される", async () => {
-		mockApiResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeRecord()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -92,9 +107,9 @@ describe("TimelineScreen", () => {
 	});
 
 	it("預りの記録カードが正しく表示される", async () => {
-		mockApiResponse({
+		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeRecord({
 					id: "entry-2",
 					category: "deposit",
 					amount: 3000,
@@ -113,10 +128,10 @@ describe("TimelineScreen", () => {
 	});
 
 	it("月ごとのセクションヘッダーが表示される", async () => {
-		mockApiResponse({
+		mockTimelineResponse({
 			data: [
-				makeEntry({ id: "e1", occurredOn: "2026-03-15" }),
-				makeEntry({ id: "e2", occurredOn: "2026-02-28", label: "電気代" }),
+				makeRecord({ id: "e1", occurredOn: "2026-03-15" }),
+				makeRecord({ id: "e2", occurredOn: "2026-02-28", label: "電気代" }),
 			],
 			nextCursor: null,
 		});
@@ -129,11 +144,11 @@ describe("TimelineScreen", () => {
 	});
 
 	it("記録が月ごとに正しくグルーピングされている", async () => {
-		mockApiResponse({
+		mockTimelineResponse({
 			data: [
-				makeEntry({ id: "e1", occurredOn: "2026-03-20", label: "3月の記録A" }),
-				makeEntry({ id: "e2", occurredOn: "2026-03-10", label: "3月の記録B" }),
-				makeEntry({ id: "e3", occurredOn: "2026-02-15", label: "2月の記録" }),
+				makeRecord({ id: "e1", occurredOn: "2026-03-20", label: "3月の記録A" }),
+				makeRecord({ id: "e2", occurredOn: "2026-03-10", label: "3月の記録B" }),
+				makeRecord({ id: "e3", occurredOn: "2026-02-15", label: "2月の記録" }),
 			],
 			nextCursor: null,
 		});
@@ -166,8 +181,8 @@ describe("TimelineScreen", () => {
 	});
 
 	it("記録カードをタップすると詳細画面に遷移する", async () => {
-		mockApiResponse({
-			data: [makeEntry({ id: "abc-123", originalId: "abc-123" })],
+		mockTimelineResponse({
+			data: [makeRecord({ id: "abc-123", originalId: "abc-123" })],
 			nextCursor: null,
 		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
@@ -182,7 +197,7 @@ describe("TimelineScreen", () => {
 	});
 
 	it("FABボタンが表示されタップで記録登録フォームへ遷移する", async () => {
-		mockApiResponse({ data: [], nextCursor: null });
+		mockTimelineResponse({ data: [], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		const fab = await screen.findByRole("button", { name: "記録を追加" });
@@ -192,12 +207,10 @@ describe("TimelineScreen", () => {
 		expect(mockPush).toHaveBeenCalledWith("/entry-form");
 	});
 
-	// --- バージョン管理バッジのテスト ---
-
 	it("修正バージョン(v2)に「修正」バッジが表示される", async () => {
-		mockApiResponse({
+		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeRecord({
 					id: "mod-1",
 					originalId: "entry-1",
 					latest: true,
@@ -217,9 +230,9 @@ describe("TimelineScreen", () => {
 	});
 
 	it("取消バージョンに「取消」バッジが表示される", async () => {
-		mockApiResponse({
+		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeRecord({
 					id: "cancel-1",
 					originalId: "entry-1",
 					cancelled: true,
@@ -233,5 +246,30 @@ describe("TimelineScreen", () => {
 		await waitFor(() => {
 			expect(screen.getByText("取消")).toBeOnTheScreen();
 		});
+	});
+
+	it("精算カードをタップすると精算詳細画面に遷移する", async () => {
+		mockTimelineResponse({
+			data: [
+				makeRecord({
+					id: "stl-1",
+					originalId: "stl-1",
+					type: "settlement",
+					category: null,
+					amount: 5000,
+					label: null,
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("精算")).toBeOnTheScreen();
+		});
+
+		await user.press(screen.getByText("¥5,000"));
+
+		expect(mockPush).toHaveBeenCalledWith("/settlement-detail/stl-1");
 	});
 });

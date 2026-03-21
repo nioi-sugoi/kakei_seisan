@@ -7,8 +7,7 @@ import {
 } from "react-native";
 
 import { BalanceSummary } from "@/components/balance/BalanceSummary";
-import { EntryCard } from "@/components/timeline/EntryCard";
-import { SettlementCard } from "@/components/timeline/SettlementCard";
+import { TimelineRecordCard } from "@/components/timeline/TimelineRecordCard";
 import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
 
 export default function TimelineScreen() {
@@ -17,8 +16,7 @@ export default function TimelineScreen() {
 		isLoading,
 		isEmpty,
 		isFetchingNextPage,
-		handleEntryPress,
-		handleSettlementPress,
+		handleRecordPress,
 		handleEndReached,
 		handleAddPress,
 	} = useTimeline();
@@ -41,11 +39,11 @@ export default function TimelineScreen() {
 			) : (
 				<FlatList<TimelineItem>
 					data={items}
-					keyExtractor={(item) => {
-						if (item.type === "header") return `header-${item.title}`;
-						if (item.type === "entry") return `entry-${item.entry.id}`;
-						return `settlement-${item.settlement.id}`;
-					}}
+					keyExtractor={(item) =>
+						item.type === "header"
+							? `header-${item.title}`
+							: `${item.record.type}-${item.record.id}`
+					}
 					renderItem={({ item }) => {
 						if (item.type === "header") {
 							return (
@@ -54,19 +52,12 @@ export default function TimelineScreen() {
 								</Text>
 							);
 						}
-						if (item.type === "settlement") {
-							return (
-								<View className="px-4 pb-2">
-									<SettlementCard
-										settlement={item.settlement}
-										onPress={handleSettlementPress}
-									/>
-								</View>
-							);
-						}
 						return (
 							<View className="px-4 pb-2">
-								<EntryCard entry={item.entry} onPress={handleEntryPress} />
+								<TimelineRecordCard
+									record={item.record}
+									onPress={handleRecordPress}
+								/>
 							</View>
 						);
 					}}
