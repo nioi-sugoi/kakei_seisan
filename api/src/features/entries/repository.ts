@@ -1,6 +1,6 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { entries } from "../../db/schema";
+import { entries, entryImages } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
 
 export function createEntry(
@@ -221,4 +221,58 @@ export function createCancellation(
 			})
 			.returning(),
 	]);
+}
+
+// ============================================================
+// 画像関連
+// ============================================================
+
+/**
+ * 画像メタデータを作成する（枚数制限超過時は null を返す）。
+ * INSERT...SELECT で枚数チェックと displayOrder 算出をアトミックに行い、
+ * 並行リクエストによる制限超過を防止する。
+ */
+export async function createImage(
+	db: DrizzleD1Database,
+	input: {
+		entryId: string;
+		storagePath: string;
+	},
+): Promise<typeof entryImages.$inferSelect | null> {
+	const id = crypto.randomUUID();
+	const now = Date.now();
+	const result = await db.run(sql`
+		INSERT INTO entry_images (id, entry_id, storage_path, display_order, created_at)
+		SELECT ${id}, ${input.entryId}, ${input.storagePath},
+			COALESCE(MAX(display_order) + 1, 0), ${now}
+		FROM entry_images
+		WHERE entry_id = ${input.entryId}
+		HAVING COUNT(*) < 2
+	`);
+	if (!result.meta.rows_written || result.meta.rows_written === 0) {
+		return null;
+	}
+	const row = await db
+		.select()
+		.from(entryImages)
+		.where(eq(entryImages.id, id))
+		.get();
+	return row ?? null;
+}
+
+export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
+	return db
+		.select()
+		.from(entryImages)
+		.where(eq(entryImages.entryId, entryId))
+		.orderBy(entryImages.displayOrder)
+		.all();
+}
+
+export function findImageById(db: DrizzleD1Database, imageId: string) {
+	return db.select().from(entryImages).where(eq(entryImages.id, imageId)).get();
+}
+
+export function deleteImage(db: DrizzleD1Database, imageId: string) {
+	return db.delete(entryImages).where(eq(entryImages.id, imageId)).run();
 }
