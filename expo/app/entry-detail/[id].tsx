@@ -27,9 +27,9 @@ function Header({ onBack }: { onBack: () => void }) {
 export default function EntryDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
-	const { data: entry, isPending, error } = useEntryDetail(id ?? "");
-	const cancelMutation = useCancelEntry(id ?? "");
-	const restoreMutation = useRestoreEntry(id ?? "");
+	const { data: entry, isPending, error } = useEntryDetail(id);
+	const cancelMutation = useCancelEntry(id);
+	const restoreMutation = useRestoreEntry(id);
 
 	if (isPending) {
 		return (
