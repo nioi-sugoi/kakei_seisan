@@ -1,5 +1,3 @@
-export type Status = "approved" | "pending" | "rejected";
-
 export type CreateSettlementInput = {
 	amount: number;
 	occurredOn: string;

@@ -13,40 +13,39 @@ const balanceApp = new Hono<{
 	const user = c.get("user");
 	const db = drizzle(c.env.DB);
 
-	// 有効な記録の集計（latest=true, cancelled=false）
-	const entryResult = await db
-		.select({
-			advanceTotal: sum(
-				sql`CASE WHEN ${entries.category} = 'advance' THEN ${entries.amount} ELSE 0 END`,
-			),
-			depositTotal: sum(
-				sql`CASE WHEN ${entries.category} = 'deposit' THEN ${entries.amount} ELSE 0 END`,
-			),
-		})
-		.from(entries)
-		.where(
-			and(
-				eq(entries.userId, user.id),
-				eq(entries.latest, true),
-				eq(entries.cancelled, false),
-			),
-		)
-		.get();
-
-	// 有効な精算の集計（latest=true, cancelled=false）
-	const settlementResult = await db
-		.select({
-			settlementTotal: sum(settlements.amount),
-		})
-		.from(settlements)
-		.where(
-			and(
-				eq(settlements.userId, user.id),
-				eq(settlements.latest, true),
-				eq(settlements.cancelled, false),
-			),
-		)
-		.get();
+	const [entryResult, settlementResult] = await Promise.all([
+		db
+			.select({
+				advanceTotal: sum(
+					sql`CASE WHEN ${entries.category} = 'advance' THEN ${entries.amount} ELSE 0 END`,
+				),
+				depositTotal: sum(
+					sql`CASE WHEN ${entries.category} = 'deposit' THEN ${entries.amount} ELSE 0 END`,
+				),
+			})
+			.from(entries)
+			.where(
+				and(
+					eq(entries.userId, user.id),
+					eq(entries.latest, true),
+					eq(entries.cancelled, false),
+				),
+			)
+			.get(),
+		db
+			.select({
+				settlementTotal: sum(settlements.amount),
+			})
+			.from(settlements)
+			.where(
+				and(
+					eq(settlements.userId, user.id),
+					eq(settlements.latest, true),
+					eq(settlements.cancelled, false),
+				),
+			)
+			.get(),
+	]);
 
 	const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
 	const depositTotal = Number(entryResult?.depositTotal ?? 0);

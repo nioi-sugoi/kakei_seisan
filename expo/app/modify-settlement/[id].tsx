@@ -5,9 +5,9 @@ import {
 	Platform,
 	ScrollView,
 	Text,
-	TextInput,
 	View,
 } from "react-native";
+import { AmountInput } from "@/components/entry-form/AmountInput";
 import {
 	FormError,
 	FormHeader,
@@ -39,30 +39,14 @@ function ModifySettlementForm({ target }: { target: ModifyTarget }) {
 			>
 				<form.Field name="amount">
 					{(field) => (
-						<View className="gap-2">
-							<Text className="text-sm font-medium text-foreground">
-								精算額
-							</Text>
-							<View className="flex-row items-center rounded-xl border border-border bg-card px-4">
-								<Text className="text-xl font-bold text-muted-foreground">
-									¥
-								</Text>
-								<TextInput
-									value={field.state.value}
-									onChangeText={field.handleChange}
-									placeholder="0"
-									keyboardType="number-pad"
-									accessibilityLabel="精算額"
-									className="flex-1 py-3.5 text-right text-2xl font-bold text-foreground"
-									placeholderTextColor="#9ca3af"
-								/>
-							</View>
-							{field.state.meta.errors[0]?.message ? (
-								<Text className="text-sm text-destructive">
-									{field.state.meta.errors[0].message}
-								</Text>
-							) : null}
-						</View>
+						<AmountInput
+							value={field.state.value}
+							onChange={field.handleChange}
+							error={field.state.meta.errors[0]?.message}
+							label="精算額"
+							required={false}
+							accessibilityLabel="精算額"
+						/>
 					)}
 				</form.Field>
 				{serverError ? <FormError message={serverError} /> : null}

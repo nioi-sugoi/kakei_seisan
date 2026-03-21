@@ -6,10 +6,10 @@ import {
 	ScrollView,
 	type StyleProp,
 	Text,
-	TextInput,
 	View,
 	type ViewStyle,
 } from "react-native";
+import { AmountInput } from "@/components/entry-form/AmountInput";
 import {
 	FormError,
 	FormHeader,
@@ -41,7 +41,6 @@ function SettlementFormContent({ balance }: { balance: number }) {
 				contentContainerClassName="px-4 py-5 gap-5"
 				keyboardShouldPersistTaps="handled"
 			>
-				{/* 残高表示カード */}
 				<View
 					style={balanceCardBg}
 					className="items-center gap-2 rounded-xl px-5 py-5"
@@ -55,32 +54,17 @@ function SettlementFormContent({ balance }: { balance: number }) {
 					</Text>
 				</View>
 
-				{/* 精算額入力 */}
 				<form.Field name="amount">
 					{(field) => (
-						<View className="gap-2">
-							<Text className="text-sm font-medium text-foreground">
-								精算額
-							</Text>
-							<View className="flex-row items-center rounded-xl border border-border bg-card px-4">
-								<Text className="text-xl font-bold text-muted-foreground">
-									¥
-								</Text>
-								<TextInput
-									value={field.state.value}
-									onChangeText={field.handleChange}
-									placeholder="0"
-									keyboardType="number-pad"
-									accessibilityLabel="精算額"
-									className="flex-1 py-3.5 text-right text-2xl font-bold text-foreground"
-									placeholderTextColor="#9ca3af"
-								/>
-							</View>
-							{field.state.meta.errors[0]?.message ? (
-								<Text className="text-sm text-destructive">
-									{field.state.meta.errors[0].message}
-								</Text>
-							) : null}
+						<>
+							<AmountInput
+								value={field.state.value}
+								onChange={field.handleChange}
+								error={field.state.meta.errors[0]?.message}
+								label="精算額"
+								required={false}
+								accessibilityLabel="精算額"
+							/>
 							<Pressable
 								onPress={() => field.handleChange(String(absBalance))}
 								className="items-center rounded-xl border border-border bg-card py-2.5 active:opacity-80"
@@ -89,7 +73,7 @@ function SettlementFormContent({ balance }: { balance: number }) {
 									全額精算
 								</Text>
 							</Pressable>
-						</View>
+						</>
 					)}
 				</form.Field>
 

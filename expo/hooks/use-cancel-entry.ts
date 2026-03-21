@@ -21,6 +21,7 @@ export function useCancelEntry(entryId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
 			router.back();
 		},
 	});

@@ -50,6 +50,7 @@ export function useCreateEntryForm() {
 			parseResponse(client.api.entries.$post({ json: input })),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
 			router.replace("/(tabs)");
 		},
 	});

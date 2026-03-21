@@ -19,6 +19,7 @@ export function useRestoreEntry(entryId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
 			router.back();
 		},
 	});

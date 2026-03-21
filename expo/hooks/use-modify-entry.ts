@@ -26,6 +26,7 @@ export function useModifyEntry(entryId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
 			router.replace("/(tabs)");
 		},
 	});
