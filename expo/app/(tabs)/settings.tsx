@@ -1,5 +1,4 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { PartnerSection } from "@/components/settings/PartnerSection";
 import { authClient } from "@/lib/auth-client";
 
 export default function SettingsScreen() {
@@ -19,10 +18,6 @@ export default function SettingsScreen() {
 				<Text className="text-foreground text-base mt-1">
 					{session?.user?.email ?? "—"}
 				</Text>
-			</View>
-
-			<View className="mt-8">
-				<PartnerSection userEmail={session?.user?.email ?? ""} />
 			</View>
 
 			<Pressable

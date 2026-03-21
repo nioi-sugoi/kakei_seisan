@@ -10,6 +10,12 @@ v0_design/ Vercelのv0で作ったデザインモック
 
 Bash toolはサンドボックス上で実行されるため、ファイルアクセスやネットワーク接続がエラーになることがある。
 
+## 開発サーバー起動
+- ワークツリーごとに `.env.worktree` でポートをずらしているため、開発サーバーは必ず pnpm スクリプト経由で起動すること
+  - API: `pnpm --filter api dev`
+  - Expo: `pnpm --filter expo-app start`（`start` スクリプトが `.env.worktree` の `EXPO_PORT` を参照する）
+- `npx expo start` や `npx wrangler dev` を直接実行するとポート競合が起きる
+
 ## 開発フロー
 - Issue番号に対応してissue-XXXXのブランチを作成して開発を行う
 - イシューを始める時はGithubProjectsでのステータスも同時に更新しておく
