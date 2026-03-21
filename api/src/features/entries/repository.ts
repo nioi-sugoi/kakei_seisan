@@ -103,7 +103,7 @@ export function createModification(
 	return db.batch([
 		db
 			.update(entries)
-			.set({ latest: false, updatedAt: now })
+			.set({ latest: false })
 			.where(
 				and(
 					eq(entries.originalId, original.originalId),
@@ -124,7 +124,6 @@ export function createModification(
 				cancelled: false,
 				latest: true,
 				createdAt: now,
-				updatedAt: now,
 			})
 			.returning(),
 	]);
@@ -151,7 +150,7 @@ export function createRestoration(
 	return db.batch([
 		db
 			.update(entries)
-			.set({ latest: false, updatedAt: now })
+			.set({ latest: false })
 			.where(
 				and(
 					eq(entries.originalId, latestEntry.originalId),
@@ -172,7 +171,6 @@ export function createRestoration(
 				cancelled: false,
 				latest: true,
 				createdAt: now,
-				updatedAt: now,
 			})
 			.returning(),
 	]);
@@ -198,7 +196,7 @@ export function createCancellation(
 	return db.batch([
 		db
 			.update(entries)
-			.set({ latest: false, updatedAt: now })
+			.set({ latest: false })
 			.where(
 				and(
 					eq(entries.originalId, latestEntry.originalId),
@@ -219,7 +217,6 @@ export function createCancellation(
 				cancelled: true,
 				latest: true,
 				createdAt: now,
-				updatedAt: now,
 			})
 			.returning(),
 	]);

@@ -56,7 +56,6 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 			approvedAt: null,
 			approvalComment: null,
 			createdAt: 1742000000000,
-			updatedAt: 1742000000000,
 			versions: [
 				{
 					id: "entry-1",

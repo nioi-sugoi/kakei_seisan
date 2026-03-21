@@ -53,7 +53,6 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
 		approvedAt: null,
 		approvalComment: null,
 		createdAt: 1773676800000,
-		updatedAt: 1773676800000,
 		...overrides,
 	};
 }

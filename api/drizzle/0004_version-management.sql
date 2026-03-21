@@ -18,7 +18,6 @@ CREATE TABLE "entries_new" (
 	"approved_at" integer,
 	"approval_comment" text,
 	"created_at" integer NOT NULL,
-	"updated_at" integer NOT NULL,
 	CHECK ("category" IN ('advance', 'deposit')),
 	CHECK ("status" IN ('approved', 'pending', 'rejected')),
 	CHECK ("amount" >= 0)
@@ -29,13 +28,13 @@ INSERT INTO "entries_new" (
 	"id", "user_id", "category", "amount", "date", "label", "memo",
 	"original_id", "cancelled", "latest",
 	"status", "approved_by", "approved_at", "approval_comment",
-	"created_at", "updated_at"
+	"created_at"
 )
 SELECT
 	"id", "user_id", "category", "amount", "date", "label", "memo",
 	"id", 0, 1,
 	"status", "approved_by", "approved_at", "approval_comment",
-	"created_at", "updated_at"
+	"created_at"
 FROM "entries"
 WHERE "operation" = 'original';--> statement-breakpoint
 
@@ -64,7 +63,6 @@ CREATE TABLE "settlements_new" (
 	"approved_at" integer,
 	"approval_comment" text,
 	"created_at" integer NOT NULL,
-	"updated_at" integer NOT NULL,
 	CHECK ("status" IN ('approved', 'pending', 'rejected')),
 	CHECK ("amount" >= 0)
 );--> statement-breakpoint
@@ -73,13 +71,13 @@ INSERT INTO "settlements_new" (
 	"id", "user_id", "amount", "date",
 	"original_id", "cancelled", "latest",
 	"status", "approved_by", "approved_at", "approval_comment",
-	"created_at", "updated_at"
+	"created_at"
 )
 SELECT
 	"id", "user_id", "amount", "date",
 	"id", 0, 1,
 	"status", "approved_by", "approved_at", "approval_comment",
-	"created_at", "updated_at"
+	"created_at"
 FROM "settlements"
 WHERE "operation" = 'original';--> statement-breakpoint
 

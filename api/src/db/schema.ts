@@ -180,9 +180,6 @@ export const entries = sqliteTable(
 		createdAt: integer("created_at")
 			.notNull()
 			.$defaultFn(() => Date.now()),
-		updatedAt: integer("updated_at")
-			.notNull()
-			.$defaultFn(() => Date.now()),
 	},
 	(table) => [
 		index("entries_user_status_idx").on(table.userId, table.status),
@@ -225,7 +222,6 @@ export const settlements = sqliteTable(
 		approvedAt: integer("approved_at"),
 		approvalComment: text("approval_comment"),
 		createdAt: integer("created_at").notNull(),
-		updatedAt: integer("updated_at").notNull(),
 	},
 	(table) => [
 		index("settlements_user_status_idx").on(table.userId, table.status),
