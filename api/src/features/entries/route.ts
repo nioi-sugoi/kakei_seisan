@@ -65,17 +65,9 @@ const entriesApp = new Hono<{
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
 
-		// バージョン一覧と元エントリを並行取得
-		const [versions, original] = await Promise.all([
-			entriesRepository.findVersions(db, entry.originalId),
-			entry.id !== entry.originalId
-				? entriesRepository
-						.findById(db, entry.originalId)
-						.then((e) => e ?? undefined)
-				: Promise.resolve(undefined),
-		]);
+		const versions = await entriesRepository.findVersions(db, entry.originalId);
 
-		return c.json({ ...entry, versions, original }, 200);
+		return c.json({ ...entry, versions }, 200);
 	})
 	.post(
 		"/",

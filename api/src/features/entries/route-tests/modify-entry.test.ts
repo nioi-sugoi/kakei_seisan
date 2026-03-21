@@ -135,7 +135,7 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(dbVersions[0].amount).toBe(8000);
 	});
 
-	it("修正してもカテゴリは元の値が維持される", async () => {
+	it("deposit カテゴリの記録を修正してもカテゴリは deposit のまま変わらない", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 5000,
 			label: "お釣り",
@@ -156,6 +156,31 @@ describe("POST /api/entries/:id/modify", () => {
 
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions[0].category).toBe("deposit");
+	});
+
+	it("修正リクエストに category を含めても無視される", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 5000,
+			label: "お釣り",
+			category: "deposit",
+		});
+
+		// Honoクライアントの型では category を送信できないため raw fetch で検証
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				// category は modifyEntrySchema に含まれないため無視される
+				json: { amount: 3000, label: "お釣り修正", category: "advance" } as {
+					amount: number;
+					label: string;
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toMatchObject({ category: "deposit" });
 	});
 
 	it("変更がない場合は 400 を返す", async () => {

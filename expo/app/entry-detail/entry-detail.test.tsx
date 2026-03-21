@@ -63,7 +63,6 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 					createdAt: 1742000000000,
 				},
 			],
-			original: undefined,
 			...overrides,
 		}),
 		{ status: 200, headers: jsonHeaders },
@@ -254,7 +253,6 @@ describe("EntryDetailScreen", () => {
 						createdAt: 1742000000000,
 					},
 				],
-				original: { id: "parent-1" },
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
@@ -283,7 +281,6 @@ describe("EntryDetailScreen", () => {
 						createdAt: 1742000000000,
 					},
 				],
-				original: { id: "parent-1" },
 			}),
 		);
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });

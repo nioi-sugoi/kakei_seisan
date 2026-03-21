@@ -324,7 +324,6 @@ describe("EntryFormScreen", () => {
 							createdAt: 1742000000000,
 						},
 					],
-					original: undefined,
 				}),
 				{ status: 200, headers: { "Content-Type": "application/json" } },
 			),
