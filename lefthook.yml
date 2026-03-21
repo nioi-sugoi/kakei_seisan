@@ -1,0 +1,18 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome check
+      glob: "*.{js,ts,jsx,tsx,json,css}"
+      run: pnpm biome check --staged --no-errors-on-unmatched {staged_files}
+
+    - name: expo typecheck
+      run: cd expo && npx tsc --noEmit
+
+    - name: api typecheck
+      run: cd api && npx tsc --noEmit
+
+    - name: expo test
+      run: cd expo && pnpm test
+
+    - name: api test
+      run: cd api && pnpm test
