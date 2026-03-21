@@ -65,9 +65,23 @@ const entriesApp = new Hono<{
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
 
-		const versions = await entriesRepository.findVersions(db, entry.originalId);
+		const [versions, images] = await Promise.all([
+			entriesRepository.findVersions(db, entry.originalId),
+			entriesRepository.findImagesByEntry(db, entry.originalId),
+		]);
 
-		return c.json({ ...entry, versions }, 200);
+		return c.json(
+			{
+				...entry,
+				versions,
+				images: images.map((img) => ({
+					id: img.id,
+					displayOrder: img.displayOrder,
+					createdAt: img.createdAt,
+				})),
+			},
+			200,
+		);
 	})
 	.post(
 		"/",
@@ -181,6 +195,130 @@ const entriesApp = new Hono<{
 		);
 
 		return c.json(insertedRows[0], 201);
+	})
+	// ── 画像エンドポイント ────────────────────────────────────────
+	.post("/:entryId/images", requireAuth, async (c) => {
+		const user = c.get("user");
+		const entryId = c.req.param("entryId");
+		const db = drizzle(c.env.DB);
+
+		// エントリーの所有者チェック（任意のバージョン ID を受け付けて originalId を特定）
+		const entry = await entriesRepository.findByOwner(db, entryId, user.id);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		const targetId = entry.originalId;
+
+		// 最大2枚チェック
+		const imageCount = await entriesRepository.countImagesByEntry(db, targetId);
+		if (imageCount >= 2) {
+			return c.json({ error: "画像は最大2枚までです" as const }, 400);
+		}
+
+		// マルチパートボディをパース
+		const body = await c.req.parseBody();
+		const file = body.image;
+		if (!(file instanceof File)) {
+			return c.json({ error: "画像ファイルが必要です" as const }, 400);
+		}
+
+		// ファイル形式チェック
+		const allowedTypes = [
+			"image/jpeg",
+			"image/png",
+			"image/webp",
+			"image/heic",
+		];
+		if (!allowedTypes.includes(file.type)) {
+			return c.json(
+				{ error: "サポートされていないファイル形式です" as const },
+				400,
+			);
+		}
+
+		// ファイルサイズチェック（10MB）
+		if (file.size > 10 * 1024 * 1024) {
+			return c.json(
+				{ error: "ファイルサイズは10MB以下にしてください" as const },
+				400,
+			);
+		}
+
+		// MIME → 拡張子マッピング
+		const extMap: Record<string, string> = {
+			"image/jpeg": "jpg",
+			"image/png": "png",
+			"image/webp": "webp",
+			"image/heic": "heic",
+		};
+		const ext = extMap[file.type] ?? "jpg";
+		const storagePath = `receipts/${user.id}/${targetId}/${crypto.randomUUID()}.${ext}`;
+
+		// R2 にアップロード
+		await c.env.RECEIPTS.put(storagePath, file.stream(), {
+			httpMetadata: { contentType: file.type },
+		});
+
+		// DB にメタデータを保存
+		const image = await entriesRepository.createImage(db, {
+			entryId: targetId,
+			storagePath,
+			displayOrder: imageCount,
+		});
+
+		return c.json(image, 201);
+	})
+	.get("/:entryId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const entryId = c.req.param("entryId");
+		const imageId = c.req.param("imageId");
+		const db = drizzle(c.env.DB);
+
+		const entry = await entriesRepository.findByOwner(db, entryId, user.id);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+
+		const image = await entriesRepository.findImageById(db, imageId);
+		if (!image || image.entryId !== entry.originalId) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const object = await c.env.RECEIPTS.get(image.storagePath);
+		if (!object) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const headers = new Headers();
+		object.writeHttpMetadata(headers);
+		headers.set("etag", object.httpEtag);
+		headers.set("cache-control", "private, max-age=3600");
+
+		return new Response(object.body, { headers });
+	})
+	.delete("/:entryId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const entryId = c.req.param("entryId");
+		const imageId = c.req.param("imageId");
+		const db = drizzle(c.env.DB);
+
+		const entry = await entriesRepository.findByOwner(db, entryId, user.id);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+
+		const image = await entriesRepository.findImageById(db, imageId);
+		if (!image || image.entryId !== entry.originalId) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		// R2 から削除
+		await c.env.RECEIPTS.delete(image.storagePath);
+
+		// DB から削除
+		await entriesRepository.deleteImage(db, imageId);
+
+		return c.json({ success: true as const }, 200);
 	});
 
 export { entriesApp };

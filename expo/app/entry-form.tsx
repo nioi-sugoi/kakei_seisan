@@ -7,12 +7,20 @@ import {
 	FormHeader,
 	SubmitButton,
 } from "@/components/entry-form/FormShared";
+import { ImagePicker } from "@/components/entry-form/ImagePicker";
 import { LabelInput } from "@/components/entry-form/LabelInput";
 import { MemoInput } from "@/components/entry-form/MemoInput";
 import { useCreateEntryForm } from "@/hooks/use-entry-form";
 
 export default function CreateEntryScreen() {
-	const { form, serverError, loading, goBack } = useCreateEntryForm();
+	const {
+		form,
+		serverError,
+		loading,
+		selectedImages,
+		setSelectedImages,
+		goBack,
+	} = useCreateEntryForm();
 
 	return (
 		<KeyboardAvoidingView
@@ -67,6 +75,7 @@ export default function CreateEntryScreen() {
 						/>
 					)}
 				</form.Field>
+				<ImagePicker images={selectedImages} onChange={setSelectedImages} />
 				{serverError ? <FormError message={serverError} /> : null}
 				<SubmitButton
 					label="登録する"

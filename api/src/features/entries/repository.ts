@@ -1,6 +1,6 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, count, desc, eq, lt } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { entries } from "../../db/schema";
+import { entries, entryImages } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
 
 export function createEntry(
@@ -221,4 +221,64 @@ export function createCancellation(
 			})
 			.returning(),
 	]);
+}
+
+// ============================================================
+// 画像関連
+// ============================================================
+
+/** エントリーに紐づく画像メタデータを作成する */
+export function createImage(
+	db: DrizzleD1Database,
+	input: {
+		entryId: string;
+		storagePath: string;
+		displayOrder: number;
+	},
+) {
+	const id = crypto.randomUUID();
+	return db
+		.insert(entryImages)
+		.values({
+			id,
+			entryId: input.entryId,
+			storagePath: input.storagePath,
+			displayOrder: input.displayOrder,
+			createdAt: Date.now(),
+		})
+		.returning()
+		.get();
+}
+
+/** エントリーに紐づく画像一覧を取得する（displayOrder 昇順） */
+export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
+	return db
+		.select()
+		.from(entryImages)
+		.where(eq(entryImages.entryId, entryId))
+		.orderBy(entryImages.displayOrder)
+		.all();
+}
+
+/** 画像 ID で1件取得する */
+export function findImageById(db: DrizzleD1Database, imageId: string) {
+	return db.select().from(entryImages).where(eq(entryImages.id, imageId)).get();
+}
+
+/** エントリーに紐づく画像数を取得する */
+export async function countImagesByEntry(
+	db: DrizzleD1Database,
+	entryId: string,
+): Promise<number> {
+	const result = await db
+		.select({ value: count() })
+		.from(entryImages)
+		.where(eq(entryImages.entryId, entryId))
+		.get();
+	return result?.value ?? 0;
+}
+
+/** 画像メタデータを削除する */
+export function deleteImage(db: DrizzleD1Database, imageId: string) {
+	return db.delete(entryImages).where(eq(entryImages.id, imageId)).run();
 }

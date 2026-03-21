@@ -28,6 +28,7 @@
 		"expo-font": "~14.0.11",
 		"expo-haptics": "~15.0.8",
 		"expo-image": "~3.0.11",
+		"expo-image-picker": "^55.0.13",
 		"expo-linking": "~8.0.11",
 		"expo-network": "~8.0.8",
 		"expo-router": "~6.0.23",
@@ -52,6 +53,7 @@
 		"valibot": "^1.2.0"
 	},
 	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260301.1",
 		"@testing-library/react-native": "^13.3.3",
 		"@types/jest": "^30.0.0",
 		"@types/react": "~19.1.0",

@@ -15,6 +15,18 @@ jest.mock("expo-router", () => ({
 	useRouter: () => ({ back: mockBack, push: mockPush }),
 }));
 
+jest.mock("@/hooks/use-image-upload", () => ({
+	useUploadEntryImages: () => ({
+		mutate: jest.fn(),
+		mutateAsync: jest.fn(),
+		isPending: false,
+	}),
+	useDeleteEntryImage: () => ({ mutate: jest.fn(), isPending: false }),
+	getImageSource: (entryId: string, imageId: string) => ({
+		uri: `mock://${entryId}/${imageId}`,
+	}),
+}));
+
 const mockGet = jest.fn();
 const mockCancelPost = jest.fn();
 
@@ -64,6 +76,7 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 					createdAt: 1742000000000,
 				},
 			],
+			images: [],
 			...overrides,
 		}),
 		{ status: 200, headers: jsonHeaders },

@@ -3,8 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { parseResponse } from "hono/client";
+import { useState } from "react";
 import * as v from "valibot";
+import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
+import { useUploadEntryImages } from "./use-image-upload";
 import { useModifyEntry } from "./use-modify-entry";
 
 const entryFieldSchema = {
@@ -44,10 +47,23 @@ type ModifyTarget = {
 export function useCreateEntryForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+	const uploadImages = useUploadEntryImages();
 
 	const mutation = useMutation({
-		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
-			parseResponse(client.api.entries.$post({ json: input })),
+		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
+			const entry = await parseResponse(
+				client.api.entries.$post({ json: input }),
+			);
+			// エントリー作成後に画像をアップロード
+			if (selectedImages.length > 0) {
+				await uploadImages.mutateAsync({
+					entryId: entry.id,
+					images: selectedImages,
+				});
+			}
+			return entry;
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
 			router.replace("/(tabs)");
@@ -78,6 +94,8 @@ export function useCreateEntryForm() {
 		isModifyMode: false as const,
 		serverError: mutation.error ? "エラーが発生しました" : "",
 		loading: mutation.isPending,
+		selectedImages,
+		setSelectedImages,
 		goBack: () => router.back(),
 	};
 }
