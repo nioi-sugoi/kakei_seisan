@@ -2,8 +2,12 @@ import { Tabs } from "expo-router";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useReceivedInvitations } from "@/hooks/use-partner-status";
 
 export default function TabLayout() {
+	const receivedInvitations = useReceivedInvitations();
+	const invitationCount = receivedInvitations.data?.length ?? 0;
+
 	return (
 		<Tabs
 			screenOptions={{
@@ -27,6 +31,7 @@ export default function TabLayout() {
 					tabBarIcon: ({ color }) => (
 						<IconSymbol size={28} name="person.2.fill" color={color} />
 					),
+					tabBarBadge: invitationCount > 0 ? invitationCount : undefined,
 				}}
 			/>
 			<Tabs.Screen
