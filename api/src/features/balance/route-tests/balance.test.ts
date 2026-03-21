@@ -207,6 +207,61 @@ describe("GET /api/balance", () => {
 		expect(body.advanceTotal).toBe(5000);
 	});
 
+	it("精算を取り消すと残高に反映される", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
+
+		const settlementRes = await client.api.settlements.$post(
+			{ json: { amount: 3000, occurredOn: "2024-03-15" } },
+			{ headers: { Cookie: authCookie } },
+		);
+		const settlement = await settlementRes.json();
+		if ("error" in settlement) throw new Error("unexpected error");
+
+		await client.api.settlements[":originalId"].cancel.$post(
+			{ param: { originalId: settlement.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.settlementTotal).toBe(0);
+		expect(body.balance).toBe(10000);
+	});
+
+	it("精算を修正すると残高に反映される", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
+
+		const settlementRes = await client.api.settlements.$post(
+			{ json: { amount: 3000, occurredOn: "2024-03-15" } },
+			{ headers: { Cookie: authCookie } },
+		);
+		const settlement = await settlementRes.json();
+		if ("error" in settlement) throw new Error("unexpected error");
+
+		await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: { amount: 5000 },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.settlementTotal).toBe(5000);
+		expect(body.balance).toBe(5000);
+	});
+
 	it("認証なしでリクエストすると 401 を返す", async () => {
 		const res = await client.api.balance.$get({});
 
