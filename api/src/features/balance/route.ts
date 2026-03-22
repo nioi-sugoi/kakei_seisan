@@ -34,7 +34,12 @@ const balanceApp = new Hono<{
 			.get(),
 		db
 			.select({
-				settlementTotal: sum(settlements.amount),
+				refundTotal: sum(
+					sql`CASE WHEN ${settlements.category} = 'refund' THEN ${settlements.amount} ELSE 0 END`,
+				),
+				repaymentTotal: sum(
+					sql`CASE WHEN ${settlements.category} = 'repayment' THEN ${settlements.amount} ELSE 0 END`,
+				),
 			})
 			.from(settlements)
 			.where(
@@ -49,13 +54,15 @@ const balanceApp = new Hono<{
 
 	const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
 	const depositTotal = Number(entryResult?.depositTotal ?? 0);
-	const settlementTotal = Number(settlementResult?.settlementTotal ?? 0);
-	const balance = advanceTotal - depositTotal - settlementTotal;
+	const refundTotal = Number(settlementResult?.refundTotal ?? 0);
+	const repaymentTotal = Number(settlementResult?.repaymentTotal ?? 0);
+	const balance = advanceTotal - depositTotal - refundTotal + repaymentTotal;
 
 	return c.json({
 		advanceTotal,
 		depositTotal,
-		settlementTotal,
+		refundTotal,
+		repaymentTotal,
 		balance,
 	});
 });

@@ -45,6 +45,7 @@ async function insertSettlement(
 	await db.insert(settlements).values({
 		id,
 		userId,
+		category: "refund",
 		amount: 0,
 		occurredOn: "2024-03-15",
 		originalId: id,
@@ -70,7 +71,8 @@ describe("GET /api/balance", () => {
 		expect(body).toEqual({
 			advanceTotal: 0,
 			depositTotal: 0,
-			settlementTotal: 0,
+			refundTotal: 0,
+			repaymentTotal: 0,
 			balance: 0,
 		});
 	});
@@ -89,15 +91,19 @@ describe("GET /api/balance", () => {
 		expect(body).toEqual({
 			advanceTotal: 5000,
 			depositTotal: 0,
-			settlementTotal: 0,
+			refundTotal: 0,
+			repaymentTotal: 0,
 			balance: 5000,
 		});
 	});
 
-	it("残高 = 立替合計 − 預り合計 − 精算合計", async () => {
+	it("残高 = 立替合計 − 預り合計 − 返金合計 + 返済合計", async () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
 		await insertEntry(TEST_USER.id, { category: "deposit", amount: 3000 });
-		await insertSettlement(TEST_USER.id, { amount: 2000 });
+		await insertSettlement(TEST_USER.id, {
+			category: "refund",
+			amount: 2000,
+		});
 
 		const res = await client.api.balance.$get(
 			{},
@@ -109,7 +115,8 @@ describe("GET /api/balance", () => {
 		expect(body).toEqual({
 			advanceTotal: 10000,
 			depositTotal: 3000,
-			settlementTotal: 2000,
+			refundTotal: 2000,
+			repaymentTotal: 0,
 			balance: 5000,
 		});
 	});
@@ -126,6 +133,53 @@ describe("GET /api/balance", () => {
 		expect(res.ok).toBe(true);
 		const body = await res.json();
 		expect(body.balance).toBe(-4000);
+	});
+
+	it("返済の精算は残高を増やす", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 1000 });
+		await insertEntry(TEST_USER.id, { category: "deposit", amount: 5000 });
+		await insertSettlement(TEST_USER.id, {
+			category: "repayment",
+			amount: 2000,
+		});
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body.balance).toBe(-2000);
+		expect(body.repaymentTotal).toBe(2000);
+	});
+
+	it("返金と返済が混在する場合の残高計算", async () => {
+		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
+		await insertEntry(TEST_USER.id, { category: "deposit", amount: 3000 });
+		await insertSettlement(TEST_USER.id, {
+			category: "refund",
+			amount: 4000,
+		});
+		await insertSettlement(TEST_USER.id, {
+			category: "repayment",
+			amount: 1000,
+		});
+
+		const res = await client.api.balance.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		const body = await res.json();
+		expect(body).toEqual({
+			advanceTotal: 10000,
+			depositTotal: 3000,
+			refundTotal: 4000,
+			repaymentTotal: 1000,
+			balance: 4000,
+		});
 	});
 
 	it("取り消された記録は集計に含まれない", async () => {
@@ -165,8 +219,15 @@ describe("GET /api/balance", () => {
 	});
 
 	it("取り消された精算は集計に含まれない", async () => {
-		await insertSettlement(TEST_USER.id, { amount: 5000 });
-		await insertSettlement(TEST_USER.id, { amount: 3000, cancelled: true });
+		await insertSettlement(TEST_USER.id, {
+			category: "refund",
+			amount: 5000,
+		});
+		await insertSettlement(TEST_USER.id, {
+			category: "refund",
+			amount: 3000,
+			cancelled: true,
+		});
 
 		const res = await client.api.balance.$get(
 			{},
@@ -175,12 +236,19 @@ describe("GET /api/balance", () => {
 
 		expect(res.ok).toBe(true);
 		const body = await res.json();
-		expect(body.settlementTotal).toBe(5000);
+		expect(body.refundTotal).toBe(5000);
 	});
 
 	it("最新版ではない精算は集計に含まれない", async () => {
-		await insertSettlement(TEST_USER.id, { amount: 5000 });
-		await insertSettlement(TEST_USER.id, { amount: 3000, latest: false });
+		await insertSettlement(TEST_USER.id, {
+			category: "refund",
+			amount: 5000,
+		});
+		await insertSettlement(TEST_USER.id, {
+			category: "refund",
+			amount: 3000,
+			latest: false,
+		});
 
 		const res = await client.api.balance.$get(
 			{},
@@ -189,7 +257,7 @@ describe("GET /api/balance", () => {
 
 		expect(res.ok).toBe(true);
 		const body = await res.json();
-		expect(body.settlementTotal).toBe(5000);
+		expect(body.refundTotal).toBe(5000);
 	});
 
 	it("他ユーザーのデータは集計に含まれない", async () => {
@@ -211,7 +279,13 @@ describe("GET /api/balance", () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
 
 		const settlementRes = await client.api.settlements.$post(
-			{ json: { amount: 3000, occurredOn: "2024-03-15" } },
+			{
+				json: {
+					category: "refund",
+					amount: 3000,
+					occurredOn: "2024-03-15",
+				},
+			},
 			{ headers: { Cookie: authCookie } },
 		);
 		const settlement = await settlementRes.json();
@@ -229,7 +303,7 @@ describe("GET /api/balance", () => {
 
 		expect(res.ok).toBe(true);
 		const body = await res.json();
-		expect(body.settlementTotal).toBe(0);
+		expect(body.refundTotal).toBe(0);
 		expect(body.balance).toBe(10000);
 	});
 
@@ -237,7 +311,13 @@ describe("GET /api/balance", () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
 
 		const settlementRes = await client.api.settlements.$post(
-			{ json: { amount: 3000, occurredOn: "2024-03-15" } },
+			{
+				json: {
+					category: "refund",
+					amount: 3000,
+					occurredOn: "2024-03-15",
+				},
+			},
 			{ headers: { Cookie: authCookie } },
 		);
 		const settlement = await settlementRes.json();
@@ -258,7 +338,7 @@ describe("GET /api/balance", () => {
 
 		expect(res.ok).toBe(true);
 		const body = await res.json();
-		expect(body.settlementTotal).toBe(5000);
+		expect(body.refundTotal).toBe(5000);
 		expect(body.balance).toBe(5000);
 	});
 

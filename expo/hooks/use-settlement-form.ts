@@ -54,6 +54,7 @@ export function useCreateSettlementForm(balance: number) {
 		onSubmit: ({ value }) => {
 			const parsed = v.parse(maxAmountSchema, value);
 			mutation.mutate({
+				category: balance >= 0 ? "refund" : "repayment",
 				amount: parsed.amount,
 				occurredOn: format(new Date(), "yyyy-MM-dd"),
 			});

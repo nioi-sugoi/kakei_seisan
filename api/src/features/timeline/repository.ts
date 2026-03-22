@@ -34,7 +34,7 @@ export function listByUser(
 		WHERE user_id = ${userId} ${cursorClause}
 		UNION ALL
 		SELECT id, user_id AS userId, 'settlement' AS type,
-			NULL AS category, amount, occurred_on AS occurredOn, NULL AS label, NULL AS memo,
+			category, amount, occurred_on AS occurredOn, NULL AS label, NULL AS memo,
 			original_id AS originalId, cancelled, latest, status, created_at AS createdAt
 		FROM settlements
 		WHERE user_id = ${userId} ${cursorClause}

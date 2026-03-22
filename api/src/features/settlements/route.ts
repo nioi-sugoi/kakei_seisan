@@ -9,6 +9,7 @@ import type { AppVariables } from "../../types";
 import * as settlementsRepository from "./repository";
 
 const createSettlementSchema = v.object({
+	category: v.picklist(["refund", "repayment"]),
 	amount: v.pipe(v.number(), v.integer(), v.minValue(1)),
 	occurredOn: v.pipe(v.string(), v.isoDate()),
 });
@@ -89,6 +90,7 @@ const settlementsApp = new Hono<{
 				user.id,
 				{
 					originalId,
+					category: latestSettlement.category,
 					occurredOn: latestSettlement.occurredOn,
 				},
 				input,

@@ -1,7 +1,11 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { settlements } from "../../db/schema";
-import type { CreateSettlementInput, ModifySettlementInput } from "./types";
+import type {
+	CreateSettlementInput,
+	ModifySettlementInput,
+	SettlementCategory,
+} from "./types";
 
 export function createSettlement(
 	db: DrizzleD1Database,
@@ -14,6 +18,7 @@ export function createSettlement(
 		.values({
 			id,
 			userId,
+			category: input.category,
 			amount: input.amount,
 			occurredOn: input.occurredOn,
 			originalId: id,
@@ -63,6 +68,7 @@ export function createModification(
 	userId: string,
 	original: {
 		originalId: string;
+		category: SettlementCategory;
 		occurredOn: string;
 	},
 	input: ModifySettlementInput,
@@ -84,6 +90,7 @@ export function createModification(
 			.values({
 				id: newId,
 				userId,
+				category: original.category,
 				amount: input.amount,
 				occurredOn: original.occurredOn,
 				originalId: original.originalId,
@@ -100,6 +107,7 @@ export function createCancellation(
 	userId: string,
 	latestSettlement: {
 		originalId: string;
+		category: SettlementCategory;
 		amount: number;
 		occurredOn: string;
 	},
@@ -121,6 +129,7 @@ export function createCancellation(
 			.values({
 				id: newId,
 				userId,
+				category: latestSettlement.category,
 				amount: latestSettlement.amount,
 				occurredOn: latestSettlement.occurredOn,
 				originalId: latestSettlement.originalId,
@@ -137,6 +146,7 @@ export function createRestoration(
 	userId: string,
 	latestSettlement: {
 		originalId: string;
+		category: SettlementCategory;
 		amount: number;
 		occurredOn: string;
 	},
@@ -158,6 +168,7 @@ export function createRestoration(
 			.values({
 				id: newId,
 				userId,
+				category: latestSettlement.category,
 				amount: latestSettlement.amount,
 				occurredOn: latestSettlement.occurredOn,
 				originalId: latestSettlement.originalId,

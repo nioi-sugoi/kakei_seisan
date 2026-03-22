@@ -66,7 +66,7 @@ describe("GET /api/timeline", () => {
 		expect(body.data).toHaveLength(1);
 		expect(body.data[0].type).toBe("settlement");
 		expect(body.data[0].amount).toBe(3000);
-		expect(body.data[0].category).toBeNull();
+		expect(body.data[0].category).toBe("refund");
 		expect(body.data[0].label).toBeNull();
 	});
 
@@ -291,6 +291,7 @@ describe("GET /api/timeline", () => {
 
 	it("精算のフィールドが正しく返される", async () => {
 		await insertSettlement(TEST_USER.id, {
+			category: "repayment",
 			amount: 8000,
 			occurredOn: "2024-07-01",
 		});
@@ -305,7 +306,7 @@ describe("GET /api/timeline", () => {
 		const body = await res.json();
 		const [record] = body.data;
 		expect(record.type).toBe("settlement");
-		expect(record.category).toBeNull();
+		expect(record.category).toBe("repayment");
 		expect(record.amount).toBe(8000);
 		expect(record.occurredOn).toBe("2024-07-01");
 		expect(record.label).toBeNull();

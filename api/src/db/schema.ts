@@ -207,6 +207,7 @@ export const settlements = sqliteTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id),
+		category: text("category", { enum: ["refund", "repayment"] }).notNull(),
 		amount: integer("amount").notNull(),
 		occurredOn: text("occurred_on").notNull(),
 		originalId: text("original_id")
@@ -235,6 +236,10 @@ export const settlements = sqliteTable(
 		index("settlements_original_created_idx").on(
 			table.originalId,
 			table.createdAt,
+		),
+		check(
+			"settlements_category_check",
+			sql`${table.category} IN ('refund', 'repayment')`,
 		),
 		check(
 			"settlements_status_check",
