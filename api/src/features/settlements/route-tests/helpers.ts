@@ -24,7 +24,7 @@ export async function insertSettlement(
 		.values({
 			id,
 			userId,
-			category: "refund",
+			category: "fromHousehold",
 			amount: 5000,
 			occurredOn: "2024-03-15",
 			originalId: id,

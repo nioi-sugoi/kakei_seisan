@@ -4,7 +4,7 @@ import { parseResponse } from "hono/client";
 import { client } from "@/lib/api-client";
 
 type CreateSettlementInput = {
-	category: "refund" | "repayment";
+	category: "fromHousehold" | "fromUser";
 	amount: number;
 	occurredOn: string;
 };

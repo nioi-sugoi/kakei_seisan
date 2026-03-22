@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "73783e65-42cf-4299-b9bf-1ce1dd0e5d3e",
+	"id": "164c9a05-2f40-47f5-b22d-8af7f0a63f92",
 	"prevId": "f99b0673-a380-4cb7-aa28-21e41eddb5f6",
 	"tables": {
 		"account": {
@@ -840,7 +840,7 @@
 			"checkConstraints": {
 				"settlements_category_check": {
 					"name": "settlements_category_check",
-					"value": "\"settlements\".\"category\" IN ('refund', 'repayment')"
+					"value": "\"settlements\".\"category\" IN ('fromUser', 'fromHousehold')"
 				},
 				"settlements_status_check": {
 					"name": "settlements_status_check",

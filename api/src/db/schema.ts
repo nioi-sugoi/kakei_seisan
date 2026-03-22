@@ -207,7 +207,9 @@ export const settlements = sqliteTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id),
-		category: text("category", { enum: ["refund", "repayment"] }).notNull(),
+		category: text("category", {
+			enum: ["fromUser", "fromHousehold"],
+		}).notNull(),
 		amount: integer("amount").notNull(),
 		occurredOn: text("occurred_on").notNull(),
 		originalId: text("original_id")
@@ -239,7 +241,7 @@ export const settlements = sqliteTable(
 		),
 		check(
 			"settlements_category_check",
-			sql`${table.category} IN ('refund', 'repayment')`,
+			sql`${table.category} IN ('fromUser', 'fromHousehold')`,
 		),
 		check(
 			"settlements_status_check",

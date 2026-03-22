@@ -9,7 +9,7 @@ import type { AppVariables } from "../../types";
 import * as settlementsRepository from "./repository";
 
 const createSettlementSchema = v.object({
-	category: v.picklist(["refund", "repayment"]),
+	category: v.picklist(["fromUser", "fromHousehold"]),
 	amount: v.pipe(v.number(), v.integer(), v.minValue(1)),
 	occurredOn: v.pipe(v.string(), v.isoDate()),
 });

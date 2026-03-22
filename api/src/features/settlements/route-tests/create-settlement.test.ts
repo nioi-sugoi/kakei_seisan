@@ -22,7 +22,7 @@ describe("POST /api/settlements", () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
-					category: "refund",
+					category: "fromHousehold",
 					amount: 5000,
 					occurredOn: "2024-03-15",
 				},
@@ -34,7 +34,7 @@ describe("POST /api/settlements", () => {
 		const body = await res.json();
 		if ("error" in body) throw new Error("unexpected error");
 		expect(body).toMatchObject({
-			category: "refund",
+			category: "fromHousehold",
 			amount: 5000,
 			occurredOn: "2024-03-15",
 			userId: TEST_USER.id,
@@ -49,7 +49,7 @@ describe("POST /api/settlements", () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
-					category: "repayment",
+					category: "fromUser",
 					amount: 3000,
 					occurredOn: "2024-03-15",
 				},
@@ -61,7 +61,7 @@ describe("POST /api/settlements", () => {
 		const body = await res.json();
 		if ("error" in body) throw new Error("unexpected error");
 		expect(body).toMatchObject({
-			category: "repayment",
+			category: "fromUser",
 			amount: 3000,
 		});
 	});
@@ -70,7 +70,7 @@ describe("POST /api/settlements", () => {
 		await client.api.settlements.$post(
 			{
 				json: {
-					category: "refund",
+					category: "fromHousehold",
 					amount: 3000,
 					occurredOn: "2024-04-01",
 				},
@@ -87,7 +87,7 @@ describe("POST /api/settlements", () => {
 
 		expect(result).toHaveLength(1);
 		expect(result[0]).toMatchObject({
-			category: "refund",
+			category: "fromHousehold",
 			amount: 3000,
 			occurredOn: "2024-04-01",
 			cancelled: false,
@@ -98,7 +98,7 @@ describe("POST /api/settlements", () => {
 	it("ログインしていないとエラーになる", async () => {
 		const res = await client.api.settlements.$post({
 			json: {
-				category: "refund",
+				category: "fromHousehold",
 				amount: 1000,
 				occurredOn: "2024-03-15",
 			},
@@ -111,7 +111,7 @@ describe("POST /api/settlements", () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
-					category: "refund",
+					category: "fromHousehold",
 					amount: 0,
 					occurredOn: "2024-03-15",
 				},
@@ -126,7 +126,7 @@ describe("POST /api/settlements", () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
-					category: "refund",
+					category: "fromHousehold",
 					amount: -100,
 					occurredOn: "2024-03-15",
 				},
@@ -141,7 +141,7 @@ describe("POST /api/settlements", () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
-					category: "refund",
+					category: "fromHousehold",
 					amount: 100.5,
 					occurredOn: "2024-03-15",
 				},
@@ -156,7 +156,7 @@ describe("POST /api/settlements", () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
-					category: "refund",
+					category: "fromHousehold",
 					amount: 1000,
 					occurredOn: "2024/03/15",
 				},

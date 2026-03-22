@@ -1,4 +1,4 @@
-export type SettlementCategory = "refund" | "repayment";
+export type SettlementCategory = "fromUser" | "fromHousehold";
 
 export type CreateSettlementInput = {
 	category: SettlementCategory;

@@ -67,8 +67,8 @@ beforeEach(() => {
 				JSON.stringify({
 					advanceTotal: 0,
 					depositTotal: 0,
-					refundTotal: 0,
-					repaymentTotal: 0,
+					fromHouseholdTotal: 0,
+					fromUserTotal: 0,
 					balance: 0,
 				}),
 				{ headers: { "Content-Type": "application/json" } },

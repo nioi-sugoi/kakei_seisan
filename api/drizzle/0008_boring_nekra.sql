@@ -16,7 +16,7 @@ CREATE TABLE `__new_settlements` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`original_id`) REFERENCES `settlements`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`approved_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
-	CONSTRAINT "settlements_category_check" CHECK("__new_settlements"."category" IN ('refund', 'repayment')),
+	CONSTRAINT "settlements_category_check" CHECK("__new_settlements"."category" IN ('fromUser', 'fromHousehold')),
 	CONSTRAINT "settlements_status_check" CHECK("__new_settlements"."status" IN ('approved', 'pending', 'rejected')),
 	CONSTRAINT "settlements_amount_check" CHECK("__new_settlements"."amount" >= 0)
 );
