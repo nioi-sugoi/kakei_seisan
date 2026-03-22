@@ -18,7 +18,7 @@ describe("POST /api/settlements", () => {
 		await seedTestUser();
 	});
 
-	it("返金の精算を登録できる", async () => {
+	it("家計からの精算を登録できる", async () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
@@ -45,7 +45,7 @@ describe("POST /api/settlements", () => {
 		expect(body.originalId).toBe(body.id);
 	});
 
-	it("返済の精算を登録できる", async () => {
+	it("ユーザーからの精算を登録できる", async () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {

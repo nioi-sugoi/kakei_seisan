@@ -97,7 +97,7 @@ describe("GET /api/balance", () => {
 		});
 	});
 
-	it("残高 = 立替合計 − 預り合計 − 返金合計 + 返済合計", async () => {
+	it("残高 = 立替合計 − 預り合計 − 家計からの精算合計 + ユーザーからの精算合計", async () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
 		await insertEntry(TEST_USER.id, { category: "deposit", amount: 3000 });
 		await insertSettlement(TEST_USER.id, {
@@ -135,7 +135,7 @@ describe("GET /api/balance", () => {
 		expect(body.balance).toBe(-4000);
 	});
 
-	it("返済の精算は残高を増やす", async () => {
+	it("ユーザーからの精算は残高を増やす", async () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 1000 });
 		await insertEntry(TEST_USER.id, { category: "deposit", amount: 5000 });
 		await insertSettlement(TEST_USER.id, {
@@ -154,7 +154,7 @@ describe("GET /api/balance", () => {
 		expect(body.fromUserTotal).toBe(2000);
 	});
 
-	it("返金と返済が混在する場合の残高計算", async () => {
+	it("家計からの精算とユーザーからの精算が混在する場合の残高計算", async () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 10000 });
 		await insertEntry(TEST_USER.id, { category: "deposit", amount: 3000 });
 		await insertSettlement(TEST_USER.id, {
