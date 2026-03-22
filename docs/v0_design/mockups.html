@@ -669,8 +669,8 @@ tailwind.config = {
           <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
         </div>
       </div>
-      <!-- Entry 2 pending -->
-      <div class="entry-card" style="border-left: 3px solid #d97706;">
+      <!-- Entry 2 pending (no left border) -->
+      <div class="entry-card">
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
           <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;"> ・ 3/14</span></span>
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の文房具</span>
@@ -718,6 +718,42 @@ tailwind.config = {
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
           <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
           <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+    </div>
+    <!-- 2026年2月 -->
+    <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+      <h3 style="font-size: 13px; font-weight: 600; color: #6b7280; margin: 0;">2026年2月</h3>
+      <!-- Modified entry (original, shows 修正済み) -->
+      <div class="entry-card" style="opacity: 0.6;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;"> ・ 2/25</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ガソリン代</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,200</span>
+          <span style="font-size: 10px; color: #d97706;">修正済み</span>
+        </div>
+      </div>
+      <!-- Modified entry (new version) -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #d97706;"> 修正</span><span style="color: #6b7280;"> ・ 2/25</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ガソリン代</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,500</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+      <!-- Cancelled entry -->
+      <div class="entry-card" style="opacity: 0.6;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #ef4444;"> 取消</span><span style="color: #6b7280;"> ・ 2/20</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c; text-decoration: line-through; opacity: 0.5;">&#165;2,000</span>
         </div>
       </div>
     </div>
