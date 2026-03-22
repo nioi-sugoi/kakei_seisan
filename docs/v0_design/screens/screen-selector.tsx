@@ -24,7 +24,7 @@ const screens: { value: Screen; label: string; group: string }[] = [
   { value: "entry-form", label: "5. 記録登録", group: "記録" },
   { value: "entry-detail", label: "6. 記録詳細", group: "記録" },
   { value: "entry-detail-cancelled", label: "7. 記録詳細（取消）", group: "記録" },
-  { value: "settlement", label: "8. 精算実行", group: "精算" },
+  { value: "settlement", label: "8. 精算", group: "精算" },
   { value: "partner-invitation", label: "9. パートナー招待", group: "パートナー" },
   { value: "partner-shared", label: "10. パートナー（共有）", group: "パートナー" },
   { value: "partner-managed", label: "11. パートナー（管理）", group: "パートナー" },
