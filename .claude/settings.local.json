@@ -66,6 +66,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/setup-worktree.sh"
+          }
+        ]
+      }
     ]
   },
   "autoMemoryEnabled": false,
