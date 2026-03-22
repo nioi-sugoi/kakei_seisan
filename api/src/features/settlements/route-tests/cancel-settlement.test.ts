@@ -49,7 +49,7 @@ describe("POST /api/settlements/:originalId/cancel", () => {
 		expect(dbVersions[1].latest).toBe(false);
 	});
 
-	it("修正済み精算を取り消すと最新バージョンの値が保持される", async () => {
+	it("修正後の精算を取り消すと修正後の金額で取り消される", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 10000,
 		});
