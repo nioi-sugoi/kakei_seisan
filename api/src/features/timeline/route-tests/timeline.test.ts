@@ -114,7 +114,7 @@ describe("GET /api/timeline", () => {
 		expect(body.data[0].label).toBe("自分の記録");
 	});
 
-	it("cancelled や latest=false の記録もタイムラインに含まれる", async () => {
+	it("取り消し済みや旧バージョンの記録もタイムラインに含まれる", async () => {
 		const t1 = new Date("2024-01-01").getTime();
 		const t2 = new Date("2024-01-02").getTime();
 		const t3 = new Date("2024-01-03").getTime();
@@ -151,7 +151,7 @@ describe("GET /api/timeline", () => {
 		expect(old?.latest).toBe(false);
 	});
 
-	it("cancelled と latest がboolean型で返される", async () => {
+	it("取り消し状態と最新版フラグが真偽値で返される", async () => {
 		await insertEntry(TEST_USER.id, { cancelled: false, latest: true });
 
 		const res = await client.api.timeline.$get(
@@ -166,7 +166,7 @@ describe("GET /api/timeline", () => {
 		expect(body.data[0].latest).toBe(true);
 	});
 
-	it("50件を超える場合は nextCursor を返す", async () => {
+	it("50件を超える場合は続きを取得できる", async () => {
 		const base = new Date("2024-01-01").getTime();
 		const inserts = [];
 		for (let i = 0; i < 51; i++) {
@@ -191,7 +191,7 @@ describe("GET /api/timeline", () => {
 		expect(body.nextCursor).not.toBeNull();
 	});
 
-	it("50件以下の場合は nextCursor が null", async () => {
+	it("50件以下の場合はすべて一度に返される", async () => {
 		await insertEntry(TEST_USER.id);
 
 		const res = await client.api.timeline.$get(
@@ -205,7 +205,7 @@ describe("GET /api/timeline", () => {
 		expect(body.nextCursor).toBeNull();
 	});
 
-	it("cursor を指定するとそれより前のデータを返す", async () => {
+	it("続きを読み込むとより古いデータが取得される", async () => {
 		const t1 = new Date("2024-01-01").getTime();
 		const t2 = new Date("2024-01-02").getTime();
 		const t3 = new Date("2024-01-03").getTime();
@@ -226,7 +226,7 @@ describe("GET /api/timeline", () => {
 		expect(body.data[0].label).toBe("古い記録");
 	});
 
-	it("cursor でページネーションすると全データを取得できる", async () => {
+	it("続きを読み込むことで全データを取得できる", async () => {
 		const base = new Date("2024-01-01").getTime();
 		const inserts = [];
 		for (let i = 0; i < 60; i++) {
@@ -315,7 +315,7 @@ describe("GET /api/timeline", () => {
 		expect(record.status).toBe("approved");
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const res = await client.api.timeline.$get({ query: {} });
 
 		expect(res.status).toBe(401);

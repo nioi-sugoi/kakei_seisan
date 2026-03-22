@@ -128,7 +128,7 @@ describe("GET /api/balance", () => {
 		expect(body.balance).toBe(-4000);
 	});
 
-	it("cancelled=true の記録は集計に含まれない", async () => {
+	it("取り消された記録は集計に含まれない", async () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 5000 });
 		await insertEntry(TEST_USER.id, {
 			category: "advance",
@@ -146,7 +146,7 @@ describe("GET /api/balance", () => {
 		expect(body.advanceTotal).toBe(5000);
 	});
 
-	it("latest=false の記録は集計に含まれない", async () => {
+	it("最新版ではない記録は集計に含まれない", async () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 5000 });
 		await insertEntry(TEST_USER.id, {
 			category: "advance",
@@ -164,7 +164,7 @@ describe("GET /api/balance", () => {
 		expect(body.advanceTotal).toBe(5000);
 	});
 
-	it("cancelled=true の精算は集計に含まれない", async () => {
+	it("取り消された精算は集計に含まれない", async () => {
 		await insertSettlement(TEST_USER.id, { amount: 5000 });
 		await insertSettlement(TEST_USER.id, { amount: 3000, cancelled: true });
 
@@ -178,7 +178,7 @@ describe("GET /api/balance", () => {
 		expect(body.settlementTotal).toBe(5000);
 	});
 
-	it("latest=false の精算は集計に含まれない", async () => {
+	it("最新版ではない精算は集計に含まれない", async () => {
 		await insertSettlement(TEST_USER.id, { amount: 5000 });
 		await insertSettlement(TEST_USER.id, { amount: 3000, latest: false });
 
@@ -262,7 +262,7 @@ describe("GET /api/balance", () => {
 		expect(body.balance).toBe(5000);
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const res = await client.api.balance.$get({});
 
 		expect(res.status).toBe(401);

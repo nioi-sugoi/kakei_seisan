@@ -23,7 +23,7 @@ describe("POST /api/settlements/:originalId/cancel", () => {
 		await seedTestUser();
 	});
 
-	it("精算を取り消すと cancelled バージョンが作成される", async () => {
+	it("精算を取り消すと取り消し履歴が作成される", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -110,7 +110,7 @@ describe("POST /api/settlements/:originalId/cancel", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("存在しない ID の場合 404 を返す", async () => {
+	it("存在しない精算を指定するとエラーになる", async () => {
 		const res = await client.api.settlements[":originalId"].cancel.$post(
 			{ param: { originalId: "nonexistent" } },
 			{ headers: { Cookie: authCookie } },
@@ -119,7 +119,7 @@ describe("POST /api/settlements/:originalId/cancel", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id);
 
 		const res = await client.api.settlements[":originalId"].cancel.$post({

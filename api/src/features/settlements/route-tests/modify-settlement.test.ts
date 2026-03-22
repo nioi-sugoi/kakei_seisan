@@ -82,7 +82,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(dbVersions[0].amount).toBe(8000);
 	});
 
-	it("変更がない場合は 400 を返す", async () => {
+	it("変更がない場合はエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -138,7 +138,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("存在しない ID の場合 404 を返す", async () => {
+	it("存在しない精算を指定するとエラーになる", async () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: "nonexistent" },
@@ -150,7 +150,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id);
 
 		const res = await client.api.settlements[":originalId"].modify.$post({

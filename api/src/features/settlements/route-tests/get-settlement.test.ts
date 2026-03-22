@@ -45,7 +45,7 @@ describe("GET /api/settlements/:id", () => {
 		});
 	});
 
-	it("versions にバージョン一覧が含まれる", async () => {
+	it("修正履歴が含まれる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -70,7 +70,7 @@ describe("GET /api/settlements/:id", () => {
 		expect(body.versions[0].amount).toBe(4000);
 	});
 
-	it("存在しない ID の場合 404 を返す", async () => {
+	it("存在しない精算を指定するとエラーになる", async () => {
 		const res = await client.api.settlements[":id"].$get(
 			{ param: { id: "nonexistent-id" } },
 			{ headers: { Cookie: authCookie } },
@@ -93,7 +93,7 @@ describe("GET /api/settlements/:id", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id);
 
 		const res = await client.api.settlements[":id"].$get({

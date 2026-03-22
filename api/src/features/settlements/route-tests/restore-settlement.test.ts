@@ -83,7 +83,7 @@ describe("POST /api/settlements/:originalId/restore", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("存在しない ID の場合 404 を返す", async () => {
+	it("存在しない精算を指定するとエラーになる", async () => {
 		const res = await client.api.settlements[":originalId"].restore.$post(
 			{ param: { originalId: "nonexistent" } },
 			{ headers: { Cookie: authCookie } },
@@ -92,7 +92,7 @@ describe("POST /api/settlements/:originalId/restore", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id);
 
 		const res = await client.api.settlements[":originalId"].restore.$post({

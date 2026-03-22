@@ -70,7 +70,7 @@ describe("POST /api/settlements", () => {
 		});
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
+	it("ログインしていないとエラーになる", async () => {
 		const res = await client.api.settlements.$post({
 			json: {
 				amount: 1000,
@@ -81,7 +81,7 @@ describe("POST /api/settlements", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("amount が 0 の場合 400 を返す", async () => {
+	it("金額が0円の場合はエラーになる", async () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
@@ -95,7 +95,7 @@ describe("POST /api/settlements", () => {
 		expect(res.status).toBe(400);
 	});
 
-	it("amount が負の値の場合 400 を返す", async () => {
+	it("金額がマイナスの場合はエラーになる", async () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
@@ -109,7 +109,7 @@ describe("POST /api/settlements", () => {
 		expect(res.status).toBe(400);
 	});
 
-	it("amount が小数の場合 400 を返す", async () => {
+	it("金額が小数の場合はエラーになる", async () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
@@ -123,7 +123,7 @@ describe("POST /api/settlements", () => {
 		expect(res.status).toBe(400);
 	});
 
-	it("occurredOn が ISO 日付形式でない場合 400 を返す", async () => {
+	it("日付の形式が正しくない場合はエラーになる", async () => {
 		const res = await client.api.settlements.$post(
 			{
 				json: {
