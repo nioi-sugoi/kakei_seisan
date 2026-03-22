@@ -82,7 +82,7 @@ export function TimelineScreen({
               {recs.map((r) => (
                 <EntryCard
                   key={r.id}
-                  record={r}
+                  entry={r}
                   showApproval={managed}
                   onTap={onEntryTap}
                 />
