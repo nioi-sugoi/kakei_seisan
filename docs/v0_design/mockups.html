@@ -1123,89 +1123,75 @@ tailwind.config = {
         <span style="font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7);">家計から受け取り</span>
       </div>
     </div>
-    <!-- Filter Pills with approval pills -->
+    <!-- Filter Pills (type only, approval is shown by sections) -->
     <div style="display: flex; gap: 8px; padding: 0 16px; overflow-x: auto;">
       <span class="filter-pill filter-pill-active">すべて</span>
       <span class="filter-pill filter-pill-inactive">立替</span>
       <span class="filter-pill filter-pill-inactive">預り</span>
       <span class="filter-pill filter-pill-inactive">精算</span>
-      <span class="filter-pill filter-pill-inactive" style="position: relative;">承認待ち
-        <span style="position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: #e7000b; border-radius: 50%; font-size: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center;">2</span>
-      </span>
-      <span class="filter-pill filter-pill-inactive">差し戻し</span>
     </div>
-    <!-- Entries with approval badges and buttons -->
-    <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
-      <!-- Pending entry 1 -->
+    <!-- Section: Pending (action required) -->
+    <div style="padding: 12px 16px 0;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: 600; color: #d97706;">承認待ち</span>
+        <span style="background: #d97706; color: white; font-size: 11px; font-weight: 700; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;">2</span>
+      </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div class="entry-card">
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="badge badge-advance">立替</span>
-              <span class="badge badge-pending">承認待ち</span>
+        <!-- Pending entry 1 -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div class="entry-card" style="border-left: 3px solid #d97706;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; color: #6b7280; font-weight: 500;">立替 ・ 3/15</span>
+              <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">コンビニ買い物</span>
             </div>
-            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">コンビニ買い物</span>
-            <span style="font-size: 12px; color: #6b7280;">3/15</span>
+            <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,800</span>
           </div>
-          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,800</span>
+          <div style="display: flex; gap: 8px; padding: 0 4px;">
+            <button style="flex: 1; background: #1a7ab5; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">承認する</button>
+            <button style="flex: 1; background: white; color: #6b7280; border: 1px solid #dde3e9; border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 500; cursor: pointer;">差し戻す</button>
+          </div>
         </div>
-        <!-- Approve/Reject buttons -->
-        <div style="display: flex; gap: 8px; padding: 0 8px;">
-          <button style="flex: 1; background: #22c55e; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">承認</button>
-          <button style="flex: 1; background: white; color: #e7000b; border: 1px solid #e7000b; border-radius: 8px; padding: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">差し戻し</button>
+        <!-- Pending entry 2 -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div class="entry-card" style="border-left: 3px solid #d97706;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; color: #6b7280; font-weight: 500;">立替 ・ 3/12</span>
+              <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の習い事</span>
+            </div>
+            <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;15,000</span>
+          </div>
+          <div style="display: flex; gap: 8px; padding: 0 4px;">
+            <button style="flex: 1; background: #1a7ab5; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">承認する</button>
+            <button style="flex: 1; background: white; color: #6b7280; border: 1px solid #dde3e9; border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 500; cursor: pointer;">差し戻す</button>
+          </div>
         </div>
       </div>
-      <!-- Pending entry 2 -->
+    </div>
+    <!-- Section: Approved -->
+    <div style="padding: 16px 16px 0;">
+      <span style="font-size: 13px; font-weight: 600; color: #6b7280; display: block; margin-bottom: 8px;">承認済み</span>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div class="entry-card">
+        <div class="entry-card" style="opacity: 0.75;">
           <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="badge badge-advance">立替</span>
-              <span class="badge badge-pending">承認待ち</span>
-            </div>
-            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の習い事</span>
-            <span style="font-size: 12px; color: #6b7280;">3/12</span>
+            <span style="font-size: 11px; color: #6b7280; font-weight: 500;">預り ・ 3/10</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ATM引き出し預かり</span>
           </div>
-          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;15,000</span>
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">-&#165;5,000</span>
         </div>
-        <div style="display: flex; gap: 8px; padding: 0 8px;">
-          <button style="flex: 1; background: #22c55e; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">承認</button>
-          <button style="flex: 1; background: white; color: #e7000b; border: 1px solid #e7000b; border-radius: 8px; padding: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">差し戻し</button>
-        </div>
-      </div>
-      <!-- Approved entries -->
-      <div class="entry-card">
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-deposit">預り</span>
-            <span class="badge badge-approved">承認済み</span>
+        <div class="entry-card" style="opacity: 0.75;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: #6b7280; font-weight: 500;">立替 ・ 3/8</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">クリーニング代</span>
           </div>
-          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ATM引き出し預かり</span>
-          <span style="font-size: 12px; color: #6b7280;">3/10</span>
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;2,480</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c;">-&#165;5,000</span>
-      </div>
-      <div class="entry-card">
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-advance">立替</span>
-            <span class="badge badge-approved">承認済み</span>
+        <div class="entry-card" style="opacity: 0.75;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: #6b7280; font-weight: 500;">精算 ・ 3/5</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
           </div>
-          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">クリーニング代</span>
-          <span style="font-size: 12px; color: #6b7280;">3/8</span>
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,000</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;2,480</span>
-      </div>
-      <div class="entry-card">
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-settlement">精算</span>
-            <span class="badge badge-approved">承認済み</span>
-          </div>
-          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
-          <span style="font-size: 12px; color: #6b7280;">3/5</span>
-        </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #059669;">&#165;8,000</span>
       </div>
     </div>
   </div>
