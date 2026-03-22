@@ -2,14 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { client } from "@/lib/api-client";
 
-export function useRestoreEntry(entryId: string) {
+export function useRestoreSettlement(settlementId: string) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async () => {
-			const res = await client.api.entries[":originalId"].restore.$post({
-				param: { originalId: entryId },
+			const res = await client.api.settlements[":originalId"].restore.$post({
+				param: { originalId: settlementId },
 			});
 			if (!res.ok) {
 				const body = await res.json();
@@ -18,7 +18,7 @@ export function useRestoreEntry(entryId: string) {
 			return res.json();
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			queryClient.invalidateQueries({ queryKey: ["settlements"] });
 			queryClient.invalidateQueries({ queryKey: ["balance"] });
 			queryClient.invalidateQueries({ queryKey: ["timeline"] });
 			router.back();

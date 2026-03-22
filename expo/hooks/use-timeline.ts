@@ -1,26 +1,31 @@
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { type Entry, useEntries } from "./use-entries";
+import type { InferResponseType } from "hono/client";
+import { client } from "@/lib/api-client";
+
+type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
+type TimelineRecord = TimelineResponse["data"][number];
 
 export type TimelineItem =
 	| { type: "header"; title: string }
-	| { type: "entry"; entry: Entry };
+	| { type: "record"; record: TimelineRecord };
 
 function toMonthLabel(date: string) {
 	const d = new Date(date);
 	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
-function buildTimelineItems(entries: Entry[]): TimelineItem[] {
+function buildTimelineItems(records: TimelineRecord[]): TimelineItem[] {
 	const items: TimelineItem[] = [];
 	let currentMonth = "";
 
-	for (const entry of entries) {
-		const month = toMonthLabel(entry.occurredOn);
+	for (const record of records) {
+		const month = toMonthLabel(record.occurredOn);
 		if (month !== currentMonth) {
 			currentMonth = month;
 			items.push({ type: "header", title: month });
 		}
-		items.push({ type: "entry", entry });
+		items.push({ type: "record", record });
 	}
 
 	return items;
@@ -28,19 +33,33 @@ function buildTimelineItems(entries: Entry[]): TimelineItem[] {
 
 export function useTimeline() {
 	const router = useRouter();
-	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-		useEntries();
+	const query = useInfiniteQuery({
+		queryKey: ["timeline"],
+		queryFn: async ({ pageParam }: { pageParam: number | undefined }) => {
+			const res = await client.api.timeline.$get({
+				query: { cursor: pageParam ? String(pageParam) : undefined },
+			});
+			if (!res.ok) throw new Error("タイムラインの取得に失敗しました");
+			return res.json();
+		},
+		initialPageParam: undefined,
+		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+	});
 
-	const allEntries = data?.pages.flatMap((page) => page.data) ?? [];
-	const items = buildTimelineItems(allEntries);
+	const allRecords = query.data?.pages.flatMap((page) => page.data) ?? [];
+	const items = buildTimelineItems(allRecords);
 
-	const handleEntryPress = (entry: Entry) => {
-		router.push(`/entry-detail/${entry.originalId}`);
+	const handleRecordPress = (record: TimelineRecord) => {
+		if (record.type === "entry") {
+			router.push(`/entry-detail/${record.originalId}`);
+		} else {
+			router.push(`/settlement-detail/${record.originalId}`);
+		}
 	};
 
 	const handleEndReached = () => {
-		if (hasNextPage && !isFetchingNextPage) {
-			fetchNextPage();
+		if (query.hasNextPage && !query.isFetchingNextPage) {
+			query.fetchNextPage();
 		}
 	};
 
@@ -50,10 +69,10 @@ export function useTimeline() {
 
 	return {
 		items,
-		isLoading,
-		isEmpty: allEntries.length === 0,
-		isFetchingNextPage,
-		handleEntryPress,
+		isLoading: query.isLoading,
+		isEmpty: allRecords.length === 0,
+		isFetchingNextPage: query.isFetchingNextPage,
+		handleRecordPress,
 		handleEndReached,
 		handleAddPress,
 	};
