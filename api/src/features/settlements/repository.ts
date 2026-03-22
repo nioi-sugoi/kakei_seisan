@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { settlements } from "../../db/schema";
 import type { CreateSettlementInput, ModifySettlementInput } from "./types";
@@ -29,25 +29,6 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 		.from(settlements)
 		.where(and(eq(settlements.id, id), eq(settlements.userId, userId)))
 		.get();
-}
-
-export function listByUser(
-	db: DrizzleD1Database,
-	userId: string,
-	options: { limit: number; cursor?: number },
-) {
-	const conditions = [eq(settlements.userId, userId)];
-	if (options.cursor) {
-		conditions.push(lt(settlements.createdAt, options.cursor));
-	}
-
-	return db
-		.select()
-		.from(settlements)
-		.where(and(...conditions))
-		.orderBy(desc(settlements.createdAt))
-		.limit(options.limit)
-		.all();
 }
 
 export function findVersions(db: DrizzleD1Database, originalId: string) {
