@@ -552,7 +552,7 @@ tailwind.config = {
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">お釣り預かり</span>
           <span style="font-size: 12px; color: #6b7280;">3/13</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c;">-&#165;1,500</span>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c;">&#165;1,500</span>
       </div>
       <!-- Entry 4 -->
       <div class="entry-card">
@@ -628,7 +628,7 @@ tailwind.config = {
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
           <span style="font-size: 12px; color: #6b7280;">2/20</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c; text-decoration: line-through; opacity: 0.5;">-&#165;2,000</span>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c; text-decoration: line-through; opacity: 0.5;">&#165;2,000</span>
       </div>
     </div>
     <!-- FAB -->
@@ -657,73 +657,68 @@ tailwind.config = {
     </div>
     <!-- 2026年3月 -->
     <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
-      <h3 style="font-size: 14px; font-weight: 600; color: #6b7280; margin: 0;">2026年3月</h3>
+      <h3 style="font-size: 13px; font-weight: 600; color: #6b7280; margin: 0;">2026年3月</h3>
       <!-- Entry 1 approved -->
       <div class="entry-card">
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-advance">立替</span>
-            <span class="badge badge-approved">承認済み</span>
-          </div>
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;"> ・ 3/15</span></span>
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">スーパー買い物</span>
-          <span style="font-size: 12px; color: #6b7280;">3/15</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;4,280</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;4,280</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
       </div>
       <!-- Entry 2 pending -->
-      <div class="entry-card">
+      <div class="entry-card" style="border-left: 3px solid #d97706;">
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-advance">立替</span>
-            <span class="badge badge-pending">承認待ち</span>
-          </div>
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;"> ・ 3/14</span></span>
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の文房具</span>
-          <span style="font-size: 12px; color: #6b7280;">3/14</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;6,500</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;6,500</span>
+          <span style="font-size: 10px; color: #d97706;">&#9679; 承認待ち</span>
+        </div>
       </div>
       <!-- Entry 3 rejected with comment -->
-      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden;">
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; border-left: 3px solid #ef4444;">
         <div style="padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
           <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="badge badge-deposit">預り</span>
-              <span class="badge badge-rejected">差し戻し</span>
-            </div>
+            <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;"> ・ 3/13</span></span>
             <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">お釣り預かり</span>
-            <span style="font-size: 12px; color: #6b7280;">3/13</span>
           </div>
-          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c;">-&#165;1,500</span>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+            <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;1,500</span>
+            <span style="font-size: 10px; color: #ef4444;">&#10005; 差し戻し</span>
+          </div>
         </div>
         <!-- Rejection comment -->
-        <div style="margin: 0 16px 12px; background: #fef2f2; border-radius: 8px; padding: 12px; display: flex; align-items: flex-start; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-          <p style="font-size: 12px; color: #dc2626; margin: 0; line-height: 1.5;">金額を確認してください。1,500円ではなく1,800円だったと思います。</p>
+        <div style="margin: 0 16px 12px; background: #fef2f2; border-radius: 8px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          <p style="font-size: 11px; color: #dc2626; margin: 0; line-height: 1.5;">金額を確認してください。1,500円ではなく1,800円だったと思います。</p>
         </div>
       </div>
       <!-- Entry 4 approved -->
       <div class="entry-card">
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-advance">立替</span>
-            <span class="badge badge-approved">承認済み</span>
-          </div>
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;"> ・ 3/10</span></span>
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">外食（ランチ会）</span>
-          <span style="font-size: 12px; color: #6b7280;">3/10</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,900</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,900</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
       </div>
       <!-- Entry 5 settlement approved -->
       <div class="entry-card">
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge badge-settlement">精算</span>
-            <span class="badge badge-approved">承認済み</span>
-          </div>
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #059669;">精算</span><span style="color: #6b7280;"> ・ 3/8</span></span>
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
-          <span style="font-size: 12px; color: #6b7280;">3/8</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #059669;">&#165;5,000</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
       </div>
     </div>
     <!-- FAB -->
@@ -867,7 +862,7 @@ tailwind.config = {
           <span class="badge badge-cancelled">取消</span>
         </div>
         <div style="text-align: center; margin-bottom: 16px;">
-          <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: #ea580c; text-decoration: line-through; opacity: 0.5;">-&#165;2,000</span>
+          <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: #ea580c; text-decoration: line-through; opacity: 0.5;">&#165;2,000</span>
         </div>
         <div class="separator" style="margin-bottom: 16px;"></div>
         <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -890,7 +885,7 @@ tailwind.config = {
               <span style="font-size: 12px; color: #6b7280;">2026年2月20日</span>
               <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
             </div>
-            <span class="tabular-nums" style="font-size: 14px; font-weight: 700; color: #ea580c;">-&#165;2,000</span>
+            <span class="tabular-nums" style="font-size: 14px; font-weight: 700; color: #ea580c;">&#165;2,000</span>
           </div>
           <div style="background: rgba(233,240,245,0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -900,7 +895,7 @@ tailwind.config = {
               </div>
               <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
             </div>
-            <span class="tabular-nums" style="font-size: 14px; font-weight: 700; text-decoration: line-through; opacity: 0.5;">-&#165;2,000</span>
+            <span class="tabular-nums" style="font-size: 14px; font-weight: 700; text-decoration: line-through; opacity: 0.5;">&#165;2,000</span>
           </div>
         </div>
       </div>
@@ -1084,7 +1079,7 @@ tailwind.config = {
           <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ATM引き出し預かり</span>
           <span style="font-size: 12px; color: #6b7280;">3/10</span>
         </div>
-        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c;">-&#165;5,000</span>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #ea580c;">&#165;5,000</span>
       </div>
       <div class="entry-card">
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
@@ -1176,7 +1171,7 @@ tailwind.config = {
             <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;"> ・ 3/10</span></span>
             <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ATM引き出し預かり</span>
           </div>
-          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">-&#165;5,000</span>
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
         </div>
         <div class="entry-card" style="opacity: 0.75;">
           <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
