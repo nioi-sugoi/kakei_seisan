@@ -117,6 +117,30 @@ describe("POST /api/entries/:entryId/images", () => {
 		expect(body).toHaveProperty("error", "画像は最大2枚までです");
 	});
 
+	it("jpeg形式の画像をアップロードできる", async () => {
+		const res = await postImage(
+			entry.id,
+			createTestFile("receipt.jpg", "image/jpeg"),
+			authCookie,
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toHaveProperty("id");
+	});
+
+	it("png形式の画像をアップロードできる", async () => {
+		const res = await postImage(
+			entry.id,
+			createTestFile("receipt.png", "image/png"),
+			authCookie,
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toHaveProperty("id");
+	});
+
 	it("webp形式の画像をアップロードできる", async () => {
 		const res = await postImage(
 			entry.id,
