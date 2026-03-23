@@ -46,7 +46,8 @@ export function TimelineScreen({
     { value: "settlement", label: "精算" },
   ]
 
-  const filtered = filter === "all" ? records : records.filter((r) => r.type === filter)
+  const latestOnly = records.filter((r) => r.status !== "modified")
+  const filtered = filter === "all" ? latestOnly : latestOnly.filter((r) => r.type === filter)
   const grouped = groupByMonth(filtered)
 
   return (
