@@ -633,17 +633,13 @@ tailwind.config = {
     </div>
     <!-- Filters & Sort -->
     <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 16px;">
-      <!-- Type filter -->
+      <!-- Filter icon + Status pills inline -->
       <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
-        <span style="font-size: 11px; font-weight: 600; color: #9ca3af; flex-shrink: 0; width: 48px;">種別</span>
-        <span class="filter-pill filter-pill-active" style="font-size: 12px; padding: 4px 12px;">すべて</span>
-        <span class="filter-pill filter-pill-inactive" style="font-size: 12px; padding: 4px 12px;">立替</span>
-        <span class="filter-pill filter-pill-inactive" style="font-size: 12px; padding: 4px 12px;">預り</span>
-        <span class="filter-pill filter-pill-inactive" style="font-size: 12px; padding: 4px 12px;">精算</span>
-      </div>
-      <!-- Status filter -->
-      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
-        <span style="font-size: 11px; font-weight: 600; color: #9ca3af; flex-shrink: 0; width: 48px;">ステータス</span>
+        <!-- Filter icon (opens modal for detailed filters) -->
+        <button style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #dde3e9; background: white; cursor: pointer; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </button>
+        <!-- Status pills (always visible) -->
         <span class="filter-pill filter-pill-active" style="font-size: 12px; padding: 4px 12px;">すべて</span>
         <span class="filter-pill filter-pill-inactive" style="font-size: 12px; padding: 4px 12px;">承認済み</span>
         <span class="filter-pill filter-pill-inactive" style="font-size: 12px; padding: 4px 12px;">承認待ち</span>
@@ -750,6 +746,64 @@ tailwind.config = {
     </div>
     <!-- FAB -->
     <button class="fab">+</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 4b: FILTER MODAL ==================== -->
+<div class="screen" id="screen-04b-filter-modal">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>絞り込み</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 24px; padding: 20px 16px;">
+      <!-- Status filter -->
+      <div>
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 10px;">ステータス</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="filter-pill filter-pill-active" style="font-size: 13px; padding: 6px 16px;">すべて</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">承認済み</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">承認待ち</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">差し戻し</span>
+        </div>
+      </div>
+      <!-- Type filter -->
+      <div>
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 10px;">種別</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="filter-pill filter-pill-active" style="font-size: 13px; padding: 6px 16px;">すべて</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">立替</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">預り</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">精算</span>
+        </div>
+      </div>
+      <!-- Sort -->
+      <div>
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 10px;">並び替え</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: #e9f0f5; border-radius: 8px; padding: 12px 16px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="#1a7ab5"/></svg>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">日付順（新しい順）</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: white; border-radius: 8px; padding: 12px 16px; border: 1px solid #dde3e9;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span style="font-size: 14px; color: #6b7280;">日付順（古い順）</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: white; border-radius: 8px; padding: 12px 16px; border: 1px solid #dde3e9;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span style="font-size: 14px; color: #6b7280;">登録順（新しい順）</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: white; border-radius: 8px; padding: 12px 16px; border: 1px solid #dde3e9;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span style="font-size: 14px; color: #6b7280;">登録順（古い順）</span>
+          </div>
+        </div>
+      </div>
+      <!-- Apply button -->
+      <button class="btn-primary" style="margin-top: 8px;">適用する</button>
+    </div>
   </div>
 </div>
 
