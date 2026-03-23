@@ -25,7 +25,7 @@ export function CategorySelector({
 				}`}
 			>
 				<Text
-					className={`text-sm font-semibold ${
+					className={`text-base font-semibold ${
 						value === "advance"
 							? "text-primary-foreground"
 							: "text-muted-foreground"
@@ -42,7 +42,7 @@ export function CategorySelector({
 				}`}
 			>
 				<Text
-					className={`text-sm font-semibold ${
+					className={`text-base font-semibold ${
 						value === "deposit" ? "text-white" : "text-muted-foreground"
 					}`}
 				>

@@ -22,9 +22,9 @@ export function DateInput({ value, onChange }: DateInputProps) {
 	if (!NativeDateTimePicker) {
 		return (
 			<View className="gap-2" testID="日付フィールド">
-				<Text className="text-sm font-medium text-foreground">
+				<Text className="text-base font-medium text-foreground">
 					日付
-					<Text className="text-xs text-destructive"> *必須</Text>
+					<Text className="text-sm text-destructive"> *必須</Text>
 				</Text>
 				<TextInput
 					value={value}
@@ -32,7 +32,7 @@ export function DateInput({ value, onChange }: DateInputProps) {
 					placeholder="YYYY-MM-DD"
 					keyboardType="numbers-and-punctuation"
 					accessibilityLabel="日付"
-					className="rounded-xl border border-border bg-card px-4 py-3.5 text-base text-foreground"
+					className="rounded-xl border border-border bg-card px-4 py-3.5 text-lg text-foreground"
 					placeholderTextColor="#9ca3af"
 				/>
 			</View>
@@ -41,16 +41,16 @@ export function DateInput({ value, onChange }: DateInputProps) {
 
 	return (
 		<View className="gap-2" testID="日付フィールド">
-			<Text className="text-sm font-medium text-foreground">
+			<Text className="text-base font-medium text-foreground">
 				日付
-				<Text className="text-xs text-destructive"> *必須</Text>
+				<Text className="text-sm text-destructive"> *必須</Text>
 			</Text>
 			<Pressable
 				onPress={() => setShowPicker(true)}
 				accessibilityLabel="日付"
 				className="rounded-xl border border-border bg-card px-4 py-3.5"
 			>
-				<Text className="text-base text-foreground">
+				<Text className="text-lg text-foreground">
 					{format(parse(value, "yyyy-MM-dd", new Date()), "yyyy年M月d日")}
 				</Text>
 			</Pressable>
@@ -73,7 +73,7 @@ export function DateInput({ value, onChange }: DateInputProps) {
 					onPress={() => setShowPicker(false)}
 					className="items-center py-2"
 				>
-					<Text className="text-sm font-medium text-primary">完了</Text>
+					<Text className="text-base font-medium text-primary">完了</Text>
 				</Pressable>
 			)}
 		</View>

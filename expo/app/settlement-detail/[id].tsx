@@ -17,9 +17,11 @@ function Header({ onBack }: { onBack: () => void }) {
 	return (
 		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
 			<Pressable onPress={onBack} className="active:opacity-60">
-				<Text className="text-base text-primary">戻る</Text>
+				<Text className="text-lg text-primary">戻る</Text>
 			</Pressable>
-			<Text className="flex-1 text-lg font-bold text-foreground">精算詳細</Text>
+			<Text className="flex-1 text-2xl font-bold text-foreground">
+				精算詳細
+			</Text>
 		</View>
 	);
 }
@@ -44,7 +46,7 @@ export default function SettlementDetailScreen() {
 			<View className="flex-1 bg-background">
 				<Header onBack={() => router.back()} />
 				<View className="flex-1 items-center justify-center px-4">
-					<Text className="text-base text-destructive">
+					<Text className="text-lg text-destructive">
 						{error?.message ?? "精算が見つかりません"}
 					</Text>
 				</View>
@@ -99,7 +101,7 @@ export default function SettlementDetailScreen() {
 				{/* 操作履歴 */}
 				{pastVersions.length > 0 ? (
 					<View className="rounded-xl bg-card px-4 py-4">
-						<Text className="mb-3 text-sm font-bold text-foreground">
+						<Text className="mb-3 text-base font-bold text-foreground">
 							操作履歴
 						</Text>
 						{pastVersions.map((v, i) => (
@@ -109,14 +111,18 @@ export default function SettlementDetailScreen() {
 							>
 								<View className="flex-1 gap-0.5">
 									<View className="flex-row items-center gap-2">
-										<Text className="text-sm text-foreground">
+										<Text className="text-base text-foreground">
 											{v.amount != null ? formatAmount(v.amount) : ""}
 										</Text>
 										{v.cancelled && (
-											<Text className="text-xs text-destructive">取消</Text>
+											<Text className="text-sm font-semibold text-destructive">
+												取消
+											</Text>
 										)}
 										{!v.cancelled && pastVersions[i + 1]?.cancelled && (
-											<Text className="text-xs text-green-600">復元</Text>
+											<Text className="text-sm font-semibold text-green-600">
+												復元
+											</Text>
 										)}
 									</View>
 								</View>
@@ -133,7 +139,7 @@ export default function SettlementDetailScreen() {
 						}}
 						className="rounded-xl px-4 py-3"
 					>
-						<Text className="text-sm text-destructive">
+						<Text className="text-base text-destructive">
 							{cancelMutation.error?.message ?? restoreMutation.error?.message}
 						</Text>
 					</View>
@@ -146,7 +152,7 @@ export default function SettlementDetailScreen() {
 							onPress={handleModify}
 							className="flex-1 items-center rounded-xl border border-border bg-card py-3 active:opacity-80"
 						>
-							<Text className="text-base font-medium text-foreground">
+							<Text className="text-lg font-medium text-foreground">
 								修正する
 							</Text>
 						</Pressable>
@@ -158,7 +164,7 @@ export default function SettlementDetailScreen() {
 							{cancelMutation.isPending ? (
 								<ActivityIndicator />
 							) : (
-								<Text className="text-base font-medium text-destructive">
+								<Text className="text-lg font-medium text-destructive">
 									取り消す
 								</Text>
 							)}
@@ -174,7 +180,7 @@ export default function SettlementDetailScreen() {
 							{restoreMutation.isPending ? (
 								<ActivityIndicator />
 							) : (
-								<Text className="text-base font-medium text-primary">
+								<Text className="text-lg font-medium text-primary">
 									復元する
 								</Text>
 							)}

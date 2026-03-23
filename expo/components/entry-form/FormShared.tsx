@@ -10,9 +10,9 @@ export function FormHeader({
 	return (
 		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
 			<Pressable onPress={goBack} className="active:opacity-60">
-				<Text className="text-base text-primary">戻る</Text>
+				<Text className="text-lg text-primary">戻る</Text>
 			</Pressable>
-			<Text className="flex-1 text-lg font-bold text-foreground">{title}</Text>
+			<Text className="flex-1 text-2xl font-bold text-foreground">{title}</Text>
 		</View>
 	);
 }
@@ -23,7 +23,7 @@ export function FormError({ message }: { message: string }) {
 			style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
 			className="rounded-xl px-4 py-3"
 		>
-			<Text className="text-sm text-destructive">{message}</Text>
+			<Text className="text-base text-destructive">{message}</Text>
 		</View>
 	);
 }
@@ -51,7 +51,7 @@ export function SubmitButton({
 			{loading ? (
 				<ActivityIndicator color="white" />
 			) : (
-				<Text className="text-base font-semibold text-primary-foreground">
+				<Text className="text-lg font-semibold text-primary-foreground">
 					{label}
 				</Text>
 			)}

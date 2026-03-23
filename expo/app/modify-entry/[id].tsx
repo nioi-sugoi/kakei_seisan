@@ -117,7 +117,7 @@ export default function ModifyEntryScreen() {
 	if (error || !entry) {
 		return (
 			<View className="flex-1 items-center justify-center bg-background">
-				<Text className="text-base text-destructive">
+				<Text className="text-lg text-destructive">
 					{error?.message ?? "記録が見つかりません"}
 				</Text>
 			</View>

@@ -4,15 +4,15 @@ import {
 	Pressable,
 	type StyleProp,
 	Text,
+	type TextStyle,
 	View,
-	type ViewStyle,
 } from "react-native";
 import { useBalance } from "@/hooks/use-balance";
 import { formatAmount } from "@/lib/format";
 
 // NativeWind の bg-xxx/opacity を条件付き className で使うとクラッシュするため style で指定
-const cardBg: StyleProp<ViewStyle> = {
-	backgroundColor: "rgba(0, 126, 183, 0.05)",
+const subtitleStyle: StyleProp<TextStyle> = {
+	opacity: 0.8,
 };
 
 export function BalanceSummary() {
@@ -21,8 +21,8 @@ export function BalanceSummary() {
 
 	if (isPending) {
 		return (
-			<View style={cardBg} className="mx-4 mt-4 rounded-xl px-5 py-4">
-				<ActivityIndicator />
+			<View className="mx-4 mt-4 rounded-xl bg-primary px-5 py-5">
+				<ActivityIndicator color="white" />
 			</View>
 		);
 	}
@@ -35,26 +35,29 @@ export function BalanceSummary() {
 	const hasBalance = balance !== 0;
 
 	return (
-		<View style={cardBg} className="mx-4 mt-4 rounded-xl px-5 py-4">
+		<View className="mx-4 mt-4 rounded-xl bg-primary px-5 py-5">
 			<View className="items-center gap-1">
-				<Text className="text-sm text-muted-foreground">現在の残高</Text>
-				<Text className="text-2xl font-bold text-foreground">
+				<Text
+					style={subtitleStyle}
+					className="text-base font-medium text-primary-foreground"
+				>
+					現在の精算残高
+				</Text>
+				<Text className="text-4xl font-bold text-primary-foreground">
 					{formatAmount(absBalance)}
 				</Text>
-				<Text className="text-sm font-medium text-primary">
-					{isPositive ? "家計から受け取る額" : "家計に入金する額"}
+				<Text className="text-lg font-semibold text-primary-foreground">
+					{isPositive ? "家計から受け取り" : "家計へ入金"}
 				</Text>
 			</View>
 			{hasBalance ? (
 				<Pressable
 					onPress={() => router.push("/settlement-form")}
-					className="mt-3 items-center rounded-xl bg-primary py-2.5 active:opacity-80"
+					className="mt-3 items-center rounded-xl bg-primary-foreground py-2.5 active:opacity-80"
 					accessibilityRole="button"
 					accessibilityLabel="精算する"
 				>
-					<Text className="text-base font-semibold text-primary-foreground">
-						精算する
-					</Text>
+					<Text className="text-lg font-semibold text-primary">精算する</Text>
 				</Pressable>
 			) : null}
 		</View>

@@ -80,7 +80,7 @@ export default function ModifySettlementScreen() {
 	if (error || !settlement) {
 		return (
 			<View className="flex-1 items-center justify-center bg-background">
-				<Text className="text-base text-destructive">
+				<Text className="text-lg text-destructive">
 					{error?.message ?? "精算が見つかりません"}
 				</Text>
 			</View>

@@ -47,7 +47,18 @@ export function useTimeline() {
 	});
 
 	const allRecords = query.data?.pages.flatMap((page) => page.data) ?? [];
-	const items = buildTimelineItems(allRecords);
+	// originalId ごとに最新（createdAt が最大）のレコードのみ表示
+	const latestByOriginal = new Map<string, TimelineRecord>();
+	for (const r of allRecords) {
+		const existing = latestByOriginal.get(r.originalId);
+		if (!existing || r.createdAt > existing.createdAt) {
+			latestByOriginal.set(r.originalId, r);
+		}
+	}
+	const latestOnly = [...latestByOriginal.values()].sort(
+		(a, b) => b.createdAt - a.createdAt,
+	);
+	const items = buildTimelineItems(latestOnly);
 
 	const handleRecordPress = (record: TimelineRecord) => {
 		if (record.type === "entry") {
@@ -70,7 +81,7 @@ export function useTimeline() {
 	return {
 		items,
 		isLoading: query.isLoading,
-		isEmpty: allRecords.length === 0,
+		isEmpty: latestOnly.length === 0,
 		isFetchingNextPage: query.isFetchingNextPage,
 		handleRecordPress,
 		handleEndReached,

@@ -47,7 +47,7 @@ export default function TimelineScreen() {
 					renderItem={({ item }) => {
 						if (item.type === "header") {
 							return (
-								<Text className="px-4 pb-2 pt-4 text-sm font-semibold text-muted-foreground">
+								<Text className="px-4 pb-2 pt-4 text-lg font-semibold text-muted-foreground">
 									{item.title}
 								</Text>
 							);
@@ -64,20 +64,14 @@ export default function TimelineScreen() {
 					onEndReached={handleEndReached}
 					onEndReachedThreshold={0.5}
 					ListHeaderComponent={
-						<>
-							<View className="border-b border-border bg-card px-4 py-3 pt-14">
-								<Text className="text-lg font-bold text-foreground">
-									タイムライン
-								</Text>
-							</View>
+						<View className="pt-14">
 							<BalanceSummary />
-						</>
+						</View>
 					}
 					ListFooterComponent={
 						isFetchingNextPage ? <ActivityIndicator className="py-4" /> : null
 					}
 					contentContainerClassName="pb-24"
-					stickyHeaderIndices={[0]}
 				/>
 			)}
 

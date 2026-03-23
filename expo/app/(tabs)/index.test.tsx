@@ -104,7 +104,7 @@ describe("TimelineScreen", () => {
 		});
 		expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
 		expect(screen.getByText("¥1,500")).toBeOnTheScreen();
-		expect(screen.getByText("3/15")).toBeOnTheScreen();
+		expect(screen.getByText("3月15日")).toBeOnTheScreen();
 	});
 
 	it("預りの記録カードが正しく表示される", async () => {
@@ -131,8 +131,13 @@ describe("TimelineScreen", () => {
 	it("月ごとのセクションヘッダーが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeRecord({ id: "e1", occurredOn: "2026-03-15" }),
-				makeRecord({ id: "e2", occurredOn: "2026-02-28", label: "電気代" }),
+				makeRecord({ id: "e1", originalId: "e1", occurredOn: "2026-03-15" }),
+				makeRecord({
+					id: "e2",
+					originalId: "e2",
+					occurredOn: "2026-02-28",
+					label: "電気代",
+				}),
 			],
 			nextCursor: null,
 		});
@@ -147,9 +152,24 @@ describe("TimelineScreen", () => {
 	it("記録が月ごとに正しくグルーピングされている", async () => {
 		mockTimelineResponse({
 			data: [
-				makeRecord({ id: "e1", occurredOn: "2026-03-20", label: "3月の記録A" }),
-				makeRecord({ id: "e2", occurredOn: "2026-03-10", label: "3月の記録B" }),
-				makeRecord({ id: "e3", occurredOn: "2026-02-15", label: "2月の記録" }),
+				makeRecord({
+					id: "e1",
+					originalId: "e1",
+					occurredOn: "2026-03-20",
+					label: "3月の記録A",
+				}),
+				makeRecord({
+					id: "e2",
+					originalId: "e2",
+					occurredOn: "2026-03-10",
+					label: "3月の記録B",
+				}),
+				makeRecord({
+					id: "e3",
+					originalId: "e3",
+					occurredOn: "2026-02-15",
+					label: "2月の記録",
+				}),
 			],
 			nextCursor: null,
 		});
@@ -208,7 +228,7 @@ describe("TimelineScreen", () => {
 		expect(mockPush).toHaveBeenCalledWith("/entry-form");
 	});
 
-	it("修正バージョン(v2)に「修正」バッジが表示される", async () => {
+	it("修正バージョン(v2)にペンシルアイコンが表示される", async () => {
 		mockTimelineResponse({
 			data: [
 				makeRecord({
@@ -224,13 +244,13 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("修正")).toBeOnTheScreen();
+			expect(screen.getByText("食費")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("食費")).toBeOnTheScreen();
 		expect(screen.getByText("¥9,000")).toBeOnTheScreen();
+		expect(screen.getByLabelText("修正済み")).toBeOnTheScreen();
 	});
 
-	it("取消バージョンに「取消」バッジが表示される", async () => {
+	it("取消バージョンが薄く表示される", async () => {
 		mockTimelineResponse({
 			data: [
 				makeRecord({
@@ -245,8 +265,33 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("取消")).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: /取消済み/ }),
+			).toBeOnTheScreen();
 		});
+	});
+
+	it("精算カードにバッジとラベルが表示される", async () => {
+		mockTimelineResponse({
+			data: [
+				makeRecord({
+					id: "stl-1",
+					originalId: "stl-1",
+					type: "settlement",
+					category: null,
+					amount: 5000,
+					label: null,
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
+		});
+		// バッジ「精算」とラベル「精算」の2つが表示される
+		expect(screen.getAllByText("精算")).toHaveLength(2);
 	});
 
 	it("精算カードをタップすると精算詳細画面に遷移する", async () => {
@@ -266,10 +311,10 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("精算")).toBeOnTheScreen();
+			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 		});
 
-		await user.press(screen.getByText("¥5,000"));
+		await user.press(screen.getByRole("button", { name: "精算 ¥5,000" }));
 
 		expect(mockPush).toHaveBeenCalledWith("/settlement-detail/stl-1");
 	});
