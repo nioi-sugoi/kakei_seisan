@@ -6,7 +6,15 @@ import { entryImages } from "../../../db/schema";
 import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
-import { authCookie, client, insertEntry, setupAuth, setupDB } from "./helpers";
+import {
+	authCookie,
+	buildOtherUserAuthCookie,
+	client,
+	insertEntry,
+	seedOtherUser,
+	setupAuth,
+	setupDB,
+} from "./helpers";
 
 function createTestFile(name: string, type: string, sizeBytes = 1024): File {
 	const buffer = new ArrayBuffer(sizeBytes);
@@ -107,6 +115,30 @@ describe("POST /api/entries/:entryId/images", () => {
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body).toHaveProperty("error", "画像は最大2枚までです");
+	});
+
+	it("webp形式の画像をアップロードできる", async () => {
+		const res = await postImage(
+			entry.id,
+			createTestFile("receipt.webp", "image/webp"),
+			authCookie,
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toHaveProperty("id");
+	});
+
+	it("heic形式の画像をアップロードできる", async () => {
+		const res = await postImage(
+			entry.id,
+			createTestFile("receipt.heic", "image/heic"),
+			authCookie,
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toHaveProperty("id");
 	});
 
 	it("サポートされていないファイル形式は 400 を返す", async () => {
@@ -219,6 +251,26 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 		expect(res.status).toBe(404);
 	});
 
+	it("他のユーザーのエントリーの画像は取得できない", async () => {
+		const uploadRes = await postImage(
+			entry.id,
+			createTestFile("receipt.jpg", "image/jpeg"),
+			authCookie,
+		);
+		const uploaded = (await uploadRes.json()) as { id: string };
+
+		await seedOtherUser();
+		const otherCookie = await buildOtherUserAuthCookie();
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images/${uploaded.id}`,
+			{ headers: { Cookie: otherCookie } },
+			env,
+		);
+
+		expect(res.status).toBe(404);
+	});
+
 	it("認証なしでリクエストすると 401 を返す", async () => {
 		const res = await app.request(
 			`/api/entries/${entry.id}/images/any`,
@@ -275,6 +327,34 @@ describe("DELETE /api/entries/:entryId/images/:imageId", () => {
 
 		const r2Object = await env.RECEIPTS.get(storagePath);
 		expect(r2Object).toBeNull();
+	});
+
+	it("他のユーザーのエントリーの画像は削除できない", async () => {
+		const uploadRes = await postImage(
+			entry.id,
+			createTestFile("receipt.jpg", "image/jpeg"),
+			authCookie,
+		);
+		const uploaded = (await uploadRes.json()) as { id: string };
+
+		await seedOtherUser();
+		const otherCookie = await buildOtherUserAuthCookie();
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images/${uploaded.id}`,
+			{ method: "DELETE", headers: { Cookie: otherCookie } },
+			env,
+		);
+
+		expect(res.status).toBe(404);
+
+		// 元のユーザーからはまだアクセスできることを確認
+		const checkRes = await app.request(
+			`/api/entries/${entry.id}/images/${uploaded.id}`,
+			{ headers: { Cookie: authCookie } },
+			env,
+		);
+		expect(checkRes.status).toBe(200);
 	});
 
 	it("存在しない画像 ID の削除は 404 を返す", async () => {
