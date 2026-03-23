@@ -30,7 +30,7 @@ export function LoginScreen() {
             className="h-12 rounded-xl bg-card text-base"
           />
           <Button className="h-12 rounded-xl text-base font-semibold">
-            {"マジックリンクを送信"}
+            {"認証コードを送信"}
           </Button>
         </div>
 

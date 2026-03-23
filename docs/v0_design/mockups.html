@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>かんたん家計精算 - Design Mockups</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#1a7ab5',
+          foreground: '#fafafa',
+        },
+        background: '#f5f7fa',
+        card: {
+          DEFAULT: '#ffffff',
+          foreground: '#1a1e2c',
+        },
+        foreground: '#1a1e2c',
+        'muted-foreground': '#6b7280',
+        muted: '#ebeef2',
+        secondary: {
+          DEFAULT: '#e9f0f5',
+          foreground: '#2d3348',
+        },
+        destructive: {
+          DEFAULT: '#e7000b',
+          foreground: '#fafafa',
+        },
+        border: '#dde3e9',
+        input: '#dde3e9',
+        accent: {
+          DEFAULT: '#22a77b',
+          foreground: '#fafafa',
+        },
+        warning: '#c4960a',
+        'warning-foreground': '#5a4010',
+      },
+      borderRadius: {
+        xl: '1rem',
+        '2xl': '1.25rem',
+      },
+      fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', '"Noto Sans JP"', 'sans-serif'],
+      },
+    },
+  },
+}
+</script>
+<style>
+  body {
+    background: #e5e7eb;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  }
+  .screen {
+    width: 375px;
+    height: 812px;
+    background: #f5f7fa;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    margin: 40px auto;
+    border: 8px solid #1a1e2c;
+  }
+  .screen-scroll {
+    width: 375px;
+    min-height: 812px;
+    background: #f5f7fa;
+    border-radius: 40px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    margin: 40px auto;
+    border: 8px solid #1a1e2c;
+  }
+  .screen-inner {
+    width: 100%;
+    min-height: 812px;
+  }
+  .screen-label {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: -30px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 24px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1e2c;
+    background: white;
+  }
+  .status-bar-transparent {
+    background: transparent;
+  }
+  /* Badge styles */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .badge-advance {
+    background: rgba(26, 122, 181, 0.1);
+    color: #1a7ab5;
+    border-color: rgba(26, 122, 181, 0.2);
+  }
+  .badge-deposit {
+    background: #fff7ed;
+    color: #ea580c;
+    border-color: #fed7aa;
+  }
+  .badge-settlement {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+  }
+  .badge-approved {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+  }
+  .badge-pending {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+  }
+  .badge-rejected {
+    background: #fef2f2;
+    color: #ef4444;
+    border-color: #fecaca;
+  }
+  .badge-modified {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+  }
+  .badge-cancelled {
+    background: #fef2f2;
+    color: #ef4444;
+    border-color: #fecaca;
+  }
+  .badge-inviting {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+  }
+  .badge-expired {
+    background: #ebeef2;
+    color: #6b7280;
+    border-color: #dde3e9;
+  }
+  /* Entry card */
+  .entry-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  /* Button styles */
+  .btn-primary {
+    background: #1a7ab5;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-outline {
+    background: white;
+    color: #1a1e2c;
+    border: 1px solid #dde3e9;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-destructive-outline {
+    background: white;
+    color: #e7000b;
+    border: 1px solid #e7000b;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: #6b7280;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-green {
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .btn-green-lg {
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #dde3e9;
+    background: white;
+    padding: 12px 16px;
+    position: relative;
+  }
+  .header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1e2c;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .back-arrow {
+    color: #6b7280;
+    font-size: 20px;
+    line-height: 1;
+  }
+  /* Filter pills */
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-pill-active {
+    background: #1a7ab5;
+    color: white;
+  }
+  .filter-pill-inactive {
+    background: white;
+    color: #6b7280;
+  }
+  /* Card */
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  /* Separator */
+  .separator {
+    height: 1px;
+    background: #dde3e9;
+    width: 100%;
+  }
+  /* Toggle/switch */
+  .toggle {
+    width: 44px;
+    height: 24px;
+    background: #1a7ab5;
+    border-radius: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  /* Input */
+  .input {
+    width: 100%;
+    height: 48px;
+    border: 1px solid #dde3e9;
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: 16px;
+    background: white;
+    color: #1a1e2c;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .input::placeholder {
+    color: #9ca3af;
+  }
+  .input-lg {
+    height: 56px;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: right;
+    padding-left: 40px;
+  }
+  .textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #dde3e9;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 16px;
+    background: white;
+    color: #1a1e2c;
+    outline: none;
+    resize: none;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .textarea::placeholder {
+    color: #9ca3af;
+  }
+  /* Receipt placeholder */
+  .receipt-placeholder {
+    width: 96px;
+    height: 96px;
+    background: #e9f0f5;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* FAB */
+  .fab {
+    position: absolute;
+    bottom: 32px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    background: #1a7ab5;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 28px;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(26, 122, 181, 0.4);
+    cursor: pointer;
+    z-index: 10;
+  }
+  /* SVG icons */
+  .icon-sm { width: 16px; height: 16px; }
+  .icon-md { width: 20px; height: 20px; }
+  .icon-lg { width: 24px; height: 24px; }
+  .icon-xl { width: 32px; height: 32px; }
+  /* tabular nums */
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<!-- ==================== SCREEN 1: LOGIN ==================== -->
+<div class="screen" id="screen-01-login">
+  <div class="screen-inner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 812px; padding: 24px; background: #f5f7fa;">
+    <div style="width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; gap: 32px;">
+      <!-- Logo -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div style="width: 64px; height: 64px; background: #1a7ab5; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+          </svg>
+        </div>
+        <h1 style="font-size: 24px; font-weight: 700; color: #1a1e2c; margin: 0;">かんたん家計精算</h1>
+        <p style="font-size: 14px; color: #6b7280; margin: 0;">家計の立替・預りをかんたんに精算</p>
+      </div>
+      <!-- Email Login -->
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+        <input type="email" class="input" placeholder="メールアドレスを入力" style="height: 48px;">
+        <button class="btn-primary">認証コードを送信</button>
+      </div>
+      <!-- Divider -->
+      <div style="width: 100%; display: flex; align-items: center; gap: 16px;">
+        <div class="separator" style="flex: 1;"></div>
+        <span style="font-size: 12px; color: #6b7280;">または</span>
+        <div class="separator" style="flex: 1;"></div>
+      </div>
+      <!-- Social Login -->
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn-outline">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Googleでログイン
+        </button>
+        <button class="btn-outline">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#1a1e2c">
+            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.11 4.45-3.74 4.25z"/>
+          </svg>
+          Appleでログイン
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 2: OTP ==================== -->
+<div class="screen" id="screen-02-otp">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>認証コード入力</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 32px; padding: 48px 24px 24px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <p style="font-size: 14px; color: #6b7280; margin: 0;">以下のメールアドレスに認証コードを送信しました</p>
+        <p style="font-size: 16px; font-weight: 600; color: #1a1e2c; margin: 0;">tanaka@example.com</p>
+      </div>
+      <!-- OTP digits -->
+      <div style="display: flex; gap: 12px;">
+        <div style="width: 44px; height: 56px; border: 2px solid #1a7ab5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: white; color: #1a1e2c;">1</div>
+        <div style="width: 44px; height: 56px; border: 2px solid #1a7ab5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: white; color: #1a1e2c;">2</div>
+        <div style="width: 44px; height: 56px; border: 2px solid #1a7ab5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: white; color: #1a1e2c;">3</div>
+        <div style="width: 44px; height: 56px; border: 2px solid #1a7ab5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: white; color: #1a1e2c;">4</div>
+        <div style="width: 44px; height: 56px; border: 2px solid #1a7ab5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: white; color: #1a1e2c;">5</div>
+        <div style="width: 44px; height: 56px; border: 2px solid #dde3e9; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: white; color: #6b7280;">&nbsp;</div>
+      </div>
+      <p style="font-size: 12px; color: #6b7280; margin: 0;">有効期限: 5分</p>
+      <!-- Actions -->
+      <div style="width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn-outline" style="height: 44px; font-size: 14px;">コードを再送信</button>
+        <button class="btn-ghost">メールアドレスを変更する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 3: TIMELINE SOLO ==================== -->
+<div class="screen-scroll" id="screen-03-timeline-solo">
+  <div class="screen-inner" style="background: #f5f7fa; padding-bottom: 100px;">
+    <!-- Balance Card -->
+    <div style="padding: 16px;">
+      <div style="background: #1a7ab5; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,122,181,0.3);">
+        <span style="font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8);">現在の残高</span>
+        <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: white;">&#165;21,530</span>
+        <span style="font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7);">家計から受け取り</span>
+        <button style="margin-top: 4px; background: white; color: #1a7ab5; border: none; border-radius: 12px; padding: 8px 32px; font-size: 14px; font-weight: 600; cursor: pointer;">精算する</button>
+      </div>
+    </div>
+    <!-- Filters & Sort -->
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 16px;">
+      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
+        <span class="filter-pill filter-pill-active" style="font-size: 11px; padding: 3px 10px;">すべて</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">立替</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">預り</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">精算</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px; padding: 2px 0;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        <span style="font-size: 12px; font-weight: 500; color: #1a7ab5; cursor: pointer;">発生日（新しい順）</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+    <!-- 2026年3月 -->
+    <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <h3 style="font-size: 13px; font-weight: 600; color: #6b7280; margin: 0;">2026年3月</h3>
+      <!-- Entry 1 -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月15日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">スーパー買い物</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;4,280</span>
+      </div>
+      <!-- Entry 2 -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月14日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ドラッグストア</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;2,150</span>
+      </div>
+      <!-- Entry 3 deposit -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;">  3月13日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">お釣り預かり</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;1,500</span>
+      </div>
+      <!-- Entry 4 -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月10日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">外食（ランチ会）</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,900</span>
+      </div>
+      <!-- Entry 5 settlement -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #059669;">精算</span><span style="color: #6b7280;">  3月8日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
+      </div>
+    </div>
+    <!-- 2026年2月 -->
+    <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+      <h3 style="font-size: 13px; font-weight: 600; color: #6b7280; margin: 0;">2026年2月</h3>
+      <!-- Entry 6 -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  2月28日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">電気代</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;12,400</span>
+      </div>
+      <!-- Entry 7 modified (latest version only) - pencil icon next to date -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  2月25日</span></span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+          </div>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ガソリン代</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,500</span>
+      </div>
+      <!-- Entry 8 cancelled - strikethrough amount + opacity, no label -->
+      <div class="entry-card" style="opacity: 0.5;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;">  2月20日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c; text-decoration: line-through;">&#165;2,000</span>
+      </div>
+    </div>
+    <!-- FAB -->
+    <button class="fab">+</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 4: TIMELINE MANAGED ==================== -->
+<div class="screen-scroll" id="screen-04-timeline-managed">
+  <div class="screen-inner" style="background: #f5f7fa; padding-bottom: 100px;">
+    <!-- Balance Card -->
+    <div style="padding: 16px;">
+      <div style="background: #1a7ab5; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,122,181,0.3);">
+        <span style="font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8);">現在の残高</span>
+        <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: white;">&#165;21,530</span>
+        <span style="font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7);">家計から受け取り</span>
+        <button style="margin-top: 4px; background: white; color: #1a7ab5; border: none; border-radius: 12px; padding: 8px 32px; font-size: 14px; font-weight: 600; cursor: pointer;">精算する</button>
+      </div>
+    </div>
+    <!-- Filters & Sort -->
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 16px;">
+      <!-- Filter icon + Status pills inline -->
+      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
+        <!-- Filter icon (opens modal for detailed filters) -->
+        <button style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #dde3e9; background: white; cursor: pointer; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </button>
+        <!-- Status pills (always visible) -->
+        <span class="filter-pill filter-pill-active" style="font-size: 11px; padding: 3px 10px;">すべて</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">承認済み</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">承認待ち</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">差し戻し</span>
+      </div>
+      <!-- Sort control -->
+      <div style="display: flex; align-items: center; gap: 4px; padding: 2px 0;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        <span style="font-size: 12px; font-weight: 500; color: #1a7ab5; cursor: pointer;">発生日（新しい順）</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+    <!-- 2026年3月 -->
+    <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <h3 style="font-size: 13px; font-weight: 600; color: #6b7280; margin: 0;">2026年3月</h3>
+      <!-- Entry 1 approved (with memo) -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月15日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">スーパー買い物</span>
+          <span style="font-size: 11px; color: #9ca3af;">夕食の材料</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;4,280</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+      <!-- Entry 2 pending -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月14日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の文房具</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;6,500</span>
+          <span style="font-size: 10px; color: #d97706;">&#9679; 承認待ち</span>
+        </div>
+      </div>
+      <!-- Entry 3 rejected with comment -->
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden;">
+        <div style="padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;">  3月13日</span></span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">お釣り預かり</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+            <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;1,500</span>
+            <span style="font-size: 10px; color: #ef4444;">&#10005; 差し戻し</span>
+          </div>
+        </div>
+        <!-- Rejection comment -->
+        <div style="margin: 0 16px 12px; background: #fef2f2; border-radius: 8px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          <p style="font-size: 11px; color: #dc2626; margin: 0; line-height: 1.5;">金額を確認してください。1,500円ではなく1,800円だったと思います。</p>
+        </div>
+      </div>
+      <!-- Entry 4 approved -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月10日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">外食（ランチ会）</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,900</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+      <!-- Entry 5 settlement approved -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #059669;">精算</span><span style="color: #6b7280;">  3月8日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+    </div>
+    <!-- 2026年2月 -->
+    <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+      <h3 style="font-size: 13px; font-weight: 600; color: #6b7280; margin: 0;">2026年2月</h3>
+      <!-- Modified entry (latest version only) - pencil icon indicates modification -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  2月25日</span></span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+          </div>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ガソリン代</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,500</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+      <!-- Cancelled entry - strikethrough amount + opacity, no label -->
+      <div class="entry-card" style="opacity: 0.5;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;">  2月20日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c; text-decoration: line-through;">&#165;2,000</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+    </div>
+    <!-- FAB -->
+    <button class="fab">+</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 4b: FILTER MODAL ==================== -->
+<div class="screen" id="screen-04b-filter-modal">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>絞り込み</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 24px; padding: 20px 16px;">
+      <!-- Status filter -->
+      <div>
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 10px;">ステータス</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="filter-pill filter-pill-active" style="font-size: 13px; padding: 6px 16px;">すべて</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">承認済み</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">承認待ち</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">差し戻し</span>
+        </div>
+      </div>
+      <!-- Type filter -->
+      <div>
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 10px;">種別</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="filter-pill filter-pill-active" style="font-size: 13px; padding: 6px 16px;">すべて</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">立替</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">預り</span>
+          <span class="filter-pill filter-pill-inactive" style="font-size: 13px; padding: 6px 16px;">精算</span>
+        </div>
+      </div>
+      <!-- Sort -->
+      <div>
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 10px;">並び替え</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: #e9f0f5; border-radius: 8px; padding: 12px 16px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="#1a7ab5"/></svg>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">発生日（新しい順）</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: white; border-radius: 8px; padding: 12px 16px; border: 1px solid #dde3e9;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span style="font-size: 14px; color: #6b7280;">発生日（古い順）</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: white; border-radius: 8px; padding: 12px 16px; border: 1px solid #dde3e9;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span style="font-size: 14px; color: #6b7280;">登録日（新しい順）</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: white; border-radius: 8px; padding: 12px 16px; border: 1px solid #dde3e9;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span style="font-size: 14px; color: #6b7280;">登録日（古い順）</span>
+          </div>
+        </div>
+      </div>
+      <!-- Apply button -->
+      <button class="btn-primary" style="margin-top: 8px;">適用する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 5: ENTRY FORM ==================== -->
+<div class="screen" id="screen-05-entry-form">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>記録を登録</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px; padding: 20px 16px;">
+      <!-- Type Selector -->
+      <div style="display: flex; background: #e9f0f5; border-radius: 12px; padding: 4px;">
+        <button style="flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; background: #1a7ab5; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">立替</button>
+        <button style="flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #6b7280;">預り</button>
+      </div>
+      <!-- Amount -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">金額</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: 700; color: #6b7280;">&#165;</span>
+          <input type="text" class="input input-lg" placeholder="0" value="">
+        </div>
+      </div>
+      <!-- Date -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">日付</label>
+        <div class="input" style="display: flex; align-items: center; color: #1a1e2c;">2026-03-22</div>
+      </div>
+      <!-- Label -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ラベル<span style="margin-left: 4px; font-size: 12px; color: #e7000b;">*必須</span></label>
+        <input type="text" class="input" placeholder="例: スーパー買い物">
+      </div>
+      <!-- Memo -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">メモ<span style="margin-left: 4px; font-size: 12px; color: #6b7280;">任意</span></label>
+        <textarea class="textarea" placeholder="メモを入力..."></textarea>
+      </div>
+      <!-- Receipt Images -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">レシート画像<span style="margin-left: 4px; font-size: 12px; color: #6b7280;">最大2枚</span></label>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn-outline" style="flex: 1; height: 44px; font-size: 14px; padding: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            撮影
+          </button>
+          <button class="btn-outline" style="flex: 1; height: 44px; font-size: 14px; padding: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            選択
+          </button>
+        </div>
+      </div>
+      <!-- Submit -->
+      <button class="btn-primary" style="margin-top: 8px;">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 6: ENTRY DETAIL ==================== -->
+<div class="screen" id="screen-06-entry-detail">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>記録詳細</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px;">
+      <!-- Main Info Card -->
+      <div class="card" style="padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+          <span class="badge badge-advance">立替</span>
+        </div>
+        <div style="text-align: center; margin-bottom: 16px;">
+          <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: #1a1e2c;">&#165;4,280</span>
+        </div>
+        <div class="separator" style="margin-bottom: 16px;"></div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">日付</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">2026年3月15日</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">ラベル</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">スーパー買い物</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">メモ</span>
+            <span style="font-size: 14px; color: #1a1e2c;">夕食の材料</span>
+          </div>
+        </div>
+      </div>
+      <!-- Receipt Images -->
+      <div class="card" style="padding: 16px 20px;">
+        <span style="font-size: 14px; font-weight: 500; color: #1a1e2c; display: block; margin-bottom: 12px;">レシート画像</span>
+        <div class="receipt-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#c0c8d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        </div>
+      </div>
+      <!-- Operation History -->
+      <div class="card" style="padding: 16px 20px;">
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 12px;">操作履歴</span>
+        <div style="background: rgba(233,240,245,0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 12px; color: #6b7280;">2026年3月15日</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">スーパー買い物</span>
+          </div>
+          <span class="tabular-nums" style="font-size: 14px; font-weight: 700; color: #1a1e2c;">&#165;4,280</span>
+        </div>
+      </div>
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 12px; padding-top: 16px;">
+        <button class="btn-outline" style="flex: 1; height: 48px;">修正する</button>
+        <button class="btn-destructive-outline" style="flex: 1; height: 48px;">取り消す</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 7: ENTRY DETAIL CANCELLED ==================== -->
+<div class="screen" id="screen-07-entry-detail-cancelled">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>記録詳細</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px;">
+      <!-- Main Info Card -->
+      <div class="card" style="padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+          <span class="badge badge-deposit">預り</span>
+          <span class="badge badge-cancelled">取消</span>
+        </div>
+        <div style="text-align: center; margin-bottom: 16px;">
+          <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: #ea580c; text-decoration: line-through; opacity: 0.5;">&#165;2,000</span>
+        </div>
+        <div class="separator" style="margin-bottom: 16px;"></div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">日付</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">2026年2月20日</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">ラベル</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
+          </div>
+        </div>
+      </div>
+      <!-- Operation History -->
+      <div class="card" style="padding: 16px 20px;">
+        <span style="font-size: 14px; font-weight: 600; color: #1a1e2c; display: block; margin-bottom: 12px;">操作履歴</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: rgba(233,240,245,0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 12px; color: #6b7280;">2026年2月20日</span>
+              <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
+            </div>
+            <span class="tabular-nums" style="font-size: 14px; font-weight: 700; color: #ea580c;">&#165;2,000</span>
+          </div>
+          <div style="background: rgba(233,240,245,0.5); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 12px; color: #6b7280;">2026年2月21日</span>
+                <span class="badge badge-cancelled" style="font-size: 10px; padding: 1px 6px;">取消</span>
+              </div>
+              <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">図書カード預かり</span>
+            </div>
+            <span class="tabular-nums" style="font-size: 14px; font-weight: 700; text-decoration: line-through; opacity: 0.5;">&#165;2,000</span>
+          </div>
+        </div>
+      </div>
+      <!-- Restore Button -->
+      <div style="padding-top: 16px;">
+        <button class="btn-primary" style="height: 48px;">復元する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 8: SETTLEMENT ==================== -->
+<div class="screen" id="screen-08-settlement">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>精算</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px; padding: 20px 16px;">
+      <!-- Balance Card -->
+      <div class="card" style="padding: 20px; background: rgba(26,122,181,0.05);">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size: 14px; color: #6b7280;">現在の残高</span>
+          <span class="tabular-nums" style="font-size: 24px; font-weight: 700; color: #1a1e2c;">&#165;21,530</span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a7ab5;">家計から受け取る額</span>
+        </div>
+      </div>
+      <!-- Settlement Amount -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算額</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: 700; color: #6b7280;">&#165;</span>
+          <input type="text" class="input input-lg" value="21,530">
+        </div>
+        <button class="btn-outline" style="height: 40px; font-size: 14px;">全額精算</button>
+      </div>
+      <!-- Evidence Images -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c;">証跡画像<span style="margin-left: 4px; font-size: 12px; color: #6b7280;">最大2枚</span></label>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn-outline" style="flex: 1; height: 44px; font-size: 14px; padding: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            撮影
+          </button>
+          <button class="btn-outline" style="flex: 1; height: 44px; font-size: 14px; padding: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            選択
+          </button>
+        </div>
+      </div>
+      <!-- Submit -->
+      <button class="btn-primary" style="margin-top: auto;">精算済みにする</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 9: PARTNER INVITATION ==================== -->
+<div class="screen" id="screen-09-partner-invitation">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px;">
+      <!-- Invitation Form Card -->
+      <div class="card" style="padding: 20px;">
+        <h3 style="font-size: 14px; font-weight: 600; color: #6b7280; margin: 0 0 16px;">パートナーを招待</h3>
+        <label style="font-size: 14px; font-weight: 500; color: #1a1e2c; display: block; margin-bottom: 12px;">メールアドレス</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="email" class="input" placeholder="partner@example.com" style="flex: 1; height: 44px;">
+          <button style="background: #1a7ab5; color: white; border: none; border-radius: 12px; padding: 0 24px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            招待
+          </button>
+        </div>
+      </div>
+      <!-- Sent Invitations Card -->
+      <div class="card" style="padding: 20px;">
+        <h3 style="font-size: 14px; font-weight: 600; color: #6b7280; margin: 0 0 16px;">送信した招待</h3>
+        <!-- Active invitation -->
+        <div style="background: rgba(233,240,245,0.5); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">yukari@example.com</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-inviting">招待中</span>
+              <span style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #6b7280;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                残り 23時間
+              </span>
+            </div>
+          </div>
+          <button style="background: white; color: #e7000b; border: 1px solid #e7000b; border-radius: 8px; padding: 4px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            取消
+          </button>
+        </div>
+        <!-- Expired invitation -->
+        <div style="background: rgba(233,240,245,0.3); border-radius: 8px; padding: 12px 16px; opacity: 0.6;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">old@example.com</span>
+            </div>
+            <span class="badge badge-expired" style="width: fit-content;">期限切れ</span>
+          </div>
+        </div>
+      </div>
+      <!-- Received Invitations Card -->
+      <div class="card" style="padding: 20px;">
+        <h3 style="font-size: 14px; font-weight: 600; color: #6b7280; margin: 0 0 16px;">受信した招待</h3>
+        <div style="border: 1px solid rgba(26,122,181,0.2); background: rgba(26,122,181,0.05); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">田中 太郎さんからの招待</span>
+            <span style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #6b7280;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              tanaka@example.com
+            </span>
+            <span style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #6b7280;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              残り 45時間
+            </span>
+          </div>
+          <button class="btn-green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            承認
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 10: PARTNER SHARED ==================== -->
+<div class="screen-scroll" id="screen-10-partner-shared">
+  <div class="screen-inner" style="background: #f5f7fa; padding-bottom: 100px;">
+    <!-- Header -->
+    <div style="padding: 16px 16px 12px;">
+      <h2 style="font-size: 18px; font-weight: 700; color: #1a1e2c; margin: 0 0 12px;">ゆかりさんの記録</h2>
+      <!-- Balance Card (no settle button) -->
+      <div style="background: #1a7ab5; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,122,181,0.3);">
+        <span style="font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8);">現在の残高</span>
+        <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: white;">&#165;21,530</span>
+        <span style="font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7);">家計から受け取り</span>
+      </div>
+    </div>
+    <!-- Filters & Sort -->
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 16px;">
+      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
+        <span class="filter-pill filter-pill-active" style="font-size: 11px; padding: 3px 10px;">すべて</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">立替</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">預り</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">精算</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px; padding: 2px 0;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        <span style="font-size: 12px; font-weight: 500; color: #1a7ab5; cursor: pointer;">発生日（新しい順）</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+    <!-- Entries -->
+    <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月15日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">コンビニ買い物</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,800</span>
+      </div>
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月12日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の習い事</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;15,000</span>
+      </div>
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;">  3月10日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ATM引き出し預かり</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
+      </div>
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月8日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">クリーニング代</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;2,480</span>
+      </div>
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #059669;">精算</span><span style="color: #6b7280;">  3月5日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
+        </div>
+        <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 11: PARTNER MANAGED ==================== -->
+<div class="screen-scroll" id="screen-11-partner-managed">
+  <div class="screen-inner" style="background: #f5f7fa; padding-bottom: 100px;">
+    <!-- Header -->
+    <div style="padding: 16px 16px 12px;">
+      <h2 style="font-size: 18px; font-weight: 700; color: #1a1e2c; margin: 0 0 12px;">ゆかりさんの記録</h2>
+      <!-- Balance Card -->
+      <div style="background: #1a7ab5; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(26,122,181,0.3);">
+        <span style="font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8);">現在の残高</span>
+        <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: white;">&#165;21,530</span>
+        <span style="font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7);">家計から受け取り</span>
+      </div>
+    </div>
+    <!-- Filters & Sort -->
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 16px;">
+      <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
+        <button style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #dde3e9; background: white; cursor: pointer; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </button>
+        <span class="filter-pill filter-pill-active" style="font-size: 11px; padding: 3px 10px;">すべて</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">承認済み</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">承認待ち</span>
+        <span class="filter-pill filter-pill-inactive" style="font-size: 11px; padding: 3px 10px;">差し戻し</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px; padding: 2px 0;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        <span style="font-size: 12px; font-weight: 500; color: #1a7ab5; cursor: pointer;">発生日（新しい順）</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+    <!-- Flat timeline with approval status indicators -->
+    <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <!-- Pending entry 1 -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月15日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">コンビニ買い物</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;3,800</span>
+          <span style="font-size: 10px; color: #d97706;">&#9679; 承認待ち</span>
+        </div>
+      </div>
+      <!-- Pending entry 2 -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月12日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">子供の習い事</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;15,000</span>
+          <span style="font-size: 10px; color: #d97706;">&#9679; 承認待ち</span>
+        </div>
+      </div>
+      <!-- Approved entries -->
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #ea580c;">預り</span><span style="color: #6b7280;">  3月10日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">ATM引き出し預かり</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;5,000</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #1a7ab5;">立替</span><span style="color: #6b7280;">  3月8日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">クリーニング代</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;2,480</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+      <div class="entry-card">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 11px; font-weight: 500;"><span style="color: #059669;">精算</span><span style="color: #6b7280;">  3月5日</span></span>
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">精算</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+          <span class="tabular-nums" style="font-size: 18px; font-weight: 700; color: #1a1e2c;">&#165;8,000</span>
+          <span style="font-size: 10px; color: #059669;">&#10003; 承認済み</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 12: APPROVAL ==================== -->
+<div class="screen" id="screen-12-approval">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div class="header">
+      <span class="back-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </span>
+      <h1>承認操作</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px 16px;">
+      <!-- Entry Detail Card -->
+      <div class="card" style="padding: 20px;">
+        <div style="margin-bottom: 16px;">
+          <span class="badge badge-advance">立替</span>
+        </div>
+        <div style="text-align: center; margin-bottom: 16px;">
+          <span class="tabular-nums" style="font-size: 30px; font-weight: 700; color: #1a1e2c;">&#165;3,800</span>
+        </div>
+        <div class="separator" style="margin-bottom: 16px;"></div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">日付</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">2026年3月15日</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">ラベル</span>
+            <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">コンビニ買い物</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 14px; color: #6b7280;">メモ</span>
+            <span style="font-size: 14px; color: #1a1e2c;">日用品の購入</span>
+          </div>
+        </div>
+      </div>
+      <!-- Receipt Images -->
+      <div class="card" style="padding: 16px 20px;">
+        <span style="font-size: 14px; font-weight: 500; color: #1a1e2c; display: block; margin-bottom: 12px;">レシート画像</span>
+        <div class="receipt-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#c0c8d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        </div>
+      </div>
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px;">
+        <button class="btn-green-lg">承認する</button>
+        <button class="btn-destructive-outline">差し戻す</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 13: SETTINGS ==================== -->
+<div class="screen" id="screen-13-settings">
+  <div class="screen-inner" style="background: #f5f7fa;">
+    <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px;">
+      <!-- Profile Card -->
+      <div class="card" style="padding: 20px;">
+        <h3 style="font-size: 14px; font-weight: 600; color: #6b7280; margin: 0 0 16px;">プロフィール</h3>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(26,122,181,0.1); display: flex; align-items: center; justify-content: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a7ab5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 16px; font-weight: 600; color: #1a1e2c;">田中 太郎</span>
+            <span style="display: flex; align-items: center; gap: 4px; font-size: 14px; color: #6b7280;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              tanaka@example.com
+            </span>
+          </div>
+        </div>
+      </div>
+      <!-- Partner Card -->
+      <div class="card" style="padding: 20px;">
+        <h3 style="font-size: 14px; font-weight: 600; color: #6b7280; margin: 0 0 16px;">パートナー管理</h3>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(34,167,123,0.1); display: flex; align-items: center; justify-content: center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22a77b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 16px; font-weight: 600; color: #1a1e2c;">ゆかり</span>
+            <span style="display: flex; align-items: center; gap: 4px; font-size: 14px; color: #6b7280;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              yukari@example.com
+            </span>
+          </div>
+        </div>
+      </div>
+      <!-- Management Mode Card -->
+      <div class="card" style="padding: 20px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #6b7280; margin: 0 0 16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+          管理モード
+        </h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">自分の管理モード</span>
+          <div class="toggle"></div>
+        </div>
+        <div class="separator" style="margin-bottom: 16px;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 14px; font-weight: 500; color: #1a1e2c;">パートナーの管理モード</span>
+          <div class="toggle"></div>
+        </div>
+      </div>
+      <!-- Logout -->
+      <button class="btn-destructive-outline" style="height: 48px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        ログアウト
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

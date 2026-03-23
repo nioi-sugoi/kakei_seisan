@@ -44,17 +44,17 @@ export function PartnerScreen({
   const filtered = (() => {
     switch (filter) {
       case "pending":
-        return records.filter((r) => r.approvalStatus === "pending")
+        return entries.filter((r) => r.approvalStatus === "pending")
       case "rejected":
-        return records.filter((r) => r.approvalStatus === "rejected")
+        return entries.filter((r) => r.approvalStatus === "rejected")
       case "all":
-        return records
+        return entries
       default:
-        return records.filter((r) => r.type === filter)
+        return entries.filter((r) => r.type === filter)
     }
   })()
 
-  const pendingCount = records.filter((r) => r.approvalStatus === "pending").length
+  const pendingCount = entries.filter((r) => r.approvalStatus === "pending").length
 
   return (
     <div className="flex flex-col gap-4 pb-24">
@@ -93,7 +93,7 @@ export function PartnerScreen({
         {filtered.map((r) => (
           <div key={r.id} className="flex flex-col gap-2">
             <EntryCard
-              record={r}
+              entry={r}
               showApproval={managed}
               onTap={onEntryTap}
             />
