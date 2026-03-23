@@ -7,6 +7,7 @@ export interface HouseholdEntry {
   type: EntryType
   amount: number
   occurredOn: string
+  createdAt: string
   label: string
   memo?: string
   hasReceipt: boolean
