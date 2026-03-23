@@ -66,14 +66,16 @@ export function EntryCard({ entry, showApproval = false, onTap }: EntryCardProps
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium text-foreground">{entry.label}</span>
-            {isModifiedVersion && (
-              <Pencil className="h-3 w-3 text-muted-foreground" />
-            )}
             {entry.hasReceipt && (
               <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{formatDate(entry.occurredOn)}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">{formatDate(entry.occurredOn)}</span>
+            {isModifiedVersion && (
+              <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+            )}
+          </div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span
