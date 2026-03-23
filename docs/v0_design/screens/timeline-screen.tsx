@@ -22,8 +22,8 @@ interface TimelineScreenProps {
 }
 
 const sortLabels: Record<SortKey, Record<SortOrder, string>> = {
-  occurredOn: { desc: "利用日順（新しい順）", asc: "利用日順（古い順）" },
-  createdAt: { desc: "登録順（新しい順）", asc: "登録順（古い順）" },
+  occurredOn: { desc: "発生日（新しい順）", asc: "発生日（古い順）" },
+  createdAt: { desc: "登録日（新しい順）", asc: "登録日（古い順）" },
 }
 
 function groupByMonth(records: HouseholdEntry[], sortKey: SortKey) {
