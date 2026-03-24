@@ -26,12 +26,14 @@ export function TimelineRecordCard({
 	const isModified = !isV1 && !isCancelled;
 	const label = isEntry ? record.label : (record.label ?? "精算");
 
-	const typeLabel = isEntry
-		? (typeConfig[record.category as keyof typeof typeConfig]?.label ?? "立替")
-		: "精算";
+	const { category } = record;
+	const entryConfig =
+		category === "advance" || category === "deposit"
+			? typeConfig[category]
+			: null;
+	const typeLabel = isEntry ? (entryConfig?.label ?? "立替") : "精算";
 	const typeColor = isEntry
-		? (typeConfig[record.category as keyof typeof typeConfig]?.className ??
-			"text-primary")
+		? (entryConfig?.className ?? "text-primary")
 		: "text-emerald-600";
 
 	return (

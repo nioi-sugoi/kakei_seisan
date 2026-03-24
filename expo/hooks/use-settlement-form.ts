@@ -8,10 +8,10 @@ import { useModifySettlement } from "./use-modify-settlement";
 const settlementFieldSchema = {
 	amount: v.pipe(
 		v.string(),
-		v.minLength(1, "1以上の整数を入力してください"),
+		v.minLength(1, "0より大きい整数を入力してください"),
 		v.transform(Number),
-		v.integer("1以上の整数を入力してください"),
-		v.minValue(1, "1以上の整数を入力してください"),
+		v.integer("0より大きい整数を入力してください"),
+		v.minValue(1, "0より大きい整数を入力してください"),
 	),
 };
 
@@ -31,10 +31,10 @@ export function useCreateSettlementForm(balance: number) {
 	const maxAmountSchema = v.object({
 		amount: v.pipe(
 			v.string(),
-			v.minLength(1, "1以上の整数を入力してください"),
+			v.minLength(1, "0より大きい整数を入力してください"),
 			v.transform(Number),
-			v.integer("1以上の整数を入力してください"),
-			v.minValue(1, "1以上の整数を入力してください"),
+			v.integer("0より大きい整数を入力してください"),
+			v.minValue(1, "0より大きい整数を入力してください"),
 			v.maxValue(
 				absBalance,
 				`精算額は残高（¥${absBalance.toLocaleString()}）以下にしてください`,
