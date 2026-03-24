@@ -6,7 +6,7 @@ export function formatAmount(amount: number): string {
 }
 
 export function formatDateShort(dateStr: string): string {
-	return format(parseISO(dateStr), "M/d");
+	return format(parseISO(dateStr), "M月d日");
 }
 
 export function formatDateFull(dateStr: string): string {

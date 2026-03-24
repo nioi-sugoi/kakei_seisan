@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entries } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
@@ -35,25 +35,6 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 		.from(entries)
 		.where(and(eq(entries.id, id), eq(entries.userId, userId)))
 		.get();
-}
-
-export function listByUser(
-	db: DrizzleD1Database,
-	userId: string,
-	options: { limit: number; cursor?: number },
-) {
-	const conditions = [eq(entries.userId, userId)];
-	if (options.cursor) {
-		conditions.push(lt(entries.createdAt, options.cursor));
-	}
-
-	return db
-		.select()
-		.from(entries)
-		.where(and(...conditions))
-		.orderBy(desc(entries.createdAt))
-		.limit(options.limit)
-		.all();
 }
 
 /** 同じ original_id グループの全バージョンを取得 */

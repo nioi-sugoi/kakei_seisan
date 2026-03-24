@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX `entries_one_latest_per_original` ON `entries`(`original_id`) WHERE `latest` = 1;--> statement-breakpoint
+CREATE UNIQUE INDEX `settlements_one_latest_per_original` ON `settlements`(`original_id`) WHERE `latest` = 1;
