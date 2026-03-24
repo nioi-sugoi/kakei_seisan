@@ -66,6 +66,26 @@ export default function RootLayout() {
 							headerShown: false,
 						}}
 					/>
+					<Stack.Screen
+						name="settlement-form"
+						options={{
+							headerShown: false,
+							presentation: "modal",
+						}}
+					/>
+					<Stack.Screen
+						name="modify-settlement/[id]"
+						options={{
+							headerShown: false,
+							presentation: "modal",
+						}}
+					/>
+					<Stack.Screen
+						name="settlement-detail/[id]"
+						options={{
+							headerShown: false,
+						}}
+					/>
 				</Stack>
 				<StatusBar style="auto" />
 			</ThemeProvider>

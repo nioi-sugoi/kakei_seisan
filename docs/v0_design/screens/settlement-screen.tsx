@@ -99,7 +99,7 @@ export function SettlementScreen({ balance, onBack }: SettlementScreenProps) {
               disabled={images.length >= 2}
             >
               <ImageIcon className="h-4 w-4" />
-              {"ギャラリーから選択"}
+              {"選択"}
             </Button>
           </div>
           {images.length > 0 && (
@@ -123,7 +123,7 @@ export function SettlementScreen({ balance, onBack }: SettlementScreenProps) {
 
         {/* Submit */}
         <Button className="mt-auto h-12 rounded-xl text-base font-semibold">
-          {"精算を実行する"}
+          {"精算済みにする"}
         </Button>
       </div>
     </div>

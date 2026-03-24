@@ -149,6 +149,38 @@ export function EntryDetailScreen({ entry, managed = false, onBack }: EntryDetai
           </Card>
         )}
 
+        {/* Operation History */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="flex flex-col gap-3 px-5 py-4">
+            <span className="text-sm font-semibold text-foreground">{"操作履歴"}</span>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-muted-foreground">{"2026年3月15日"}</span>
+                  <span className="text-sm font-medium text-foreground">{"スーパー買い物"}</span>
+                </div>
+                <span className="text-sm font-bold tabular-nums text-foreground">{"\u00A54,280"}</span>
+              </div>
+              {entry.status !== "active" && (
+                <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">{"2026年3月16日"}</span>
+                      <Badge variant="outline" className="rounded-md text-[10px] bg-amber-50 text-amber-600 border-amber-200">
+                        {entry.status === "cancelled" ? "取消" : "修正"}
+                      </Badge>
+                    </div>
+                    <span className="text-sm font-medium text-foreground">{entry.label}</span>
+                  </div>
+                  <span className={`text-sm font-bold tabular-nums ${entry.status === "cancelled" ? "line-through opacity-50" : "text-foreground"}`}>
+                    {formatAmount(entry.amount)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Related Entry Link */}
         {entry.relatedEntryId && (
           <button className="flex items-center justify-center gap-2 text-sm text-primary">
@@ -172,6 +204,15 @@ export function EntryDetailScreen({ entry, managed = false, onBack }: EntryDetai
               className="flex-1 h-12 rounded-xl border-destructive text-base font-medium text-destructive hover:bg-destructive/5"
             >
               {"取り消す"}
+            </Button>
+          </div>
+        )}
+
+        {/* Restore Button (for cancelled entries) */}
+        {entry.status === "cancelled" && (
+          <div className="mt-auto pb-4 pt-4">
+            <Button className="w-full h-12 rounded-xl text-base font-semibold">
+              {"復元する"}
             </Button>
           </div>
         )}

@@ -2,9 +2,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createAuth } from "./auth";
 import type { Env } from "./bindings";
+import { balanceApp } from "./features/balance";
 import { entriesApp } from "./features/entries";
 import { partnerApp } from "./features/partner";
 import { partnerInvitationsApp } from "./features/partner-invitations";
+import { settlementsApp } from "./features/settlements";
+import { timelineApp } from "./features/timeline";
 import type { AppVariables } from "./types";
 
 const app = new Hono<{
@@ -54,6 +57,9 @@ const routes = app
 		return c.json({ status: "ok" });
 	})
 	.route("/entries", entriesApp)
+	.route("/settlements", settlementsApp)
+	.route("/balance", balanceApp)
+	.route("/timeline", timelineApp)
 	.route("/partner", partnerApp)
 	.route("/partner-invitations", partnerInvitationsApp);
 

@@ -40,7 +40,7 @@ CHECK (inviter_id != invitee_id)
 | `created_at` | INTEGER | NOT NULL |
 
 ```sql
-CHECK (status IN ('pending', 'accepted', 'expired'))
+CHECK (status IN ('pending', 'accepted', 'expired', 'cancelled'))
 ```
 
 ---
@@ -66,17 +66,14 @@ CHECK (status IN ('pending', 'accepted', 'expired'))
 | `approved_at` | INTEGER | |
 | `approval_comment` | TEXT | |
 | `created_at` | INTEGER | NOT NULL |
-| `updated_at` | INTEGER | NOT NULL |
 
 ```sql
 CHECK (category IN ('advance', 'deposit'))
 CHECK (amount >= 0)
 CHECK (status IN ('approved', 'pending', 'rejected'))
-CHECK (cancelled IN (0, 1))
-CHECK (latest IN (0, 1))
 ```
 
-**Index**: `(user_id, status)`, `(user_id, occurred_on)`, `(original_id)`, `(user_id, latest)`
+**Index**: `(user_id, status)`, `(user_id, occurred_on)`, `(user_id, created_at)`, `(original_id)`, `(original_id, created_at)`, `(user_id, latest)`
 
 **バージョン管理の仕組み:**
 
@@ -105,16 +102,13 @@ CHECK (latest IN (0, 1))
 | `approved_at` | INTEGER | |
 | `approval_comment` | TEXT | |
 | `created_at` | INTEGER | NOT NULL |
-| `updated_at` | INTEGER | NOT NULL |
 
 ```sql
 CHECK (amount >= 0)
 CHECK (status IN ('approved', 'pending', 'rejected'))
-CHECK (cancelled IN (0, 1))
-CHECK (latest IN (0, 1))
 ```
 
-**Index**: `(user_id, status)`, `(user_id, occurred_on)`, `(original_id)`, `(user_id, latest)`
+**Index**: `(user_id, status)`, `(user_id, occurred_on)`, `(original_id)`, `(original_id, created_at)`, `(user_id, latest)`
 
 ---
 

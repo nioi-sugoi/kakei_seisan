@@ -138,7 +138,7 @@ export function EntryFormScreen({ onBack }: EntryFormProps) {
               disabled={images.length >= 2}
             >
               <ImageIcon className="h-4 w-4" />
-              {"ギャラリーから選択"}
+              {"選択"}
             </Button>
           </div>
           {images.length > 0 && (

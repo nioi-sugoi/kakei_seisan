@@ -42,35 +42,6 @@ const entriesApp = new Hono<{
 	Bindings: Env;
 	Variables: AppVariables;
 }>()
-	.get(
-		"/",
-		requireAuth,
-		vValidator(
-			"query",
-			v.object({
-				cursor: v.optional(
-					v.pipe(v.string(), v.transform(Number), v.integer()),
-				),
-			}),
-		),
-		async (c) => {
-			const user = c.get("user");
-			const { cursor } = c.req.valid("query");
-			const limit = 50;
-
-			const db = drizzle(c.env.DB);
-			const items = await entriesRepository.listByUser(db, user.id, {
-				limit: limit + 1,
-				cursor,
-			});
-
-			const hasMore = items.length > limit;
-			const data = hasMore ? items.slice(0, limit) : items;
-			const nextCursor = hasMore ? data[data.length - 1].createdAt : null;
-
-			return c.json({ data, nextCursor });
-		},
-	)
 	.get("/:id", requireAuth, async (c) => {
 		const user = c.get("user");
 		const id = c.req.param("id");

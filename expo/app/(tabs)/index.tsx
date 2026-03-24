@@ -6,7 +6,8 @@ import {
 	View,
 } from "react-native";
 
-import { EntryCard } from "@/components/timeline/EntryCard";
+import { BalanceSummary } from "@/components/balance/BalanceSummary";
+import { TimelineRecordCard } from "@/components/timeline/TimelineRecordCard";
 import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
 
 export default function TimelineScreen() {
@@ -15,7 +16,7 @@ export default function TimelineScreen() {
 		isLoading,
 		isEmpty,
 		isFetchingNextPage,
-		handleEntryPress,
+		handleRecordPress,
 		handleEndReached,
 		handleAddPress,
 	} = useTimeline();
@@ -41,36 +42,36 @@ export default function TimelineScreen() {
 					keyExtractor={(item) =>
 						item.type === "header"
 							? `header-${item.title}`
-							: `entry-${item.entry.id}`
+							: `${item.record.type}-${item.record.id}`
 					}
 					renderItem={({ item }) => {
 						if (item.type === "header") {
 							return (
-								<Text className="px-4 pb-2 pt-4 text-sm font-semibold text-muted-foreground">
+								<Text className="px-4 pb-2 pt-4 text-lg font-semibold text-muted-foreground">
 									{item.title}
 								</Text>
 							);
 						}
 						return (
 							<View className="px-4 pb-2">
-								<EntryCard entry={item.entry} onPress={handleEntryPress} />
+								<TimelineRecordCard
+									record={item.record}
+									onPress={handleRecordPress}
+								/>
 							</View>
 						);
 					}}
 					onEndReached={handleEndReached}
 					onEndReachedThreshold={0.5}
 					ListHeaderComponent={
-						<View className="border-b border-border bg-card px-4 py-3 pt-14">
-							<Text className="text-lg font-bold text-foreground">
-								タイムライン
-							</Text>
+						<View className="pt-14">
+							<BalanceSummary />
 						</View>
 					}
 					ListFooterComponent={
 						isFetchingNextPage ? <ActivityIndicator className="py-4" /> : null
 					}
 					contentContainerClassName="pb-24"
-					stickyHeaderIndices={[0]}
 				/>
 			)}
 
