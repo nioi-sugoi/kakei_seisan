@@ -68,24 +68,24 @@ describe("SettlementFormScreen", () => {
 
 	// --- 表示 ---
 
-	it("残高が正の場合に「家計から受け取り」と表示される", async () => {
+	it("残高が正の場合に「家計から受け取ります」と金額付きで表示される", async () => {
 		mockBalanceResponse(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("家計から受け取り")).toBeOnTheScreen();
+			expect(
+				screen.getByText("¥5,000を家計から受け取ります"),
+			).toBeOnTheScreen();
 		});
-		expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 	});
 
-	it("残高が負の場合に「家計へ入金」と表示される", async () => {
+	it("残高が負の場合に「家計へ入金します」と金額付きで表示される", async () => {
 		mockBalanceResponse(-3000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("家計へ入金")).toBeOnTheScreen();
+			expect(screen.getByText("¥3,000を家計へ入金します")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
 
 	it("精算額に残高の絶対値がデフォルトで入力されている", async () => {
