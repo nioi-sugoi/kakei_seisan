@@ -1,7 +1,9 @@
 import { useForm } from "@tanstack/react-form";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import * as v from "valibot";
+import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { useCreateSettlement } from "./use-create-settlement";
 import { useModifySettlement } from "./use-modify-settlement";
 
@@ -25,7 +27,8 @@ type ModifyTarget = {
 
 export function useCreateSettlementForm(balance: number) {
 	const router = useRouter();
-	const mutation = useCreateSettlement();
+	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+	const mutation = useCreateSettlement(selectedImages);
 	const absBalance = Math.abs(balance);
 
 	const maxAmountSchema = v.object({
@@ -65,6 +68,8 @@ export function useCreateSettlementForm(balance: number) {
 		form,
 		serverError: mutation.error ? "エラーが発生しました" : "",
 		loading: mutation.isPending,
+		selectedImages,
+		setSelectedImages,
 		goBack: () => router.back(),
 	};
 }

@@ -1,3 +1,7 @@
+jest.mock("expo-constants", () => ({
+	default: { appOwnership: null, expoConfig: { hostUri: "localhost:8081" } },
+}));
+
 jest.mock("expo-image-picker", () => ({
 	requestCameraPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
 	requestMediaLibraryPermissionsAsync: jest

@@ -1,4 +1,6 @@
+import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
@@ -7,8 +9,17 @@ import {
 	Text,
 	View,
 } from "react-native";
+import {
+	ImagePicker,
+	type SelectedImage,
+} from "@/components/entry-form/ImagePicker";
 import { SettlementInfoCard } from "@/components/settlement-detail/SettlementInfoCard";
 import { useCancelSettlement } from "@/hooks/use-cancel-settlement";
+import {
+	getSettlementImageSource,
+	useDeleteSettlementImage,
+	useUploadSettlementImages,
+} from "@/hooks/use-image-upload";
 import { useRestoreSettlement } from "@/hooks/use-restore-settlement";
 import { useSettlementDetail } from "@/hooks/use-settlement-detail";
 import { formatAmount } from "@/lib/format";
@@ -32,6 +43,9 @@ export default function SettlementDetailScreen() {
 	const { data: settlement, isPending, error } = useSettlementDetail(id);
 	const cancelMutation = useCancelSettlement(id);
 	const restoreMutation = useRestoreSettlement(id);
+	const uploadImages = useUploadSettlementImages();
+	const deleteImage = useDeleteSettlementImage(id);
+	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
 
 	if (isPending) {
 		return (
@@ -97,6 +111,92 @@ export default function SettlementDetailScreen() {
 					amount={latestVersion.amount ?? settlement.amount}
 					occurredOn={settlement.occurredOn}
 				/>
+
+				{/* レシート画像 */}
+				{settlement.images.length > 0 || canModify ? (
+					<View className="rounded-xl bg-card px-4 py-4">
+						<Text className="mb-3 text-sm font-bold text-foreground">
+							レシート画像
+						</Text>
+						{settlement.images.length > 0 ? (
+							<View className="flex-row flex-wrap gap-3">
+								{settlement.images.map((img, index) => (
+									<View key={img.id} className="relative">
+										<ExpoImage
+											source={getSettlementImageSource(
+												settlement.originalId,
+												img.id,
+											)}
+											style={{ width: 96, height: 96 }}
+											className="rounded-lg"
+											contentFit="cover"
+											accessibilityLabel={`レシート画像 ${index + 1}`}
+										/>
+										{canModify ? (
+											<Pressable
+												onPress={() => {
+													Alert.alert(
+														"画像の削除",
+														"この画像を削除しますか？",
+														[
+															{
+																text: "キャンセル",
+																style: "cancel",
+															},
+															{
+																text: "削除する",
+																style: "destructive",
+																onPress: () => deleteImage.mutate(img.id),
+															},
+														],
+													);
+												}}
+												accessibilityLabel={`画像${index + 1}を削除`}
+												className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
+											>
+												<Text className="text-xs font-bold text-white">✕</Text>
+											</Pressable>
+										) : null}
+									</View>
+								))}
+							</View>
+						) : null}
+						{canModify && settlement.images.length < 2 ? (
+							<View className="mt-3">
+								<ImagePicker
+									images={newImages}
+									onChange={setNewImages}
+									maxImages={2 - settlement.images.length}
+								/>
+								{newImages.length > 0 ? (
+									<Pressable
+										onPress={() => {
+											uploadImages.mutate(
+												{
+													settlementId: settlement.originalId,
+													images: newImages,
+												},
+												{
+													onSuccess: () => setNewImages([]),
+												},
+											);
+										}}
+										disabled={uploadImages.isPending}
+										className="mt-3 items-center rounded-xl border border-primary bg-card py-2 active:opacity-80"
+									>
+										{uploadImages.isPending ? (
+											<ActivityIndicator />
+										) : (
+											<Text className="text-sm font-medium text-primary">
+												アップロード
+											</Text>
+										)}
+									</Pressable>
+								) : null}
+							</View>
+						) : null}
+					</View>
+				) : null}
 
 				{/* 操作履歴 */}
 				{pastVersions.length > 0 ? (

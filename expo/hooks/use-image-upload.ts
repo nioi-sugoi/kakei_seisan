@@ -101,3 +101,111 @@ export function getImageSource(entryId: string, imageId: string) {
 		headers: Object.keys(headers).length > 0 ? headers : undefined,
 	};
 }
+
+// ============================================================
+// 精算画像
+// ============================================================
+
+type UploadedSettlementImage = {
+	id: string;
+	settlementId: string;
+	displayOrder: number;
+	createdAt: number;
+};
+
+async function uploadSettlementImage(
+	settlementId: string,
+	image: SelectedImage,
+): Promise<UploadedSettlementImage> {
+	const formData = new FormData();
+	// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける。
+	// Blob 型への二重キャストは RN 固有の制約のため不可避
+	formData.append("image", {
+		uri: image.uri,
+		name: image.fileName,
+		type: image.mimeType,
+	} as unknown as Blob);
+
+	const res = await fetch(
+		`${config.apiBaseUrl}/api/settlements/${settlementId}/images`,
+		{
+			method: "POST",
+			body: formData,
+			headers: getAuthHeaders(),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		const body = await res.json();
+		throw new Error(
+			"error" in body ? body.error : "画像のアップロードに失敗しました",
+		);
+	}
+
+	return res.json();
+}
+
+async function deleteSettlementImage(
+	settlementId: string,
+	imageId: string,
+): Promise<void> {
+	const res = await fetch(
+		`${config.apiBaseUrl}/api/settlements/${settlementId}/images/${imageId}`,
+		{
+			method: "DELETE",
+			headers: getAuthHeaders(),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		const body = await res.json();
+		throw new Error("error" in body ? body.error : "画像の削除に失敗しました");
+	}
+}
+
+export function useUploadSettlementImages() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			settlementId,
+			images,
+		}: {
+			settlementId: string;
+			images: SelectedImage[];
+		}) =>
+			Promise.all(
+				images.map((image) => uploadSettlementImage(settlementId, image)),
+			),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["settlements"] });
+		},
+	});
+}
+
+export function useDeleteSettlementImage(settlementId: string) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (imageId: string) =>
+			deleteSettlementImage(settlementId, imageId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["settlements", settlementId],
+			});
+		},
+	});
+}
+
+export function getSettlementImageSource(
+	settlementId: string,
+	imageId: string,
+) {
+	const headers = getAuthHeaders();
+	return {
+		uri: `${config.apiBaseUrl}/api/settlements/${settlementId}/images/${imageId}`,
+		headers: Object.keys(headers).length > 0 ? headers : undefined,
+	};
+}

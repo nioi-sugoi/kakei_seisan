@@ -14,10 +14,6 @@ jest.mock("expo-router", () => ({
 	useRouter: () => ({ replace: mockReplace, back: mockBack }),
 }));
 
-jest.mock("expo-constants", () => ({
-	default: { appOwnership: null },
-}));
-
 const mockPost = jest.fn();
 
 jest.mock("@/lib/api-client", () => ({
