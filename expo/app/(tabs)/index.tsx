@@ -7,7 +7,7 @@ import {
 } from "react-native";
 
 import { BalanceSummary } from "@/components/balance/BalanceSummary";
-import { TimelineRecordCard } from "@/components/timeline/TimelineRecordCard";
+import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
 import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
 
 export default function TimelineScreen() {
@@ -16,7 +16,7 @@ export default function TimelineScreen() {
 		isLoading,
 		isEmpty,
 		isFetchingNextPage,
-		handleRecordPress,
+		handleEventPress,
 		handleEndReached,
 		handleAddPress,
 	} = useTimeline();
@@ -42,7 +42,7 @@ export default function TimelineScreen() {
 					keyExtractor={(item) =>
 						item.type === "header"
 							? `header-${item.title}`
-							: `${item.record.type}-${item.record.id}`
+							: `${item.event.type}-${item.event.id}`
 					}
 					renderItem={({ item }) => {
 						if (item.type === "header") {
@@ -54,9 +54,9 @@ export default function TimelineScreen() {
 						}
 						return (
 							<View className="px-4 pb-2">
-								<TimelineRecordCard
-									record={item.record}
-									onPress={handleRecordPress}
+								<TimelineEventCard
+									event={item.event}
+									onPress={handleEventPress}
 								/>
 							</View>
 						);

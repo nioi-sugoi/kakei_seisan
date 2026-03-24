@@ -150,6 +150,54 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(res.status).toBe(404);
 	});
 
+	it("金額が0円の場合はエラーになる", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		const res = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: { amount: 0 },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+	});
+
+	it("金額がマイナスの場合はエラーになる", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		const res = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: { amount: -1 },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+	});
+
+	it("金額が小数の場合はエラーになる", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		const res = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: { amount: 100.5 },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+	});
+
 	it("ログインしていないとエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id);
 

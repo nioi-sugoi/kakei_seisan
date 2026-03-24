@@ -4,28 +4,28 @@ import type { InferResponseType } from "hono/client";
 import { client } from "@/lib/api-client";
 
 type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
-type TimelineRecord = TimelineResponse["data"][number];
+type TimelineEvent = TimelineResponse["data"][number];
 
 export type TimelineItem =
 	| { type: "header"; title: string }
-	| { type: "record"; record: TimelineRecord };
+	| { type: "record"; event: TimelineEvent };
 
 function toMonthLabel(date: string) {
 	const d = new Date(date);
 	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
-function buildTimelineItems(records: TimelineRecord[]): TimelineItem[] {
+function buildTimelineItems(events: TimelineEvent[]): TimelineItem[] {
 	const items: TimelineItem[] = [];
 	let currentMonth = "";
 
-	for (const record of records) {
-		const month = toMonthLabel(record.occurredOn);
+	for (const event of events) {
+		const month = toMonthLabel(event.occurredOn);
 		if (month !== currentMonth) {
 			currentMonth = month;
 			items.push({ type: "header", title: month });
 		}
-		items.push({ type: "record", record });
+		items.push({ type: "record", event });
 	}
 
 	return items;
@@ -46,25 +46,15 @@ export function useTimeline() {
 		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 	});
 
-	const allRecords = query.data?.pages.flatMap((page) => page.data) ?? [];
-	// originalId ごとに最新（createdAt が最大）のレコードのみ表示
-	const latestByOriginal = new Map<string, TimelineRecord>();
-	for (const r of allRecords) {
-		const existing = latestByOriginal.get(r.originalId);
-		if (!existing || r.createdAt > existing.createdAt) {
-			latestByOriginal.set(r.originalId, r);
-		}
-	}
-	const latestOnly = [...latestByOriginal.values()].sort(
-		(a, b) => b.createdAt - a.createdAt,
-	);
+	const allEvents = query.data?.pages.flatMap((page) => page.data) ?? [];
+	const latestOnly = allEvents.filter((r) => r.latest);
 	const items = buildTimelineItems(latestOnly);
 
-	const handleRecordPress = (record: TimelineRecord) => {
-		if (record.type === "entry") {
-			router.push(`/entry-detail/${record.originalId}`);
+	const handleEventPress = (event: TimelineEvent) => {
+		if (event.type === "entry") {
+			router.push(`/entry-detail/${event.originalId}`);
 		} else {
-			router.push(`/settlement-detail/${record.originalId}`);
+			router.push(`/settlement-detail/${event.originalId}`);
 		}
 	};
 
@@ -83,7 +73,7 @@ export function useTimeline() {
 		isLoading: query.isLoading,
 		isEmpty: latestOnly.length === 0,
 		isFetchingNextPage: query.isFetchingNextPage,
-		handleRecordPress,
+		handleEventPress,
 		handleEndReached,
 		handleAddPress,
 	};
