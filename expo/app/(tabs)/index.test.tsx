@@ -267,7 +267,7 @@ describe("TimelineScreen", () => {
 		expect(screen.getByLabelText("修正済み")).toBeOnTheScreen();
 	});
 
-	it("取消バージョンが薄く表示される", async () => {
+	it("取消済みの記録が取消済みラベル付きで表示される", async () => {
 		mockTimelineResponse({
 			data: [
 				makeRecord({
@@ -309,6 +309,55 @@ describe("TimelineScreen", () => {
 		});
 		// バッジ「精算」とラベル「精算」の2つが表示される
 		expect(screen.getAllByText("精算")).toHaveLength(2);
+	});
+
+	it("記録と精算が混在するタイムラインが正しく表示される", async () => {
+		mockTimelineResponse({
+			data: [
+				makeRecord({
+					id: "e1",
+					originalId: "e1",
+					type: "entry",
+					category: "advance",
+					amount: 1500,
+					label: "スーパー",
+					occurredOn: "2026-03-20",
+				}),
+				makeRecord({
+					id: "stl-1",
+					originalId: "stl-1",
+					type: "settlement",
+					category: null,
+					amount: 5000,
+					label: null,
+					occurredOn: "2026-03-18",
+				}),
+				makeRecord({
+					id: "e2",
+					originalId: "e2",
+					type: "entry",
+					category: "deposit",
+					amount: 3000,
+					label: "お釣り",
+					occurredOn: "2026-03-15",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("立替")).toBeOnTheScreen();
+		});
+		expect(screen.getByText("スーパー")).toBeOnTheScreen();
+		expect(screen.getByText("¥1,500")).toBeOnTheScreen();
+
+		expect(screen.getAllByText("精算")).toHaveLength(2);
+		expect(screen.getByText("¥5,000")).toBeOnTheScreen();
+
+		expect(screen.getByText("預り")).toBeOnTheScreen();
+		expect(screen.getByText("お釣り")).toBeOnTheScreen();
+		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
 
 	it("精算カードをタップすると精算詳細画面に遷移する", async () => {
@@ -356,6 +405,29 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("現在の精算残高")).toBeOnTheScreen();
 		});
 		expect(screen.queryByRole("button", { name: "精算する" })).toBeNull();
+	});
+
+	it("残高が負の場合「家計へ入金」と表示される", async () => {
+		mockBalanceResponse(-2000);
+		mockTimelineResponse({ data: [makeRecord()], nextCursor: null });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("家計へ入金")).toBeOnTheScreen();
+		});
+		expect(screen.getByText("¥2,000")).toBeOnTheScreen();
+	});
+
+	it("残高が負の場合「精算する」ボタンが表示される", async () => {
+		mockBalanceResponse(-2000);
+		mockTimelineResponse({ data: [makeRecord()], nextCursor: null });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "精算する" }),
+			).toBeOnTheScreen();
+		});
 	});
 
 	it("残高が正の場合「精算する」ボタンが表示されタップで精算フォームに遷移する", async () => {
