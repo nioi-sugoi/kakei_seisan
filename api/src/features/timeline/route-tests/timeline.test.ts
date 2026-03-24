@@ -114,7 +114,7 @@ describe("GET /api/timeline", () => {
 		expect(body.data[0].label).toBe("自分の記録");
 	});
 
-	it("取り消し済みや旧バージョンの記録もタイムラインに含まれる", async () => {
+	it("取り消し済みの記録はタイムラインに含まれるが旧バージョンは含まれない", async () => {
 		const t1 = new Date("2024-01-01").getTime();
 		const t2 = new Date("2024-01-02").getTime();
 		const t3 = new Date("2024-01-03").getTime();
@@ -142,13 +142,13 @@ describe("GET /api/timeline", () => {
 		expect(res.ok).toBe(true);
 		if (!res.ok) return;
 		const body = await res.json();
-		expect(body.data).toHaveLength(3);
+		expect(body.data).toHaveLength(2);
 
 		const cancelled = body.data.find((r) => r.label === "取消済み");
 		expect(cancelled?.cancelled).toBe(true);
 
 		const old = body.data.find((r) => r.label === "旧バージョン");
-		expect(old?.latest).toBe(false);
+		expect(old).toBeUndefined();
 	});
 
 	it("取り消し状態と最新版フラグが真偽値で返される", async () => {

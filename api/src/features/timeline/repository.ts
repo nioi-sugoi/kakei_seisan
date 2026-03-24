@@ -31,13 +31,13 @@ export function listByUser(
 			category, amount, occurred_on AS occurredOn, label, memo,
 			original_id AS originalId, cancelled, latest, status, created_at AS createdAt
 		FROM entries
-		WHERE user_id = ${userId} ${cursorClause}
+		WHERE user_id = ${userId} AND latest = 1 ${cursorClause}
 		UNION ALL
 		SELECT id, user_id AS userId, 'settlement' AS type,
 			category, amount, occurred_on AS occurredOn, NULL AS label, NULL AS memo,
 			original_id AS originalId, cancelled, latest, status, created_at AS createdAt
 		FROM settlements
-		WHERE user_id = ${userId} ${cursorClause}
+		WHERE user_id = ${userId} AND latest = 1 ${cursorClause}
 		ORDER BY createdAt DESC
 		LIMIT ${options.limit}
 	`);
