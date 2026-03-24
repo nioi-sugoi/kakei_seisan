@@ -48,8 +48,11 @@ function SettlementFormContent({ balance }: { balance: number }) {
 					<Text className="text-base text-muted-foreground">
 						現在の精算残高
 					</Text>
-					<Text className="text-2xl font-bold text-foreground">
-						{`${formatAmount(absBalance)}を${isPositive ? "家計から受け取ります" : "家計へ入金します"}`}
+					<Text className="text-3xl font-bold text-foreground">
+						{formatAmount(absBalance)}
+					</Text>
+					<Text className="text-lg font-semibold text-primary">
+						{isPositive ? "家計から受け取り" : "家計へ入金"}
 					</Text>
 				</View>
 
