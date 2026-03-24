@@ -316,6 +316,15 @@ describe("GET /api/timeline", () => {
 		expect(record.status).toBe("approved");
 	});
 
+	it("cursorが不正な値の場合は400エラーになる", async () => {
+		const res = await client.api.timeline.$get(
+			{ query: { cursor: "abc" } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+	});
+
 	it("ログインしていないとエラーになる", async () => {
 		const res = await client.api.timeline.$get({ query: {} });
 

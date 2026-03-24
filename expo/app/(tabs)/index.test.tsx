@@ -40,6 +40,23 @@ function mockTimelineResponse(body: unknown) {
 	);
 }
 
+function mockBalanceResponse(balance: number) {
+	mockBalanceGet.mockImplementation(() =>
+		Promise.resolve(
+			new Response(
+				JSON.stringify({
+					advanceTotal: 0,
+					depositTotal: 0,
+					fromHouseholdTotal: 0,
+					fromUserTotal: 0,
+					balance,
+				}),
+				{ headers: { "Content-Type": "application/json" } },
+			),
+		),
+	);
+}
+
 function makeRecord(overrides: Record<string, unknown> = {}) {
 	return {
 		id: "entry-1",
@@ -317,5 +334,43 @@ describe("TimelineScreen", () => {
 		await user.press(screen.getByRole("button", { name: "精算 ¥5,000" }));
 
 		expect(mockPush).toHaveBeenCalledWith("/settlement-detail/stl-1");
+	});
+
+	it("残高が正の場合「家計から受け取り」と表示される", async () => {
+		mockBalanceResponse(3000);
+		mockTimelineResponse({ data: [makeRecord()], nextCursor: null });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("家計から受け取り")).toBeOnTheScreen();
+		});
+		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
+	});
+
+	it("残高がゼロの場合「精算する」ボタンが表示されない", async () => {
+		mockBalanceResponse(0);
+		mockTimelineResponse({ data: [makeRecord()], nextCursor: null });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("現在の精算残高")).toBeOnTheScreen();
+		});
+		expect(screen.queryByRole("button", { name: "精算する" })).toBeNull();
+	});
+
+	it("残高が正の場合「精算する」ボタンが表示されタップで精算フォームに遷移する", async () => {
+		mockBalanceResponse(5000);
+		mockTimelineResponse({ data: [makeRecord()], nextCursor: null });
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "精算する" }),
+			).toBeOnTheScreen();
+		});
+
+		await user.press(screen.getByRole("button", { name: "精算する" }));
+
+		expect(mockPush).toHaveBeenCalledWith("/settlement-form");
 	});
 });
