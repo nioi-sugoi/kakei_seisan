@@ -183,7 +183,7 @@ describe("SettlementFormScreen", () => {
 
 	// --- 正常送信 ---
 
-	it("正の残高で送信するとcategory=fromHouseholdでAPIに渡される", async () => {
+	it("精算残高が正の場合に精算を新規作成するとcategory=fromHouseholdでAPIに渡される", async () => {
 		mockBalanceResponse(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
@@ -203,7 +203,7 @@ describe("SettlementFormScreen", () => {
 		});
 	});
 
-	it("負の残高で送信するとcategory=fromUserでAPIに渡される", async () => {
+	it("精算残高が負の場合に精算を新規作成するとcategory=fromUserでAPIに渡される", async () => {
 		mockBalanceResponse(-2000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
