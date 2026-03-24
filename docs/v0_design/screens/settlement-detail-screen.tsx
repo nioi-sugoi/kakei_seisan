@@ -5,11 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import {
-  ArrowLeft,
-  ArrowRight,
-  MessageCircle,
-} from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import { ImageThumbnailGroup } from "./image-thumbnail"
 
 function formatAmount(amount: number) {
@@ -21,21 +17,26 @@ function formatDateFull(dateStr: string) {
   return `${d.getFullYear()}\u5E74${d.getMonth() + 1}\u6708${d.getDate()}\u65E5`
 }
 
-interface EntryDetailProps {
+interface SettlementDetailProps {
   entry: HouseholdEntry
   managed?: boolean
   onBack?: () => void
   onImageTap?: (index: number) => void
 }
 
-export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }: EntryDetailProps) {
-  const typeLabels = { advance: "立替", deposit: "預り", settlement: "精算" }
-  const typeColors = {
-    advance: "bg-primary/10 text-primary border-primary/20",
-    deposit: "bg-orange-50 text-orange-600 border-orange-200",
-    settlement: "bg-emerald-50 text-emerald-600 border-emerald-200",
-  }
-
+/**
+ * 精算詳細画面
+ *
+ * 精算完了後に精算内容と証跡画像を確認する画面。
+ * 記録詳細画面と同様の構造だが、精算特有の表示（カテゴリ、精算額）がある。
+ * 管理モードの承認者が証跡画像を確認するユースケースで重要。
+ */
+export function SettlementDetailScreen({
+  entry,
+  managed = false,
+  onBack,
+  onImageTap,
+}: SettlementDetailProps) {
   const approvalConfig = {
     pending: { label: "承認待ち", className: "bg-amber-50 text-amber-600 border-amber-200" },
     approved: { label: "承認済み", className: "bg-emerald-50 text-emerald-600 border-emerald-200" },
@@ -50,7 +51,7 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">{"戻る"}</span>
         </button>
-        <h1 className="text-lg font-bold text-foreground">{"記録詳細"}</h1>
+        <h1 className="text-lg font-bold text-foreground">{"精算詳細"}</h1>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 px-4 py-5">
@@ -60,9 +61,9 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className={`rounded-md text-xs font-medium ${typeColors[entry.type]}`}
+                className="rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 border-emerald-200"
               >
-                {typeLabels[entry.type]}
+                {"精算"}
               </Badge>
               {entry.status === "modified" && (
                 <Badge variant="outline" className="rounded-md text-xs bg-amber-50 text-amber-600 border-amber-200">
@@ -86,11 +87,10 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
 
             <div className="text-center">
               <span
-                className={`text-3xl font-bold tabular-nums ${
+                className={`text-3xl font-bold tabular-nums text-emerald-600 ${
                   entry.status === "cancelled" ? "line-through opacity-50" : ""
-                } ${entry.type === "deposit" ? "text-orange-600" : entry.type === "settlement" ? "text-emerald-600" : "text-foreground"}`}
+                }`}
               >
-                {entry.type === "deposit" ? "-" : ""}
                 {formatAmount(entry.amount)}
               </span>
             </div>
@@ -108,38 +108,19 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
                 <span className="text-sm text-muted-foreground">{"ラベル"}</span>
                 <span className="text-sm font-medium text-foreground">{entry.label}</span>
               </div>
-              {entry.memo && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">{"メモ"}</span>
-                  <span className="text-sm text-foreground">{entry.memo}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Receipt Images */}
+        {/* Evidence Images */}
         {entry.images && entry.images.length > 0 && (
           <Card className="border-0 shadow-sm">
             <CardContent className="px-5 py-4">
               <ImageThumbnailGroup
                 images={entry.images}
-                label="レシート画像"
+                label="証跡画像"
                 onImageTap={(_, index) => onImageTap?.(index)}
               />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Rejection Comment */}
-        {managed && entry.approvalStatus === "rejected" && entry.rejectionComment && (
-          <Card className="border-0 border-l-4 border-l-red-400 shadow-sm">
-            <CardContent className="flex items-start gap-3 px-4 py-4">
-              <MessageCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-red-500">{"差し戻しコメント"}</span>
-                <p className="text-sm leading-relaxed text-foreground">{entry.rejectionComment}</p>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -151,27 +132,11 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground">{"2026年3月15日"}</span>
-                  <span className="text-sm font-medium text-foreground">{"スーパー買い物"}</span>
+                  <span className="text-xs text-muted-foreground">{"2026年3月8日"}</span>
+                  <span className="text-sm font-medium text-foreground">{"精算"}</span>
                 </div>
-                <span className="text-sm font-bold tabular-nums text-foreground">{"\u00A54,280"}</span>
+                <span className="text-sm font-bold tabular-nums text-emerald-600">{"\u00A55,000"}</span>
               </div>
-              {entry.status !== "active" && (
-                <div className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2">
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground">{"2026年3月16日"}</span>
-                      <Badge variant="outline" className="rounded-md text-[10px] bg-amber-50 text-amber-600 border-amber-200">
-                        {entry.status === "cancelled" ? "取消" : "修正"}
-                      </Badge>
-                    </div>
-                    <span className="text-sm font-medium text-foreground">{entry.label}</span>
-                  </div>
-                  <span className={`text-sm font-bold tabular-nums ${entry.status === "cancelled" ? "line-through opacity-50" : "text-foreground"}`}>
-                    {formatAmount(entry.amount)}
-                  </span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -179,17 +144,13 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
         {/* Related Entry Link */}
         {entry.relatedEntryId && (
           <button className="flex items-center justify-center gap-2 text-sm text-primary">
-            {entry.status === "modified"
-              ? "修正後の記録を見る"
-              : entry.status === "cancelled"
-                ? "取消記録を見る"
-                : "元の記録を見る"}
+            {"元の精算を見る"}
             <ArrowRight className="h-4 w-4" />
           </button>
         )}
 
         {/* Action Buttons */}
-        {entry.status === "active" && entry.type !== "settlement" && (
+        {entry.status === "active" && (
           <div className="mt-auto flex gap-3 pb-4 pt-4">
             <Button variant="outline" className="flex-1 h-12 rounded-xl text-base font-medium">
               {"修正する"}
@@ -199,15 +160,6 @@ export function EntryDetailScreen({ entry, managed = false, onBack, onImageTap }
               className="flex-1 h-12 rounded-xl border-destructive text-base font-medium text-destructive hover:bg-destructive/5"
             >
               {"取り消す"}
-            </Button>
-          </div>
-        )}
-
-        {/* Restore Button (for cancelled entries) */}
-        {entry.status === "cancelled" && (
-          <div className="mt-auto pb-4 pt-4">
-            <Button className="w-full h-12 rounded-xl text-base font-semibold">
-              {"復元する"}
             </Button>
           </div>
         )}

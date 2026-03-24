@@ -6,9 +6,12 @@ type Screen =
   | "timeline-solo"
   | "timeline-managed"
   | "entry-form"
+  | "entry-edit-form"
   | "entry-detail"
   | "entry-detail-cancelled"
   | "settlement"
+  | "settlement-detail"
+  | "image-viewer"
   | "partner-invitation"
   | "partner-shared"
   | "partner-managed"
@@ -22,9 +25,12 @@ const screens: { value: Screen; label: string; group: string }[] = [
   { value: "timeline-solo", label: "3. タイムライン（ソロ）", group: "タイムライン" },
   { value: "timeline-managed", label: "4. タイムライン（管理）", group: "タイムライン" },
   { value: "entry-form", label: "5. 記録登録", group: "記録" },
+  { value: "entry-edit-form", label: "5b. 記録修正", group: "記録" },
   { value: "entry-detail", label: "6. 記録詳細", group: "記録" },
   { value: "entry-detail-cancelled", label: "7. 記録詳細（取消）", group: "記録" },
   { value: "settlement", label: "8. 精算", group: "精算" },
+  { value: "settlement-detail", label: "8b. 精算詳細", group: "精算" },
+  { value: "image-viewer", label: "8c. 画像ビューア", group: "画像" },
   { value: "partner-invitation", label: "9. パートナー招待", group: "パートナー" },
   { value: "partner-shared", label: "10. パートナー（共有）", group: "パートナー" },
   { value: "partner-managed", label: "11. パートナー（管理）", group: "パートナー" },
