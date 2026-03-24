@@ -5,24 +5,13 @@ import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import { handleValidationError } from "../../middleware/validation-error-handler";
+import {
+	isAllowedImageType,
+	MAX_IMAGE_SIZE,
+	MIME_TO_EXT,
+} from "../../shared/image-constants";
 import type { AppVariables } from "../../types";
 import * as settlementsRepository from "./repository";
-
-const ALLOWED_IMAGE_TYPES = [
-	"image/jpeg",
-	"image/png",
-	"image/webp",
-	"image/heic",
-] as const;
-
-const MIME_TO_EXT: Record<string, string> = {
-	"image/jpeg": "jpg",
-	"image/png": "png",
-	"image/webp": "webp",
-	"image/heic": "heic",
-};
-
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const createSettlementSchema = v.object({
 	category: v.picklist(["fromUser", "fromHousehold"]),
@@ -199,11 +188,7 @@ const settlementsApp = new Hono<{
 		if (!(file instanceof File)) {
 			return c.json({ error: "画像ファイルが必要です" as const }, 400);
 		}
-		if (
-			!ALLOWED_IMAGE_TYPES.includes(
-				file.type as (typeof ALLOWED_IMAGE_TYPES)[number],
-			)
-		) {
+		if (!isAllowedImageType(file.type)) {
 			return c.json(
 				{ error: "サポートされていないファイル形式です" as const },
 				400,

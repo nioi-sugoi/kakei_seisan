@@ -4,12 +4,7 @@ import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { authClient } from "@/lib/auth-client";
 import { config } from "@/lib/config";
 
-type UploadedImage = {
-	id: string;
-	entryId: string;
-	displayOrder: number;
-	createdAt: number;
-};
+export type ImageResourceType = "entries" | "settlements";
 
 function getAuthHeaders(): Record<string, string> {
 	if (Platform.OS === "web") return {};
@@ -17,24 +12,28 @@ function getAuthHeaders(): Record<string, string> {
 	return cookie ? { Cookie: cookie } : {};
 }
 
+// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける。
+// Blob 型への二重キャストは RN 固有の制約のため不可避
+function buildImageFormData(image: SelectedImage): FormData {
+	const formData = new FormData();
+	formData.append("image", {
+		uri: image.uri,
+		name: image.fileName,
+		type: image.mimeType,
+	} as unknown as Blob);
+	return formData;
+}
+
 async function uploadImage(
-	entryId: string,
+	resourceType: ImageResourceType,
+	parentId: string,
 	image: SelectedImage,
-): Promise<UploadedImage> {
-	const formData = new FormData();
-	// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける。
-	// Blob 型への二重キャストは RN 固有の制約のため不可避
-	formData.append("image", {
-		uri: image.uri,
-		name: image.fileName,
-		type: image.mimeType,
-	} as unknown as Blob);
-
+): Promise<{ id: string; displayOrder: number; createdAt: number }> {
 	const res = await fetch(
-		`${config.apiBaseUrl}/api/entries/${entryId}/images`,
+		`${config.apiBaseUrl}/api/${resourceType}/${parentId}/images`,
 		{
 			method: "POST",
-			body: formData,
+			body: buildImageFormData(image),
 			headers: getAuthHeaders(),
 			credentials: "include",
 		},
@@ -50,108 +49,13 @@ async function uploadImage(
 	return res.json();
 }
 
-async function deleteImage(entryId: string, imageId: string): Promise<void> {
-	const res = await fetch(
-		`${config.apiBaseUrl}/api/entries/${entryId}/images/${imageId}`,
-		{
-			method: "DELETE",
-			headers: getAuthHeaders(),
-			credentials: "include",
-		},
-	);
-
-	if (!res.ok) {
-		const body = await res.json();
-		throw new Error("error" in body ? body.error : "画像の削除に失敗しました");
-	}
-}
-
-export function useUploadEntryImages() {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: ({
-			entryId,
-			images,
-		}: {
-			entryId: string;
-			images: SelectedImage[];
-		}) => Promise.all(images.map((image) => uploadImage(entryId, image))),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["entries"] });
-		},
-	});
-}
-
-export function useDeleteEntryImage(entryId: string) {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: (imageId: string) => deleteImage(entryId, imageId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["entries", entryId] });
-		},
-	});
-}
-
-export function getImageSource(entryId: string, imageId: string) {
-	const headers = getAuthHeaders();
-	return {
-		uri: `${config.apiBaseUrl}/api/entries/${entryId}/images/${imageId}`,
-		headers: Object.keys(headers).length > 0 ? headers : undefined,
-	};
-}
-
-// ============================================================
-// 精算画像
-// ============================================================
-
-type UploadedSettlementImage = {
-	id: string;
-	settlementId: string;
-	displayOrder: number;
-	createdAt: number;
-};
-
-async function uploadSettlementImage(
-	settlementId: string,
-	image: SelectedImage,
-): Promise<UploadedSettlementImage> {
-	const formData = new FormData();
-	// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける。
-	// Blob 型への二重キャストは RN 固有の制約のため不可避
-	formData.append("image", {
-		uri: image.uri,
-		name: image.fileName,
-		type: image.mimeType,
-	} as unknown as Blob);
-
-	const res = await fetch(
-		`${config.apiBaseUrl}/api/settlements/${settlementId}/images`,
-		{
-			method: "POST",
-			body: formData,
-			headers: getAuthHeaders(),
-			credentials: "include",
-		},
-	);
-
-	if (!res.ok) {
-		const body = await res.json();
-		throw new Error(
-			"error" in body ? body.error : "画像のアップロードに失敗しました",
-		);
-	}
-
-	return res.json();
-}
-
-async function deleteSettlementImage(
-	settlementId: string,
+async function deleteImageRequest(
+	resourceType: ImageResourceType,
+	parentId: string,
 	imageId: string,
 ): Promise<void> {
 	const res = await fetch(
-		`${config.apiBaseUrl}/api/settlements/${settlementId}/images/${imageId}`,
+		`${config.apiBaseUrl}/api/${resourceType}/${parentId}/images/${imageId}`,
 		{
 			method: "DELETE",
 			headers: getAuthHeaders(),
@@ -165,47 +69,51 @@ async function deleteSettlementImage(
 	}
 }
 
-export function useUploadSettlementImages() {
+export function useUploadImages(resourceType: ImageResourceType) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: ({
-			settlementId,
+			parentId,
 			images,
 		}: {
-			settlementId: string;
+			parentId: string;
 			images: SelectedImage[];
 		}) =>
 			Promise.all(
-				images.map((image) => uploadSettlementImage(settlementId, image)),
+				images.map((image) => uploadImage(resourceType, parentId, image)),
 			),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["settlements"] });
+			queryClient.invalidateQueries({ queryKey: [resourceType] });
 		},
 	});
 }
 
-export function useDeleteSettlementImage(settlementId: string) {
+export function useDeleteImage(
+	resourceType: ImageResourceType,
+	parentId: string,
+) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: (imageId: string) =>
-			deleteSettlementImage(settlementId, imageId),
+			deleteImageRequest(resourceType, parentId, imageId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: ["settlements", settlementId],
+				queryKey: [resourceType, parentId],
 			});
 		},
 	});
 }
 
-export function getSettlementImageSource(
-	settlementId: string,
+export function getImageSource(
+	resourceType: ImageResourceType,
+	parentId: string,
 	imageId: string,
 ) {
 	const headers = getAuthHeaders();
 	return {
-		uri: `${config.apiBaseUrl}/api/settlements/${settlementId}/images/${imageId}`,
+		uri: `${config.apiBaseUrl}/api/${resourceType}/${parentId}/images/${imageId}`,
 		headers: Object.keys(headers).length > 0 ? headers : undefined,
 	};
 }

@@ -7,7 +7,7 @@ import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
-import { useUploadEntryImages } from "./use-image-upload";
+import { useUploadImages } from "./use-image-upload";
 import { useModifyEntry } from "./use-modify-entry";
 
 const entryFieldSchema = {
@@ -48,7 +48,7 @@ export function useCreateEntryForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
-	const uploadImages = useUploadEntryImages();
+	const uploadImages = useUploadImages("entries");
 
 	const mutation = useMutation({
 		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
@@ -58,7 +58,7 @@ export function useCreateEntryForm() {
 			if (selectedImages.length > 0) {
 				try {
 					await uploadImages.mutateAsync({
-						entryId: entry.id,
+						parentId: entry.id,
 						images: selectedImages,
 					});
 				} catch {

@@ -16,9 +16,9 @@ import {
 import { SettlementInfoCard } from "@/components/settlement-detail/SettlementInfoCard";
 import { useCancelSettlement } from "@/hooks/use-cancel-settlement";
 import {
-	getSettlementImageSource,
-	useDeleteSettlementImage,
-	useUploadSettlementImages,
+	getImageSource,
+	useDeleteImage,
+	useUploadImages,
 } from "@/hooks/use-image-upload";
 import { useRestoreSettlement } from "@/hooks/use-restore-settlement";
 import { useSettlementDetail } from "@/hooks/use-settlement-detail";
@@ -43,8 +43,8 @@ export default function SettlementDetailScreen() {
 	const { data: settlement, isPending, error } = useSettlementDetail(id);
 	const cancelMutation = useCancelSettlement(id);
 	const restoreMutation = useRestoreSettlement(id);
-	const uploadImages = useUploadSettlementImages();
-	const deleteImage = useDeleteSettlementImage(id);
+	const uploadImages = useUploadImages("settlements");
+	const deleteImage = useDeleteImage("settlements", id);
 	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
 
 	if (isPending) {
@@ -123,7 +123,8 @@ export default function SettlementDetailScreen() {
 								{settlement.images.map((img, index) => (
 									<View key={img.id} className="relative">
 										<ExpoImage
-											source={getSettlementImageSource(
+											source={getImageSource(
+												"settlements",
 												settlement.originalId,
 												img.id,
 											)}
@@ -173,7 +174,7 @@ export default function SettlementDetailScreen() {
 										onPress={() => {
 											uploadImages.mutate(
 												{
-													settlementId: settlement.originalId,
+													parentId: settlement.originalId,
 													images: newImages,
 												},
 												{

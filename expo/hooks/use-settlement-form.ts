@@ -1,10 +1,13 @@
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
+import { parseResponse } from "hono/client";
 import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
-import { useCreateSettlement } from "./use-create-settlement";
+import { client } from "@/lib/api-client";
+import { useUploadImages } from "./use-image-upload";
 import { useModifySettlement } from "./use-modify-settlement";
 
 const settlementFieldSchema = {
@@ -27,8 +30,9 @@ type ModifyTarget = {
 
 export function useCreateSettlementForm(balance: number) {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
-	const mutation = useCreateSettlement(selectedImages);
+	const uploadImages = useUploadImages("settlements");
 	const absBalance = Math.abs(balance);
 
 	const maxAmountSchema = v.object({
@@ -43,6 +47,31 @@ export function useCreateSettlementForm(balance: number) {
 				`精算額は残高（¥${absBalance.toLocaleString()}）以下にしてください`,
 			),
 		),
+	});
+
+	const mutation = useMutation({
+		mutationFn: (input: {
+			category: "fromHousehold" | "fromUser";
+			amount: number;
+			occurredOn: string;
+		}) => parseResponse(client.api.settlements.$post({ json: input })),
+		onSuccess: async (settlement) => {
+			// 画像アップロードは best-effort（失敗しても精算は残す）
+			if (selectedImages.length > 0) {
+				try {
+					await uploadImages.mutateAsync({
+						parentId: settlement.id,
+						images: selectedImages,
+					});
+				} catch {
+					// 画像アップロード失敗は無視（詳細画面から再添付可能）
+				}
+			}
+			queryClient.invalidateQueries({ queryKey: ["settlements"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
+			router.replace("/(tabs)");
+		},
 	});
 
 	const defaultValues = {

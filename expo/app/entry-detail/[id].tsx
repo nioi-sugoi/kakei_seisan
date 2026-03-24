@@ -18,8 +18,8 @@ import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 import {
 	getImageSource,
-	useDeleteEntryImage,
-	useUploadEntryImages,
+	useDeleteImage,
+	useUploadImages,
 } from "@/hooks/use-image-upload";
 import { useRestoreEntry } from "@/hooks/use-restore-entry";
 import { formatAmount, formatDateFull } from "@/lib/format";
@@ -43,8 +43,8 @@ export default function EntryDetailScreen() {
 	const { data: entry, isPending, error } = useEntryDetail(id);
 	const cancelMutation = useCancelEntry(id);
 	const restoreMutation = useRestoreEntry(id);
-	const uploadImages = useUploadEntryImages();
-	const deleteImage = useDeleteEntryImage(id);
+	const uploadImages = useUploadImages("entries");
+	const deleteImage = useDeleteImage("entries", id);
 	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
 
 	if (isPending) {
@@ -129,7 +129,11 @@ export default function EntryDetailScreen() {
 								{entry.images.map((img, index) => (
 									<View key={img.id} className="relative">
 										<ExpoImage
-											source={getImageSource(entry.originalId, img.id)}
+											source={getImageSource(
+												"entries",
+												entry.originalId,
+												img.id,
+											)}
 											style={{ width: 96, height: 96 }}
 											className="rounded-lg"
 											contentFit="cover"
@@ -176,7 +180,7 @@ export default function EntryDetailScreen() {
 										onPress={() => {
 											uploadImages.mutate(
 												{
-													entryId: entry.originalId,
+													parentId: entry.originalId,
 													images: newImages,
 												},
 												{

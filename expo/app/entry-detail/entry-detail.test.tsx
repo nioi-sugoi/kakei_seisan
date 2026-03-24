@@ -16,14 +16,18 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/hooks/use-image-upload", () => ({
-	useUploadEntryImages: () => ({
+	useUploadImages: () => ({
 		mutate: jest.fn(),
 		mutateAsync: jest.fn(),
 		isPending: false,
 	}),
-	useDeleteEntryImage: () => ({ mutate: jest.fn(), isPending: false }),
-	getImageSource: (entryId: string, imageId: string) => ({
-		uri: `mock://${entryId}/${imageId}`,
+	useDeleteImage: () => ({ mutate: jest.fn(), isPending: false }),
+	getImageSource: (
+		_resourceType: string,
+		parentId: string,
+		imageId: string,
+	) => ({
+		uri: `mock://${parentId}/${imageId}`,
 	}),
 }));
 
