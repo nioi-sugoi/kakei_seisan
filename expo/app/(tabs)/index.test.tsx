@@ -57,7 +57,7 @@ function mockBalanceResponse(balance: number) {
 	);
 }
 
-function makeEntry(overrides: Record<string, unknown> = {}) {
+function makeEvent(overrides: Record<string, unknown> = {}) {
 	return {
 		id: "entry-1",
 		userId: "user-1",
@@ -113,7 +113,7 @@ describe("TimelineScreen", () => {
 	});
 
 	it("立替の記録カードが正しく表示される", async () => {
-		mockTimelineResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -127,7 +127,7 @@ describe("TimelineScreen", () => {
 	it("預りの記録カードが正しく表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "entry-2",
 					category: "deposit",
 					amount: 3000,
@@ -148,8 +148,8 @@ describe("TimelineScreen", () => {
 	it("月ごとのセクションヘッダーが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({ id: "e1", originalId: "e1", occurredOn: "2026-03-15" }),
-				makeEntry({
+				makeEvent({ id: "e1", originalId: "e1", occurredOn: "2026-03-15" }),
+				makeEvent({
 					id: "e2",
 					originalId: "e2",
 					occurredOn: "2026-02-28",
@@ -169,19 +169,19 @@ describe("TimelineScreen", () => {
 	it("記録が月ごとに正しくグルーピングされている", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "e1",
 					originalId: "e1",
 					occurredOn: "2026-03-20",
 					label: "3月の記録A",
 				}),
-				makeEntry({
+				makeEvent({
 					id: "e2",
 					originalId: "e2",
 					occurredOn: "2026-03-10",
 					label: "3月の記録B",
 				}),
-				makeEntry({
+				makeEvent({
 					id: "e3",
 					originalId: "e3",
 					occurredOn: "2026-02-15",
@@ -220,7 +220,7 @@ describe("TimelineScreen", () => {
 
 	it("記録カードをタップすると詳細画面に遷移する", async () => {
 		mockTimelineResponse({
-			data: [makeEntry({ id: "abc-123", originalId: "abc-123" })],
+			data: [makeEvent({ id: "abc-123", originalId: "abc-123" })],
 			nextCursor: null,
 		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
@@ -248,7 +248,7 @@ describe("TimelineScreen", () => {
 	it("修正バージョン(v2)にペンシルアイコンが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "mod-1",
 					originalId: "entry-1",
 					latest: true,
@@ -270,7 +270,7 @@ describe("TimelineScreen", () => {
 	it("取消済みの記録が取消済みラベル付きで表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "cancel-1",
 					originalId: "entry-1",
 					cancelled: true,
@@ -291,7 +291,7 @@ describe("TimelineScreen", () => {
 	it("精算カードにバッジとラベルが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "stl-1",
 					originalId: "stl-1",
 					type: "settlement",
@@ -314,7 +314,7 @@ describe("TimelineScreen", () => {
 	it("記録と精算が混在するタイムラインが正しく表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "e1",
 					originalId: "e1",
 					type: "entry",
@@ -323,7 +323,7 @@ describe("TimelineScreen", () => {
 					label: "スーパー",
 					occurredOn: "2026-03-20",
 				}),
-				makeEntry({
+				makeEvent({
 					id: "stl-1",
 					originalId: "stl-1",
 					type: "settlement",
@@ -332,7 +332,7 @@ describe("TimelineScreen", () => {
 					label: null,
 					occurredOn: "2026-03-18",
 				}),
-				makeEntry({
+				makeEvent({
 					id: "e2",
 					originalId: "e2",
 					type: "entry",
@@ -363,7 +363,7 @@ describe("TimelineScreen", () => {
 	it("精算カードをタップすると精算詳細画面に遷移する", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEntry({
+				makeEvent({
 					id: "stl-1",
 					originalId: "stl-1",
 					type: "settlement",
@@ -387,7 +387,7 @@ describe("TimelineScreen", () => {
 
 	it("残高が正の場合「家計から受け取り」と表示される", async () => {
 		mockBalanceResponse(3000);
-		mockTimelineResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -398,7 +398,7 @@ describe("TimelineScreen", () => {
 
 	it("残高がゼロの場合「精算する」ボタンが表示されない", async () => {
 		mockBalanceResponse(0);
-		mockTimelineResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -409,7 +409,7 @@ describe("TimelineScreen", () => {
 
 	it("残高が負の場合「家計へ入金」と表示される", async () => {
 		mockBalanceResponse(-2000);
-		mockTimelineResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -420,7 +420,7 @@ describe("TimelineScreen", () => {
 
 	it("残高が負の場合「精算する」ボタンが表示される", async () => {
 		mockBalanceResponse(-2000);
-		mockTimelineResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -432,7 +432,7 @@ describe("TimelineScreen", () => {
 
 	it("残高が正の場合「精算する」ボタンが表示されタップで精算フォームに遷移する", async () => {
 		mockBalanceResponse(5000);
-		mockTimelineResponse({ data: [makeEntry()], nextCursor: null });
+		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {

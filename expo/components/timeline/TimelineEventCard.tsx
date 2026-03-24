@@ -4,26 +4,26 @@ import type { client } from "@/lib/api-client";
 import { formatAmount, formatDateShort } from "@/lib/format";
 
 type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
-type TimelineEntry = TimelineResponse["data"][number];
+type TimelineEvent = TimelineResponse["data"][number];
 
 const typeConfig = {
 	advance: { label: "立替", className: "text-primary" },
 	deposit: { label: "預り", className: "text-orange-600" },
 } as const;
 
-interface TimelineEntryCardProps {
-	entry: TimelineEntry;
-	onPress: (entry: TimelineEntry) => void;
+interface TimelineEventCardProps {
+	event: TimelineEvent;
+	onPress: (event: TimelineEvent) => void;
 }
 
-export function TimelineEntryCard({ entry, onPress }: TimelineEntryCardProps) {
-	const isV1 = entry.id === entry.originalId;
-	const isCancelled = entry.cancelled;
-	const isExpense = entry.type === "entry";
+export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
+	const isV1 = event.id === event.originalId;
+	const isCancelled = event.cancelled;
+	const isExpense = event.type === "entry";
 	const isModified = !isV1 && !isCancelled;
-	const label = isExpense ? entry.label : (entry.label ?? "精算");
+	const label = isExpense ? event.label : (event.label ?? "精算");
 
-	const { category } = entry;
+	const { category } = event;
 	const entryConfig =
 		category === "advance" || category === "deposit"
 			? typeConfig[category]
@@ -35,13 +35,13 @@ export function TimelineEntryCard({ entry, onPress }: TimelineEntryCardProps) {
 
 	return (
 		<Pressable
-			onPress={() => onPress(entry)}
+			onPress={() => onPress(event)}
 			className={`rounded-xl bg-card px-4 py-3 active:opacity-80 ${isCancelled ? "opacity-50" : ""}`}
 			accessibilityRole="button"
 			accessibilityLabel={[
 				isExpense
-					? `${typeLabel} ${entry.label} ${formatAmount(entry.amount)}`
-					: `精算 ${formatAmount(entry.amount)}`,
+					? `${typeLabel} ${event.label} ${formatAmount(event.amount)}`
+					: `精算 ${formatAmount(event.amount)}`,
 				isModified ? "修正済み" : null,
 				isCancelled ? "取消済み" : null,
 			]
@@ -56,7 +56,7 @@ export function TimelineEntryCard({ entry, onPress }: TimelineEntryCardProps) {
 							{typeLabel}
 						</Text>
 						<Text className="text-base text-muted-foreground">
-							{formatDateShort(entry.occurredOn)}
+							{formatDateShort(event.occurredOn)}
 						</Text>
 						{isModified && (
 							<Text
@@ -80,7 +80,7 @@ export function TimelineEntryCard({ entry, onPress }: TimelineEntryCardProps) {
 							: "text-foreground"
 					}`}
 				>
-					{formatAmount(entry.amount)}
+					{formatAmount(event.amount)}
 				</Text>
 			</View>
 		</Pressable>

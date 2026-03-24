@@ -4,28 +4,28 @@ import type { InferResponseType } from "hono/client";
 import { client } from "@/lib/api-client";
 
 type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
-type TimelineEntry = TimelineResponse["data"][number];
+type TimelineEvent = TimelineResponse["data"][number];
 
 export type TimelineItem =
 	| { type: "header"; title: string }
-	| { type: "record"; entry: TimelineEntry };
+	| { type: "record"; event: TimelineEvent };
 
 function toMonthLabel(date: string) {
 	const d = new Date(date);
 	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
-function buildTimelineItems(entries: TimelineEntry[]): TimelineItem[] {
+function buildTimelineItems(events: TimelineEvent[]): TimelineItem[] {
 	const items: TimelineItem[] = [];
 	let currentMonth = "";
 
-	for (const entry of entries) {
-		const month = toMonthLabel(entry.occurredOn);
+	for (const event of events) {
+		const month = toMonthLabel(event.occurredOn);
 		if (month !== currentMonth) {
 			currentMonth = month;
 			items.push({ type: "header", title: month });
 		}
-		items.push({ type: "record", entry });
+		items.push({ type: "record", event });
 	}
 
 	return items;
@@ -46,15 +46,15 @@ export function useTimeline() {
 		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 	});
 
-	const allEntries = query.data?.pages.flatMap((page) => page.data) ?? [];
-	const latestOnly = allEntries.filter((r) => r.latest);
+	const allEvents = query.data?.pages.flatMap((page) => page.data) ?? [];
+	const latestOnly = allEvents.filter((r) => r.latest);
 	const items = buildTimelineItems(latestOnly);
 
-	const handleEntryPress = (entry: TimelineEntry) => {
-		if (entry.type === "entry") {
-			router.push(`/entry-detail/${entry.originalId}`);
+	const handleEventPress = (event: TimelineEvent) => {
+		if (event.type === "entry") {
+			router.push(`/entry-detail/${event.originalId}`);
 		} else {
-			router.push(`/settlement-detail/${entry.originalId}`);
+			router.push(`/settlement-detail/${event.originalId}`);
 		}
 	};
 
@@ -73,7 +73,7 @@ export function useTimeline() {
 		isLoading: query.isLoading,
 		isEmpty: latestOnly.length === 0,
 		isFetchingNextPage: query.isFetchingNextPage,
-		handleEntryPress,
+		handleEventPress,
 		handleEndReached,
 		handleAddPress,
 	};
