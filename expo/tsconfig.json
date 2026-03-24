@@ -7,12 +7,5 @@
 			"@api/*": ["../api/src/*"]
 		}
 	},
-	"include": [
-		"**/*.ts",
-		"**/*.tsx",
-		".expo/types/**/*.ts",
-		"expo-env.d.ts",
-		"nativewind-env.d.ts"
-	],
-	"exclude": []
+	"include": ["**/*.ts", "**/*.tsx"]
 }
