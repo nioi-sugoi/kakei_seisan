@@ -316,6 +316,117 @@ describe("GET /api/timeline", () => {
 		expect(record.status).toBe("approved");
 	});
 
+	it("承認待ちステータスの記録が正しく返される", async () => {
+		await insertEntry(TEST_USER.id, {
+			label: "承認待ち記録",
+			status: "pending",
+		});
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].status).toBe("pending");
+		expect(body.data[0].approvalComment).toBeNull();
+	});
+
+	it("差し戻しステータスの記録にコメントが含まれる", async () => {
+		await insertEntry(TEST_USER.id, {
+			label: "差し戻し記録",
+			status: "rejected",
+			approvalComment: "金額を確認してください",
+		});
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].status).toBe("rejected");
+		expect(body.data[0].approvalComment).toBe("金額を確認してください");
+	});
+
+	it("精算の承認ステータスとコメントが正しく返される", async () => {
+		await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+			status: "rejected",
+			approvalComment: "精算額が違います",
+		});
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].status).toBe("rejected");
+		expect(body.data[0].approvalComment).toBe("精算額が違います");
+	});
+
+	it("承認済みの記録は approvalComment が null で返される", async () => {
+		await insertEntry(TEST_USER.id, {
+			label: "承認済み記録",
+			status: "approved",
+		});
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].status).toBe("approved");
+		expect(body.data[0].approvalComment).toBeNull();
+	});
+
+	it("異なる承認ステータスの記録が混在して正しく返される", async () => {
+		const t1 = new Date("2024-01-01").getTime();
+		const t2 = new Date("2024-01-02").getTime();
+		const t3 = new Date("2024-01-03").getTime();
+
+		await insertEntry(TEST_USER.id, {
+			label: "承認済み",
+			status: "approved",
+			createdAt: t1,
+		});
+		await insertEntry(TEST_USER.id, {
+			label: "承認待ち",
+			status: "pending",
+			createdAt: t2,
+		});
+		await insertEntry(TEST_USER.id, {
+			label: "差し戻し",
+			status: "rejected",
+			approvalComment: "要修正",
+			createdAt: t3,
+		});
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data).toHaveLength(3);
+		expect(body.data[0].status).toBe("rejected");
+		expect(body.data[0].approvalComment).toBe("要修正");
+		expect(body.data[1].status).toBe("pending");
+		expect(body.data[2].status).toBe("approved");
+	});
+
 	it("cursorが不正な値の場合は400エラーになる", async () => {
 		const res = await client.api.timeline.$get(
 			{ query: { cursor: "abc" } },

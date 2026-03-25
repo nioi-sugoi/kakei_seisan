@@ -71,6 +71,7 @@ function makeEvent(overrides: Record<string, unknown> = {}) {
 		cancelled: false,
 		latest: true,
 		status: "approved",
+		approvalComment: null,
 		createdAt: 1773676800000,
 		...overrides,
 	};
@@ -444,5 +445,171 @@ describe("TimelineScreen", () => {
 		await user.press(screen.getByRole("button", { name: "精算する" }));
 
 		expect(mockPush).toHaveBeenCalledWith("/settlement-form");
+	});
+});
+
+describe("TimelineScreen 承認ステータス表示", () => {
+	it("showApprovalStatus=false の場合、承認ステータスインジケーターが表示されない", async () => {
+		mockTimelineResponse({
+			data: [makeEvent({ status: "pending", approvalComment: null })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+		});
+
+		expect(screen.queryByText("承認待ち")).toBeNull();
+		expect(screen.queryByText("承認済み")).toBeNull();
+		expect(screen.queryByText("差し戻し")).toBeNull();
+	});
+
+	it("showApprovalStatus=true の場合、承認待ちインジケーターが表示される", async () => {
+		mockTimelineResponse({
+			data: [makeEvent({ status: "pending", approvalComment: null })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText(/承認待ち/)).toBeOnTheScreen();
+		});
+	});
+
+	it("showApprovalStatus=true の場合、承認済みインジケーターが表示される", async () => {
+		mockTimelineResponse({
+			data: [makeEvent({ status: "approved", approvalComment: null })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText(/承認済み/)).toBeOnTheScreen();
+		});
+	});
+
+	it("showApprovalStatus=true の場合、差し戻しインジケーターが表示される", async () => {
+		mockTimelineResponse({
+			data: [
+				makeEvent({
+					status: "rejected",
+					approvalComment: "金額を確認してください",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText(/差し戻し/)).toBeOnTheScreen();
+		});
+	});
+
+	it("差し戻しコメントがインライン表示される", async () => {
+		mockTimelineResponse({
+			data: [
+				makeEvent({
+					status: "rejected",
+					approvalComment: "金額を確認してください",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("金額を確認してください")).toBeOnTheScreen();
+		});
+	});
+
+	it("差し戻しコメントがない場合はコメントが表示されない", async () => {
+		mockTimelineResponse({
+			data: [makeEvent({ status: "rejected", approvalComment: null })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText(/差し戻し/)).toBeOnTheScreen();
+		});
+		// コメントがないのでカード内にコメントテキストは表示されない
+		expect(screen.queryByText("金額を確認してください")).toBeNull();
+	});
+
+	it("取消済みの記録にも承認ステータスインジケーターが表示される", async () => {
+		mockTimelineResponse({
+			data: [
+				makeEvent({
+					id: "cancel-1",
+					originalId: "entry-1",
+					cancelled: true,
+					latest: true,
+					status: "pending",
+					approvalComment: null,
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: /取消済み/ }),
+			).toBeOnTheScreen();
+		});
+		expect(screen.getByText(/承認待ち/)).toBeOnTheScreen();
+	});
+
+	it("異なる承認ステータスの記録が混在して正しく表示される", async () => {
+		mockTimelineResponse({
+			data: [
+				makeEvent({
+					id: "e1",
+					originalId: "e1",
+					status: "approved",
+					approvalComment: null,
+					label: "承認済み記録",
+				}),
+				makeEvent({
+					id: "e2",
+					originalId: "e2",
+					status: "pending",
+					approvalComment: null,
+					label: "承認待ち記録",
+				}),
+				makeEvent({
+					id: "e3",
+					originalId: "e3",
+					status: "rejected",
+					approvalComment: "要修正",
+					label: "差し戻し記録",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen showApprovalStatus />, {
+			wrapper: TestQueryWrapper,
+		});
+
+		await waitFor(() => {
+			expect(screen.getByText("承認済み記録")).toBeOnTheScreen();
+		});
+		expect(screen.getByText(/✓ 承認済み/)).toBeOnTheScreen();
+		expect(screen.getByText(/● 承認待ち/)).toBeOnTheScreen();
+		expect(screen.getByText(/✕ 差し戻し/)).toBeOnTheScreen();
+		expect(screen.getByText("要修正")).toBeOnTheScreen();
 	});
 });
