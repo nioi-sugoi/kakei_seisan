@@ -21,6 +21,7 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 	const isCancelled = event.cancelled;
 	const isExpense = event.type === "entry";
 	const isModified = !isV1 && !isCancelled;
+	const hasImages = event.imageCount > 0;
 	const label = isExpense ? event.label : (event.label ?? "精算");
 
 	const { category } = event;
@@ -42,6 +43,7 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 				isExpense
 					? `${typeLabel} ${event.label} ${formatAmount(event.amount)}`
 					: `精算 ${formatAmount(event.amount)}`,
+				hasImages ? "画像あり" : null,
 				isModified ? "修正済み" : null,
 				isCancelled ? "取消済み" : null,
 			]
@@ -50,7 +52,7 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 		>
 			<View className="flex-row items-center justify-between">
 				<View className="flex-1 gap-0.5">
-					{/* Row 1: 種別 + 日付 + ✎ */}
+					{/* Row 1: 種別 + 日付 + 📎 + ✎ */}
 					<View className="flex-row items-center gap-1.5">
 						<Text className={`text-base font-bold ${typeColor}`}>
 							{typeLabel}
@@ -58,6 +60,14 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 						<Text className="text-base text-muted-foreground">
 							{formatDateShort(event.occurredOn)}
 						</Text>
+						{hasImages && (
+							<Text
+								className="text-sm text-muted-foreground"
+								accessibilityLabel="画像あり"
+							>
+								📎
+							</Text>
+						)}
 						{isModified && (
 							<Text
 								className="text-base text-muted-foreground"

@@ -18,6 +18,22 @@ jest.mock("expo-router", () => ({
 const mockGet = jest.fn();
 const mockModifyPost = jest.fn();
 
+jest.mock("@/hooks/use-image-upload", () => ({
+	useUploadImages: () => ({
+		mutate: jest.fn(),
+		mutateAsync: jest.fn(),
+		isPending: false,
+	}),
+	useDeleteImage: () => ({ mutate: jest.fn(), isPending: false }),
+	getImageSource: (
+		_resourceType: string,
+		parentId: string,
+		imageId: string,
+	) => ({
+		uri: `mock://${parentId}/${imageId}`,
+	}),
+}));
+
 jest.mock("@/lib/api-client", () => ({
 	client: {
 		api: {
@@ -61,6 +77,7 @@ function mockSettlementResponse(overrides: Record<string, unknown> = {}) {
 					createdAt: 1742000000000,
 				},
 			],
+			images: [],
 			...overrides,
 		}),
 		{ status: 200, headers: jsonHeaders },

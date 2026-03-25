@@ -1,8 +1,11 @@
 import { useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import {
 	ActivityIndicator,
+	Alert,
 	KeyboardAvoidingView,
 	Platform,
+	Pressable,
 	ScrollView,
 	Text,
 	View,
@@ -15,10 +18,20 @@ import {
 	FormHeader,
 	SubmitButton,
 } from "@/components/entry-form/FormShared";
+import {
+	ImagePicker,
+	type SelectedImage,
+} from "@/components/entry-form/ImagePicker";
 import { LabelInput } from "@/components/entry-form/LabelInput";
 import { MemoInput } from "@/components/entry-form/MemoInput";
+import { ImageThumbnail } from "@/components/ImageThumbnail";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 import { useModifyEntryForm } from "@/hooks/use-entry-form";
+import {
+	getImageSource,
+	useDeleteImage,
+	useUploadImages,
+} from "@/hooks/use-image-upload";
 
 type ModifyTarget = {
 	id: string;
@@ -29,8 +42,19 @@ type ModifyTarget = {
 	memo: string | null;
 };
 
-function ModifyEntryForm({ target }: { target: ModifyTarget }) {
+type ExistingImage = { id: string; displayOrder: number; createdAt: number };
+
+function ModifyEntryForm({
+	target,
+	existingImages,
+}: {
+	target: ModifyTarget;
+	existingImages: ExistingImage[];
+}) {
 	const { form, serverError, loading, goBack } = useModifyEntryForm(target);
+	const uploadImages = useUploadImages("entries");
+	const deleteImage = useDeleteImage("entries", target.id);
+	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
 
 	return (
 		<KeyboardAvoidingView
@@ -86,6 +110,73 @@ function ModifyEntryForm({ target }: { target: ModifyTarget }) {
 						/>
 					)}
 				</form.Field>
+
+				{/* レシート画像 */}
+				<View className="gap-2">
+					<Text className="text-sm font-medium text-foreground">
+						レシート画像
+						<Text className="text-xs text-muted-foreground">
+							{" "}
+							任意・最大2枚
+						</Text>
+					</Text>
+					{existingImages.length > 0 ? (
+						<View className="flex-row flex-wrap gap-3">
+							{existingImages.map((img, index) => (
+								<View key={img.id} className="relative">
+									<ImageThumbnail
+										source={getImageSource("entries", target.id, img.id)}
+										accessibilityLabel={`レシート画像 ${index + 1}`}
+									/>
+									<Pressable
+										onPress={() => {
+											Alert.alert("画像の削除", "この画像を削除しますか？", [
+												{ text: "キャンセル", style: "cancel" },
+												{
+													text: "削除する",
+													style: "destructive",
+													onPress: () => deleteImage.mutate(img.id),
+												},
+											]);
+										}}
+										accessibilityLabel={`画像${index + 1}を削除`}
+										className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
+									>
+										<Text className="text-xs font-bold text-white">✕</Text>
+									</Pressable>
+								</View>
+							))}
+						</View>
+					) : null}
+					{existingImages.length < 2 ? (
+						<ImagePicker
+							images={newImages}
+							onChange={setNewImages}
+							maxImages={2 - existingImages.length}
+						/>
+					) : null}
+					{newImages.length > 0 ? (
+						<Pressable
+							onPress={() => {
+								uploadImages.mutate(
+									{ parentId: target.id, images: newImages },
+									{ onSuccess: () => setNewImages([]) },
+								);
+							}}
+							disabled={uploadImages.isPending}
+							className="items-center rounded-xl border border-primary bg-card py-2 active:opacity-80"
+						>
+							{uploadImages.isPending ? (
+								<ActivityIndicator />
+							) : (
+								<Text className="text-sm font-medium text-primary">
+									アップロード
+								</Text>
+							)}
+						</Pressable>
+					) : null}
+				</View>
+
 				{serverError ? <FormError message={serverError} /> : null}
 				<form.Subscribe selector={(state) => state.isDirty}>
 					{(isDirty) => (
@@ -136,6 +227,7 @@ export default function ModifyEntryScreen() {
 				label: latestVersion.label,
 				memo: latestVersion.memo,
 			}}
+			existingImages={entry.images}
 		/>
 	);
 }

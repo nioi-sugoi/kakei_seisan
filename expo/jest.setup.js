@@ -39,3 +39,41 @@ jest.mock("better-auth/react", () => ({
 		getCookie: jest.fn(() => null),
 	})),
 }));
+
+jest.mock("react-native-reanimated", () => {
+	const { View } = require("react-native");
+	return {
+		__esModule: true,
+		default: {
+			View,
+			createAnimatedComponent: (component) => component,
+		},
+		useSharedValue: (init) => ({ value: init }),
+		useAnimatedStyle: () => ({}),
+		withSpring: (val) => val,
+		runOnJS: (fn) => fn,
+		createAnimatedComponent: (component) => component,
+	};
+});
+
+jest.mock("react-native-gesture-handler", () => ({
+	GestureHandlerRootView: ({ children }) => children,
+	Gesture: {
+		Pinch: () => ({
+			onUpdate: () => ({ onEnd: () => ({}) }),
+			onEnd: () => ({}),
+		}),
+		Tap: () => ({
+			numberOfTaps: () => ({ onEnd: () => ({}) }),
+			onEnd: () => ({}),
+		}),
+		Pan: () => ({
+			minPointers: () => ({ onUpdate: () => ({ onEnd: () => ({}) }) }),
+			onUpdate: () => ({ onEnd: () => ({}) }),
+			onEnd: () => ({}),
+		}),
+		Simultaneous: () => ({}),
+		Exclusive: () => ({}),
+	},
+	GestureDetector: ({ children }) => children,
+}));

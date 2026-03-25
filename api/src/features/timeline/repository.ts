@@ -1,7 +1,12 @@
 import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { unionAll } from "drizzle-orm/sqlite-core";
-import { entries, settlements } from "../../db/schema";
+import {
+	entries,
+	entryImages,
+	settlementImages,
+	settlements,
+} from "../../db/schema";
 
 export function listByUser(
 	db: DrizzleD1Database,
@@ -12,6 +17,7 @@ export function listByUser(
 		? lt(entries.createdAt, options.cursor)
 		: undefined;
 
+	const entryImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${entryImages} WHERE ${entryImages.entryId} = ${entries.originalId})`;
 	const entriesQuery = db
 		.select({
 			id: entries.id,
@@ -27,6 +33,7 @@ export function listByUser(
 			latest: entries.latest,
 			status: entries.status,
 			createdAt: entries.createdAt,
+			imageCount: entryImageCountSql.as("image_count"),
 		})
 		.from(entries)
 		.where(
@@ -37,6 +44,7 @@ export function listByUser(
 		? lt(settlements.createdAt, options.cursor)
 		: undefined;
 
+	const settlementImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${settlementImages} WHERE ${settlementImages.settlementId} = ${settlements.originalId})`;
 	const settlementsQuery = db
 		.select({
 			id: settlements.id,
@@ -52,6 +60,7 @@ export function listByUser(
 			latest: settlements.latest,
 			status: settlements.status,
 			createdAt: settlements.createdAt,
+			imageCount: settlementImageCountSql.as("image_count"),
 		})
 		.from(settlements)
 		.where(

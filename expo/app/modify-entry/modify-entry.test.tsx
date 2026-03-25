@@ -13,8 +13,20 @@ jest.mock("expo-router", () => ({
 	useLocalSearchParams: () => ({ id: "entry-1" }),
 }));
 
-jest.mock("expo-constants", () => ({
-	default: { appOwnership: null },
+jest.mock("@/hooks/use-image-upload", () => ({
+	useUploadImages: () => ({
+		mutate: jest.fn(),
+		mutateAsync: jest.fn(),
+		isPending: false,
+	}),
+	useDeleteImage: () => ({ mutate: jest.fn(), isPending: false }),
+	getImageSource: (
+		_resourceType: string,
+		parentId: string,
+		imageId: string,
+	) => ({
+		uri: `mock://${parentId}/${imageId}`,
+	}),
 }));
 
 const mockGet = jest.fn();
@@ -67,6 +79,7 @@ function mockEntryResponse(overrides: Record<string, unknown> = {}) {
 					createdAt: 1742000000000,
 				},
 			],
+			images: [],
 			...overrides,
 		}),
 		{ status: 200, headers: jsonHeaders },

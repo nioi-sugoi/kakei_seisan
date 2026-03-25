@@ -44,6 +44,7 @@ const timelineApp = new Hono<{
 			latest: Boolean(row.latest),
 			status: row.status,
 			createdAt: row.createdAt,
+			imageCount: row.imageCount,
 		}));
 
 		const hasMore = rows.length > limit;

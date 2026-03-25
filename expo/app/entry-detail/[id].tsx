@@ -1,4 +1,3 @@
-import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -14,6 +13,8 @@ import {
 	ImagePicker,
 	type SelectedImage,
 } from "@/components/entry-form/ImagePicker";
+import { ImageThumbnail } from "@/components/ImageThumbnail";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 import {
@@ -46,6 +47,7 @@ export default function EntryDetailScreen() {
 	const uploadImages = useUploadImages("entries");
 	const deleteImage = useDeleteImage("entries", id);
 	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
+	const [viewerIndex, setViewerIndex] = useState(-1);
 
 	if (isPending) {
 		return (
@@ -128,15 +130,13 @@ export default function EntryDetailScreen() {
 							<View className="flex-row flex-wrap gap-3">
 								{entry.images.map((img, index) => (
 									<View key={img.id} className="relative">
-										<ExpoImage
+										<ImageThumbnail
 											source={getImageSource(
 												"entries",
 												entry.originalId,
 												img.id,
 											)}
-											style={{ width: 96, height: 96 }}
-											className="rounded-lg"
-											contentFit="cover"
+											onPress={() => setViewerIndex(index)}
 											accessibilityLabel={`レシート画像 ${index + 1}`}
 										/>
 										{canModify ? (
@@ -204,6 +204,15 @@ export default function EntryDetailScreen() {
 						) : null}
 					</View>
 				) : null}
+
+				<ImageViewerModal
+					visible={viewerIndex >= 0}
+					images={entry.images.map((img) =>
+						getImageSource("entries", entry.originalId, img.id),
+					)}
+					initialIndex={viewerIndex >= 0 ? viewerIndex : 0}
+					onClose={() => setViewerIndex(-1)}
+				/>
 
 				{/* 操作履歴 */}
 				{pastVersions.length > 0 ? (

@@ -1,4 +1,3 @@
-import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -13,6 +12,8 @@ import {
 	ImagePicker,
 	type SelectedImage,
 } from "@/components/entry-form/ImagePicker";
+import { ImageThumbnail } from "@/components/ImageThumbnail";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { SettlementInfoCard } from "@/components/settlement-detail/SettlementInfoCard";
 import { useCancelSettlement } from "@/hooks/use-cancel-settlement";
 import {
@@ -46,6 +47,7 @@ export default function SettlementDetailScreen() {
 	const uploadImages = useUploadImages("settlements");
 	const deleteImage = useDeleteImage("settlements", id);
 	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
+	const [viewerIndex, setViewerIndex] = useState(-1);
 
 	if (isPending) {
 		return (
@@ -112,26 +114,24 @@ export default function SettlementDetailScreen() {
 					occurredOn={settlement.occurredOn}
 				/>
 
-				{/* レシート画像 */}
+				{/* 証跡画像 */}
 				{settlement.images.length > 0 || canModify ? (
 					<View className="rounded-xl bg-card px-4 py-4">
 						<Text className="mb-3 text-sm font-bold text-foreground">
-							レシート画像
+							証跡画像
 						</Text>
 						{settlement.images.length > 0 ? (
 							<View className="flex-row flex-wrap gap-3">
 								{settlement.images.map((img, index) => (
 									<View key={img.id} className="relative">
-										<ExpoImage
+										<ImageThumbnail
 											source={getImageSource(
 												"settlements",
 												settlement.originalId,
 												img.id,
 											)}
-											style={{ width: 96, height: 96 }}
-											className="rounded-lg"
-											contentFit="cover"
-											accessibilityLabel={`レシート画像 ${index + 1}`}
+											onPress={() => setViewerIndex(index)}
+											accessibilityLabel={`証跡画像 ${index + 1}`}
 										/>
 										{canModify ? (
 											<Pressable
@@ -198,6 +198,15 @@ export default function SettlementDetailScreen() {
 						) : null}
 					</View>
 				) : null}
+
+				<ImageViewerModal
+					visible={viewerIndex >= 0}
+					images={settlement.images.map((img) =>
+						getImageSource("settlements", settlement.originalId, img.id),
+					)}
+					initialIndex={viewerIndex >= 0 ? viewerIndex : 0}
+					onClose={() => setViewerIndex(-1)}
+				/>
 
 				{/* 操作履歴 */}
 				{pastVersions.length > 0 ? (
