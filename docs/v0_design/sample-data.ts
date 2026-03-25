@@ -1,4 +1,32 @@
-import { HouseholdEntry } from "./types"
+import { HouseholdEntry, DisplayImage } from "./types"
+
+/** モック用の画像データ生成ヘルパー */
+function mockImage(id: string): DisplayImage {
+  return {
+    id,
+    thumbnailUrl: `/mock-images/${id}-thumb.jpg`,
+    fullUrl: `/mock-images/${id}-full.jpg`,
+    loadState: "loaded",
+  }
+}
+
+function mockImageLoading(id: string): DisplayImage {
+  return {
+    id,
+    thumbnailUrl: `/mock-images/${id}-thumb.jpg`,
+    fullUrl: `/mock-images/${id}-full.jpg`,
+    loadState: "loading",
+  }
+}
+
+function mockImageError(id: string): DisplayImage {
+  return {
+    id,
+    thumbnailUrl: `/mock-images/${id}-thumb.jpg`,
+    fullUrl: `/mock-images/${id}-full.jpg`,
+    loadState: "error",
+  }
+}
 
 export const sampleEntriesSolo: HouseholdEntry[] = [
   {
@@ -11,6 +39,7 @@ export const sampleEntriesSolo: HouseholdEntry[] = [
     memo: "夕食の材料",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("r1-img1")],
     status: "active",
     owner: "self",
   },
@@ -23,6 +52,7 @@ export const sampleEntriesSolo: HouseholdEntry[] = [
     label: "ドラッグストア",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("r2-img1")],
     status: "active",
     owner: "self",
   },
@@ -47,6 +77,7 @@ export const sampleEntriesSolo: HouseholdEntry[] = [
     memo: "同僚との会食",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("r4-img1")],
     status: "active",
     owner: "self",
   },
@@ -57,7 +88,9 @@ export const sampleEntriesSolo: HouseholdEntry[] = [
     occurredOn: "2026-03-08",
     createdAt: "2026-03-08T09:00:00Z",
     label: "精算",
-    hasReceipt: false,
+    hasReceipt: true,
+    receiptCount: 1,
+    images: [mockImage("r5-img1")],
     status: "active",
     owner: "self",
   },
@@ -71,6 +104,7 @@ export const sampleEntriesSolo: HouseholdEntry[] = [
     memo: "2月分",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("r6-img1")],
     status: "active",
     owner: "self",
   },
@@ -83,6 +117,7 @@ export const sampleEntriesSolo: HouseholdEntry[] = [
     label: "ガソリン代",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("r7m-img1")],
     status: "active",
     relatedEntryId: "r7",
     owner: "self",
@@ -112,6 +147,7 @@ export const sampleEntriesManaged: HouseholdEntry[] = [
     memo: "夕食の材料",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("m1-img1")],
     status: "active",
     approvalStatus: "approved",
     owner: "self",
@@ -125,6 +161,7 @@ export const sampleEntriesManaged: HouseholdEntry[] = [
     label: "子供の文房具",
     hasReceipt: true,
     receiptCount: 2,
+    images: [mockImage("m2-img1"), mockImage("m2-img2")],
     status: "active",
     approvalStatus: "pending",
     owner: "self",
@@ -152,6 +189,7 @@ export const sampleEntriesManaged: HouseholdEntry[] = [
     memo: "同僚との会食",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("m4-img1")],
     status: "active",
     approvalStatus: "approved",
     owner: "self",
@@ -163,7 +201,9 @@ export const sampleEntriesManaged: HouseholdEntry[] = [
     occurredOn: "2026-03-08",
     createdAt: "2026-03-08T09:00:00Z",
     label: "精算",
-    hasReceipt: false,
+    hasReceipt: true,
+    receiptCount: 1,
+    images: [mockImage("m5-img1")],
     status: "active",
     approvalStatus: "approved",
     owner: "self",
@@ -177,6 +217,7 @@ export const sampleEntriesManaged: HouseholdEntry[] = [
     label: "ガソリン代",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("m6m-img1")],
     status: "active",
     approvalStatus: "approved",
     relatedEntryId: "m6",
@@ -205,6 +246,7 @@ export const samplePartnerEntries: HouseholdEntry[] = [
     label: "コンビニ買い物",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("p1-img1")],
     status: "active",
     approvalStatus: "pending",
     owner: "partner",
@@ -219,6 +261,7 @@ export const samplePartnerEntries: HouseholdEntry[] = [
     memo: "3月分月謝",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("p2-img1")],
     status: "active",
     approvalStatus: "pending",
     owner: "partner",
@@ -244,6 +287,7 @@ export const samplePartnerEntries: HouseholdEntry[] = [
     label: "クリーニング代",
     hasReceipt: true,
     receiptCount: 1,
+    images: [mockImage("p4-img1")],
     status: "active",
     approvalStatus: "approved",
     owner: "partner",
@@ -255,7 +299,9 @@ export const samplePartnerEntries: HouseholdEntry[] = [
     occurredOn: "2026-03-05",
     createdAt: "2026-03-05T09:00:00Z",
     label: "精算",
-    hasReceipt: false,
+    hasReceipt: true,
+    receiptCount: 2,
+    images: [mockImage("p5-img1"), mockImage("p5-img2")],
     status: "active",
     approvalStatus: "approved",
     owner: "partner",

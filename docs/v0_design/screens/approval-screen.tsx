@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Image as ImageIcon } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
+import { ImageThumbnailGroup } from "./image-thumbnail"
 import { useState } from "react"
 
 function formatAmount(amount: number) {
@@ -21,9 +22,10 @@ function formatDateFull(dateStr: string) {
 interface ApprovalScreenProps {
   entry: HouseholdEntry
   onBack?: () => void
+  onImageTap?: (index: number) => void
 }
 
-export function ApprovalScreen({ entry, onBack }: ApprovalScreenProps) {
+export function ApprovalScreen({ entry, onBack, onImageTap }: ApprovalScreenProps) {
   const [showRejectInput, setShowRejectInput] = useState(false)
   const typeLabels = { advance: "立替", deposit: "預り", settlement: "精算" }
   const typeColors = {
@@ -88,21 +90,15 @@ export function ApprovalScreen({ entry, onBack }: ApprovalScreenProps) {
           </CardContent>
         </Card>
 
-        {/* Receipt Images */}
-        {entry.hasReceipt && (
+        {/* Receipt / Evidence Images */}
+        {entry.images && entry.images.length > 0 && (
           <Card className="border-0 shadow-sm">
-            <CardContent className="flex flex-col gap-3 px-5 py-4">
-              <span className="text-sm font-medium text-foreground">{"レシート画像"}</span>
-              <div className="flex gap-3">
-                {Array.from({ length: entry.receiptCount || 1 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex h-24 w-24 items-center justify-center rounded-lg bg-secondary"
-                  >
-                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
-                  </div>
-                ))}
-              </div>
+            <CardContent className="px-5 py-4">
+              <ImageThumbnailGroup
+                images={entry.images}
+                label={entry.type === "settlement" ? "証跡画像" : "レシート画像"}
+                onImageTap={(_, index) => onImageTap?.(index)}
+              />
             </CardContent>
           </Card>
         )}
