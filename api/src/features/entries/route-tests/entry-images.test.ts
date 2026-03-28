@@ -195,7 +195,7 @@ describe("POST /api/entries/:entryId/images", () => {
 		);
 	});
 
-	it("存在しないエントリーへのアップロードは 404 を返す", async () => {
+	it("存在しない記録へのアップロードは 404 を返す", async () => {
 		const res = await postImage(
 			"nonexistent",
 			createTestFile("receipt.jpg", "image/jpeg"),
@@ -275,7 +275,7 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("他のユーザーのエントリーの画像は取得できない", async () => {
+	it("他のユーザーの記録の画像は取得できない", async () => {
 		const uploadRes = await postImage(
 			entry.id,
 			createTestFile("receipt.jpg", "image/jpeg"),
@@ -353,7 +353,7 @@ describe("DELETE /api/entries/:entryId/images/:imageId", () => {
 		expect(r2Object).toBeNull();
 	});
 
-	it("他のユーザーのエントリーの画像は削除できない", async () => {
+	it("他のユーザーの記録の画像は削除できない", async () => {
 		const uploadRes = await postImage(
 			entry.id,
 			createTestFile("receipt.jpg", "image/jpeg"),
@@ -412,7 +412,7 @@ describe("GET /api/entries/:id（画像メタデータ含む）", () => {
 		await cleanR2();
 	});
 
-	it("エントリー詳細に画像メタデータが含まれる", async () => {
+	it("記録詳細に画像メタデータが含まれる", async () => {
 		await postImage(
 			entry.id,
 			createTestFile("receipt.jpg", "image/jpeg"),
