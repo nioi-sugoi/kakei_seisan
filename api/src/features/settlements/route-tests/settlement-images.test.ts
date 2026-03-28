@@ -46,9 +46,9 @@ beforeAll(async () => {
 });
 
 async function cleanR2() {
-	const listed = await env.RECEIPTS.list();
+	const listed = await env.R2.list();
 	for (const obj of listed.objects) {
-		await env.RECEIPTS.delete(obj.key);
+		await env.R2.delete(obj.key);
 	}
 }
 
@@ -230,7 +230,7 @@ describe("POST /api/settlements/:settlementId/images", () => {
 
 		expect(images).toHaveLength(1);
 
-		const r2Object = await env.RECEIPTS.get(images[0].storagePath);
+		const r2Object = await env.R2.get(images[0].storagePath);
 		expect(r2Object).not.toBeNull();
 	});
 });
@@ -349,7 +349,7 @@ describe("DELETE /api/settlements/:settlementId/images/:imageId", () => {
 			.all();
 		expect(imagesAfter).toHaveLength(0);
 
-		const r2Object = await env.RECEIPTS.get(storagePath);
+		const r2Object = await env.R2.get(storagePath);
 		expect(r2Object).toBeNull();
 	});
 

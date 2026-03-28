@@ -214,7 +214,7 @@ const settlementsApp = new Hono<{
 			return c.json({ error: "画像は最大2枚までです" as const }, 400);
 		}
 
-		await c.env.RECEIPTS.put(storagePath, file.stream(), {
+		await c.env.R2.put(storagePath, file.stream(), {
 			httpMetadata: { contentType: file.type },
 		});
 
@@ -247,7 +247,7 @@ const settlementsApp = new Hono<{
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 
-		const object = await c.env.RECEIPTS.get(image.storagePath);
+		const object = await c.env.R2.get(image.storagePath);
 		if (!object) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
@@ -280,7 +280,7 @@ const settlementsApp = new Hono<{
 
 		// DB を先に削除（R2 失敗時にメタデータが孤立しないよう）
 		await settlementsRepository.deleteImage(db, image.id);
-		await c.env.RECEIPTS.delete(image.storagePath);
+		await c.env.R2.delete(image.storagePath);
 
 		return c.json({ success: true as const }, 200);
 	});

@@ -33,9 +33,9 @@ async function postImage(
 }
 
 async function cleanR2() {
-	const listed = await env.RECEIPTS.list();
+	const listed = await env.R2.list();
 	for (const obj of listed.objects) {
-		await env.RECEIPTS.delete(obj.key);
+		await env.R2.delete(obj.key);
 	}
 }
 
