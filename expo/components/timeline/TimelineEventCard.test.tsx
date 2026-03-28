@@ -122,6 +122,34 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 		expect(screen.queryByText("金額を確認してください")).toBeNull();
 	});
 
+	it("承認コメントがインライン表示される", () => {
+		render(
+			<TimelineEventCard
+				event={makeEvent({
+					status: "approved",
+					approvalComment: "確認しました",
+				})}
+				onPress={mockOnPress}
+				showApprovalStatus
+			/>,
+		);
+
+		expect(screen.getByText("確認しました")).toBeOnTheScreen();
+	});
+
+	it("承認コメントがない場合はコメントが表示されない", () => {
+		render(
+			<TimelineEventCard
+				event={makeEvent({ status: "approved", approvalComment: null })}
+				onPress={mockOnPress}
+				showApprovalStatus
+			/>,
+		);
+
+		expect(screen.getByText(/✓ 承認済み/)).toBeOnTheScreen();
+		expect(screen.queryByText("確認しました")).toBeNull();
+	});
+
 	it("取消済みの記録にも承認ステータスインジケーターが表示される", () => {
 		render(
 			<TimelineEventCard

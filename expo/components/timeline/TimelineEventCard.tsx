@@ -51,8 +51,10 @@ export function TimelineEventCard({
 			? statusConfig[event.status]
 			: null;
 
-	const showRejectionComment =
-		showApprovalStatus && event.status === "rejected" && event.approvalComment;
+	const showApprovalComment =
+		showApprovalStatus &&
+		(event.status === "rejected" || event.status === "approved") &&
+		event.approvalComment;
 
 	return (
 		<Pressable
@@ -111,8 +113,10 @@ export function TimelineEventCard({
 					) : null}
 				</View>
 			</View>
-			{showRejectionComment ? (
-				<Text className="mt-2 text-xs text-red-500">
+			{showApprovalComment ? (
+				<Text
+					className={`mt-2 text-xs ${event.status === "rejected" ? "text-red-500" : "text-emerald-600"}`}
+				>
 					{event.approvalComment}
 				</Text>
 			) : null}
