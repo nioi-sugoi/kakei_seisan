@@ -110,7 +110,7 @@ export function ImagePicker({
 						<View key={image.uri} className="relative">
 							<Image
 								source={{ uri: image.uri }}
-								className="h-24 w-24 rounded-lg"
+								className="h-24 w-24"
 								accessibilityLabel={`画像 ${index + 1}`}
 							/>
 							<Pressable

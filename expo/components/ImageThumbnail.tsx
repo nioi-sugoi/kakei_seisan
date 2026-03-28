@@ -28,7 +28,7 @@ export function ImageThumbnail({
 			>
 				<View
 					style={{ width: size, height: size }}
-					className="items-center justify-center rounded-lg bg-muted"
+					className="items-center justify-center bg-muted"
 				>
 					<Text className="text-2xl text-muted-foreground">!</Text>
 					<Text className="text-xs text-muted-foreground">読込失敗</Text>
@@ -48,13 +48,12 @@ export function ImageThumbnail({
 				{loadState === "loading" ? (
 					<View
 						style={{ width: size, height: size, position: "absolute" }}
-						className="rounded-lg bg-muted"
+						className="bg-muted"
 					/>
 				) : null}
 				<ExpoImage
 					source={source}
 					style={{ width: size, height: size }}
-					className="rounded-lg"
 					contentFit="cover"
 					onLoad={() => setLoadState("loaded")}
 					onError={() => setLoadState("error")}

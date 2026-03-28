@@ -108,7 +108,6 @@ function ModifySettlementForm({
 									<Image
 										source={{ uri: img.uri }}
 										style={{ width: 96, height: 96 }}
-										className="rounded-lg"
 										accessibilityLabel={`画像 ${visibleExisting.length + index + 1}`}
 									/>
 									<Pressable
