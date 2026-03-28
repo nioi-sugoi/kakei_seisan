@@ -186,6 +186,54 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(body).toMatchObject({ category: "deposit" });
 	});
 
+	it("hasImageChanges が true でフィールド変更なしでも新バージョンが作成される", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: { amount: 1500, label: "食費", hasImageChanges: true },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toMatchObject({
+			amount: 1500,
+			label: "食費",
+			originalId: entry.id,
+			latest: true,
+		});
+
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(2);
+		expect(dbVersions[0].latest).toBe(true);
+		expect(dbVersions[1].latest).toBe(false);
+	});
+
+	it("hasImageChanges が false でフィールド変更なしの場合は 400 を返す", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: { amount: 1500, label: "食費", hasImageChanges: false },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body).toHaveProperty("error", "変更がありません");
+	});
+
 	it("変更がない場合は 400 を返す", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,

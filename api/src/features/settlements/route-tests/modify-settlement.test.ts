@@ -82,6 +82,51 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(dbVersions[0].amount).toBe(8000);
 	});
 
+	it("hasImageChanges が true で金額変更なしでも新バージョンが作成される", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		const res = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: { amount: 5000, hasImageChanges: true },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		expect(body).toMatchObject({
+			amount: 5000,
+			originalId: settlement.id,
+			latest: true,
+		});
+
+		const dbVersions = await queryVersionsByOriginalId(settlement.id);
+		expect(dbVersions).toHaveLength(2);
+		expect(dbVersions[0].latest).toBe(true);
+		expect(dbVersions[1].latest).toBe(false);
+	});
+
+	it("hasImageChanges が false で金額変更なしの場合は 400 を返す", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		const res = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: { amount: 5000, hasImageChanges: false },
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body).toHaveProperty("error", "変更がありません");
+	});
+
 	it("変更がない場合はエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,

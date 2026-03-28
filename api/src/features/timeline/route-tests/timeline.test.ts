@@ -5,7 +5,9 @@ import {
 	authCookie,
 	client,
 	insertEntry,
+	insertEntryImage,
 	insertSettlement,
+	insertSettlementImage,
 	OTHER_USER,
 	seedOtherUser,
 	setupAuth,
@@ -314,6 +316,51 @@ describe("GET /api/timeline", () => {
 		expect(record.userId).toBe(TEST_USER.id);
 		expect(record.id).toBe(record.originalId);
 		expect(record.status).toBe("approved");
+	});
+
+	it("画像がない場合は imageCount が 0 で返される", async () => {
+		await insertEntry(TEST_USER.id);
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].imageCount).toBe(0);
+	});
+
+	it("記録の imageCount が正しく返される", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+		await insertEntryImage(entry.originalId);
+		await insertEntryImage(entry.originalId);
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].imageCount).toBe(2);
+	});
+
+	it("精算の imageCount が正しく返される", async () => {
+		const settlement = await insertSettlement(TEST_USER.id);
+		await insertSettlementImage(settlement.originalId);
+
+		const res = await client.api.timeline.$get(
+			{ query: {} },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		const body = await res.json();
+		expect(body.data[0].imageCount).toBe(1);
 	});
 
 	it("cursorが不正な値の場合は400エラーになる", async () => {
