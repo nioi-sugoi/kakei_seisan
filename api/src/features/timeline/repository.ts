@@ -26,6 +26,7 @@ export function listByUser(
 			cancelled: entries.cancelled,
 			latest: entries.latest,
 			status: entries.status,
+			approvalComment: entries.approvalComment,
 			createdAt: entries.createdAt,
 		})
 		.from(entries)
@@ -51,6 +52,7 @@ export function listByUser(
 			cancelled: settlements.cancelled,
 			latest: settlements.latest,
 			status: settlements.status,
+			approvalComment: settlements.approvalComment,
 			createdAt: settlements.createdAt,
 		})
 		.from(settlements)

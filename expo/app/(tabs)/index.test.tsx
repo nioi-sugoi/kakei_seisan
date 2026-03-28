@@ -71,6 +71,7 @@ function makeEvent(overrides: Record<string, unknown> = {}) {
 		cancelled: false,
 		latest: true,
 		status: "approved",
+		approvalComment: null,
 		createdAt: 1773676800000,
 		...overrides,
 	};
