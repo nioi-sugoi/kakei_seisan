@@ -7,8 +7,11 @@ import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
-import { useUploadImages } from "./use-image-upload";
-import { useModifyEntry } from "./use-modify-entry";
+import {
+	deleteImageRaw,
+	uploadImageRaw,
+	useUploadImages,
+} from "./use-image-upload";
 
 const entryFieldSchema = {
 	category: v.picklist(["advance", "deposit"]),
@@ -102,9 +105,58 @@ export function useCreateEntryForm() {
 	};
 }
 
-export function useModifyEntryForm(target: ModifyTarget) {
+export type ModifyEntryImageOps = {
+	newImages: SelectedImage[];
+	pendingDeletes: string[];
+};
+
+export function useModifyEntryForm(
+	target: ModifyTarget,
+	imageOps: ModifyEntryImageOps,
+) {
 	const router = useRouter();
-	const modifyMutation = useModifyEntry(target.id);
+	const queryClient = useQueryClient();
+
+	const mutation = useMutation({
+		mutationFn: async (parsed: {
+			amount: number;
+			label: string;
+			memo?: string;
+		}) => {
+			const fieldsChanged =
+				parsed.amount !== target.amount ||
+				parsed.label !== target.label ||
+				(parsed.memo ?? null) !== target.memo;
+
+			if (fieldsChanged) {
+				const res = await client.api.entries[":originalId"].modify.$post({
+					param: { originalId: target.id },
+					json: parsed,
+				});
+				if (!res.ok) {
+					const body = await res.json();
+					throw new Error("error" in body ? body.error : "修正に失敗しました");
+				}
+			}
+
+			await Promise.all(
+				imageOps.newImages.map((img) =>
+					uploadImageRaw("entries", target.id, img),
+				),
+			);
+			await Promise.all(
+				imageOps.pendingDeletes.map((id) =>
+					deleteImageRaw("entries", target.id, id),
+				),
+			);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["entries"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
+			router.replace("/(tabs)");
+		},
+	});
 
 	const defaultValues: v.InferInput<typeof createEntrySchema> = {
 		category: target.category,
@@ -121,7 +173,7 @@ export function useModifyEntryForm(target: ModifyTarget) {
 		},
 		onSubmit: ({ value }) => {
 			const parsed = v.parse(createEntrySchema, value);
-			modifyMutation.mutate({
+			mutation.mutate({
 				amount: parsed.amount,
 				label: parsed.label,
 				memo: parsed.memo,
@@ -129,11 +181,15 @@ export function useModifyEntryForm(target: ModifyTarget) {
 		},
 	});
 
+	const hasImageChanges =
+		imageOps.newImages.length > 0 || imageOps.pendingDeletes.length > 0;
+
 	return {
 		form,
 		isModifyMode: true as const,
-		serverError: modifyMutation.error ? modifyMutation.error.message : "",
-		loading: modifyMutation.isPending,
+		serverError: mutation.error ? mutation.error.message : "",
+		loading: mutation.isPending,
+		hasImageChanges,
 		goBack: () => router.back(),
 	};
 }

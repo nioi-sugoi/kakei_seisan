@@ -24,7 +24,7 @@ function buildImageFormData(image: SelectedImage): FormData {
 	return formData;
 }
 
-async function uploadImage(
+export async function uploadImageRaw(
 	resourceType: ImageResourceType,
 	parentId: string,
 	image: SelectedImage,
@@ -49,7 +49,7 @@ async function uploadImage(
 	return res.json();
 }
 
-async function deleteImageRequest(
+export async function deleteImageRaw(
 	resourceType: ImageResourceType,
 	parentId: string,
 	imageId: string,
@@ -81,7 +81,7 @@ export function useUploadImages(resourceType: ImageResourceType) {
 			images: SelectedImage[];
 		}) =>
 			Promise.all(
-				images.map((image) => uploadImage(resourceType, parentId, image)),
+				images.map((image) => uploadImageRaw(resourceType, parentId, image)),
 			),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: [resourceType] });
@@ -97,7 +97,7 @@ export function useDeleteImage(
 
 	return useMutation({
 		mutationFn: (imageId: string) =>
-			deleteImageRequest(resourceType, parentId, imageId),
+			deleteImageRaw(resourceType, parentId, imageId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: [resourceType, parentId],

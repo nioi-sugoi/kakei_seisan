@@ -7,8 +7,11 @@ import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
-import { useUploadImages } from "./use-image-upload";
-import { useModifySettlement } from "./use-modify-settlement";
+import {
+	deleteImageRaw,
+	uploadImageRaw,
+	useUploadImages,
+} from "./use-image-upload";
 
 const settlementFieldSchema = {
 	amount: v.pipe(
@@ -103,9 +106,51 @@ export function useCreateSettlementForm(balance: number) {
 	};
 }
 
-export function useModifySettlementForm(target: ModifyTarget) {
+export type ModifySettlementImageOps = {
+	newImages: SelectedImage[];
+	pendingDeletes: string[];
+};
+
+export function useModifySettlementForm(
+	target: ModifyTarget,
+	imageOps: ModifySettlementImageOps,
+) {
 	const router = useRouter();
-	const modifyMutation = useModifySettlement(target.id);
+	const queryClient = useQueryClient();
+
+	const mutation = useMutation({
+		mutationFn: async (parsed: { amount: number }) => {
+			const fieldsChanged = parsed.amount !== target.amount;
+
+			if (fieldsChanged) {
+				const res = await client.api.settlements[":originalId"].modify.$post({
+					param: { originalId: target.id },
+					json: parsed,
+				});
+				if (!res.ok) {
+					const body = await res.json();
+					throw new Error("error" in body ? body.error : "修正に失敗しました");
+				}
+			}
+
+			await Promise.all(
+				imageOps.newImages.map((img) =>
+					uploadImageRaw("settlements", target.id, img),
+				),
+			);
+			await Promise.all(
+				imageOps.pendingDeletes.map((id) =>
+					deleteImageRaw("settlements", target.id, id),
+				),
+			);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["settlements"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
+			router.replace("/(tabs)");
+		},
+	});
 
 	const defaultValues = {
 		amount: String(target.amount),
@@ -118,16 +163,20 @@ export function useModifySettlementForm(target: ModifyTarget) {
 		},
 		onSubmit: ({ value }) => {
 			const parsed = v.parse(createSettlementSchema, value);
-			modifyMutation.mutate({
+			mutation.mutate({
 				amount: parsed.amount,
 			});
 		},
 	});
 
+	const hasImageChanges =
+		imageOps.newImages.length > 0 || imageOps.pendingDeletes.length > 0;
+
 	return {
 		form,
-		serverError: modifyMutation.error ? modifyMutation.error.message : "",
-		loading: modifyMutation.isPending,
+		serverError: mutation.error ? mutation.error.message : "",
+		loading: mutation.isPending,
+		hasImageChanges,
 		goBack: () => router.back(),
 	};
 }

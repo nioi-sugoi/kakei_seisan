@@ -9,19 +9,11 @@ import {
 	View,
 } from "react-native";
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
-import {
-	ImagePicker,
-	type SelectedImage,
-} from "@/components/entry-form/ImagePicker";
 import { ImageThumbnail } from "@/components/ImageThumbnail";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
-import {
-	getImageSource,
-	useDeleteImage,
-	useUploadImages,
-} from "@/hooks/use-image-upload";
+import { getImageSource } from "@/hooks/use-image-upload";
 import { useRestoreEntry } from "@/hooks/use-restore-entry";
 import { formatAmount, formatDateFull } from "@/lib/format";
 
@@ -44,9 +36,6 @@ export default function EntryDetailScreen() {
 	const { data: entry, isPending, error } = useEntryDetail(id);
 	const cancelMutation = useCancelEntry(id);
 	const restoreMutation = useRestoreEntry(id);
-	const uploadImages = useUploadImages("entries");
-	const deleteImage = useDeleteImage("entries", id);
-	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
 	const [viewerIndex, setViewerIndex] = useState(-1);
 
 	if (isPending) {
@@ -121,87 +110,21 @@ export default function EntryDetailScreen() {
 				/>
 
 				{/* レシート画像 */}
-				{entry.images.length > 0 || canModify ? (
+				{entry.images.length > 0 ? (
 					<View className="rounded-xl bg-card px-4 py-4">
 						<Text className="mb-3 text-sm font-bold text-foreground">
 							レシート画像
 						</Text>
-						{entry.images.length > 0 ? (
-							<View className="flex-row flex-wrap gap-3">
-								{entry.images.map((img, index) => (
-									<View key={img.id} className="relative">
-										<ImageThumbnail
-											source={getImageSource(
-												"entries",
-												entry.originalId,
-												img.id,
-											)}
-											onPress={() => setViewerIndex(index)}
-											accessibilityLabel={`レシート画像 ${index + 1}`}
-										/>
-										{canModify ? (
-											<Pressable
-												onPress={() => {
-													Alert.alert(
-														"画像の削除",
-														"この画像を削除しますか？",
-														[
-															{
-																text: "キャンセル",
-																style: "cancel",
-															},
-															{
-																text: "削除する",
-																style: "destructive",
-																onPress: () => deleteImage.mutate(img.id),
-															},
-														],
-													);
-												}}
-												accessibilityLabel={`画像${index + 1}を削除`}
-												className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
-											>
-												<Text className="text-xs font-bold text-white">✕</Text>
-											</Pressable>
-										) : null}
-									</View>
-								))}
-							</View>
-						) : null}
-						{canModify && entry.images.length < 2 ? (
-							<View className="mt-3">
-								<ImagePicker
-									images={newImages}
-									onChange={setNewImages}
-									maxImages={2 - entry.images.length}
+						<View className="flex-row flex-wrap gap-3">
+							{entry.images.map((img, index) => (
+								<ImageThumbnail
+									key={img.id}
+									source={getImageSource("entries", entry.originalId, img.id)}
+									onPress={() => setViewerIndex(index)}
+									accessibilityLabel={`レシート画像 ${index + 1}`}
 								/>
-								{newImages.length > 0 ? (
-									<Pressable
-										onPress={() => {
-											uploadImages.mutate(
-												{
-													parentId: entry.originalId,
-													images: newImages,
-												},
-												{
-													onSuccess: () => setNewImages([]),
-												},
-											);
-										}}
-										disabled={uploadImages.isPending}
-										className="mt-3 items-center rounded-xl border border-primary bg-card py-2 active:opacity-80"
-									>
-										{uploadImages.isPending ? (
-											<ActivityIndicator />
-										) : (
-											<Text className="text-sm font-medium text-primary">
-												アップロード
-											</Text>
-										)}
-									</Pressable>
-								) : null}
-							</View>
-						) : null}
+							))}
+						</View>
 					</View>
 				) : null}
 

@@ -2,7 +2,6 @@ import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
 	ActivityIndicator,
-	Alert,
 	KeyboardAvoidingView,
 	Platform,
 	Pressable,
@@ -21,11 +20,7 @@ import {
 	type SelectedImage,
 } from "@/components/entry-form/ImagePicker";
 import { ImageThumbnail } from "@/components/ImageThumbnail";
-import {
-	getImageSource,
-	useDeleteImage,
-	useUploadImages,
-} from "@/hooks/use-image-upload";
+import { getImageSource } from "@/hooks/use-image-upload";
 import { useSettlementDetail } from "@/hooks/use-settlement-detail";
 import { useModifySettlementForm } from "@/hooks/use-settlement-form";
 
@@ -44,11 +39,16 @@ function ModifySettlementForm({
 	target: ModifyTarget;
 	existingImages: ExistingImage[];
 }) {
-	const { form, serverError, loading, goBack } =
-		useModifySettlementForm(target);
-	const uploadImages = useUploadImages("settlements");
-	const deleteImage = useDeleteImage("settlements", target.id);
 	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
+	const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
+
+	const { form, serverError, loading, hasImageChanges, goBack } =
+		useModifySettlementForm(target, { newImages, pendingDeletes });
+
+	const visibleExisting = existingImages.filter(
+		(img) => !pendingDeletes.includes(img.id),
+	);
+	const totalAfterChanges = visibleExisting.length + newImages.length;
 
 	return (
 		<KeyboardAvoidingView
@@ -83,25 +83,18 @@ function ModifySettlementForm({
 							任意・最大2枚
 						</Text>
 					</Text>
-					{existingImages.length > 0 ? (
+					{visibleExisting.length > 0 ? (
 						<View className="flex-row flex-wrap gap-3">
-							{existingImages.map((img, index) => (
+							{visibleExisting.map((img, index) => (
 								<View key={img.id} className="relative">
 									<ImageThumbnail
 										source={getImageSource("settlements", target.id, img.id)}
 										accessibilityLabel={`証跡画像 ${index + 1}`}
 									/>
 									<Pressable
-										onPress={() => {
-											Alert.alert("画像の削除", "この画像を削除しますか？", [
-												{ text: "キャンセル", style: "cancel" },
-												{
-													text: "削除する",
-													style: "destructive",
-													onPress: () => deleteImage.mutate(img.id),
-												},
-											]);
-										}}
+										onPress={() =>
+											setPendingDeletes((prev) => [...prev, img.id])
+										}
 										accessibilityLabel={`画像${index + 1}を削除`}
 										className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
 									>
@@ -111,32 +104,12 @@ function ModifySettlementForm({
 							))}
 						</View>
 					) : null}
-					{existingImages.length < 2 ? (
+					{totalAfterChanges < 2 ? (
 						<ImagePicker
 							images={newImages}
 							onChange={setNewImages}
-							maxImages={2 - existingImages.length}
+							maxImages={2 - visibleExisting.length}
 						/>
-					) : null}
-					{newImages.length > 0 ? (
-						<Pressable
-							onPress={() => {
-								uploadImages.mutate(
-									{ parentId: target.id, images: newImages },
-									{ onSuccess: () => setNewImages([]) },
-								);
-							}}
-							disabled={uploadImages.isPending}
-							className="items-center rounded-xl border border-primary bg-card py-2 active:opacity-80"
-						>
-							{uploadImages.isPending ? (
-								<ActivityIndicator />
-							) : (
-								<Text className="text-sm font-medium text-primary">
-									アップロード
-								</Text>
-							)}
-						</Pressable>
 					) : null}
 				</View>
 
@@ -146,7 +119,7 @@ function ModifySettlementForm({
 						<SubmitButton
 							label="修正する"
 							loading={loading}
-							disabled={!isDirty}
+							disabled={!isDirty && !hasImageChanges}
 							onPress={() => form.handleSubmit()}
 						/>
 					)}
