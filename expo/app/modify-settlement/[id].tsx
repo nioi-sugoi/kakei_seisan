@@ -109,6 +109,7 @@ function ModifySettlementForm({
 							images={newImages}
 							onChange={setNewImages}
 							maxImages={2 - visibleExisting.length}
+							hideLabel
 						/>
 					) : null}
 				</View>

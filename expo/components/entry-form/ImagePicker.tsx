@@ -14,6 +14,8 @@ type ImagePickerProps = {
 	onChange: (images: SelectedImage[]) => void;
 	/** 選択可能な最大枚数。省略時はデフォルト MAX_IMAGES */
 	maxImages?: number;
+	/** ラベルを非表示にする（外側でラベルを表示する場合） */
+	hideLabel?: boolean;
 };
 
 function pickResultToImages(
@@ -31,6 +33,7 @@ export function ImagePicker({
 	images,
 	onChange,
 	maxImages = MAX_IMAGES,
+	hideLabel = false,
 }: ImagePickerProps) {
 	const canAdd = images.length < maxImages;
 
@@ -87,13 +90,15 @@ export function ImagePicker({
 
 	return (
 		<View className="gap-2">
-			<Text className="text-sm font-medium text-foreground">
-				画像
-				<Text className="text-xs text-muted-foreground">
-					{" "}
-					任意・最大{maxImages}枚
+			{!hideLabel ? (
+				<Text className="text-sm font-medium text-foreground">
+					画像
+					<Text className="text-xs text-muted-foreground">
+						{" "}
+						任意・最大{maxImages}枚
+					</Text>
 				</Text>
-			</Text>
+			) : null}
 
 			{/* プレビュー */}
 			{images.length > 0 ? (
