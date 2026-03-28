@@ -5,6 +5,12 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react-native";
+import {
+	makeSettlementDetail,
+	makeSettlementVersion,
+	mockJsonResponse,
+	type SettlementDetailResponse,
+} from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockReplace = jest.fn();
@@ -37,42 +43,27 @@ jest.mock("@/lib/api-client", () => ({
 
 import ModifySettlementScreen from "./[id]";
 
-const jsonHeaders = { "Content-Type": "application/json" };
-
-function mockSettlementResponse(overrides: Record<string, unknown> = {}) {
-	return new Response(
-		JSON.stringify({
-			id: "stl-1",
-			userId: "user-1",
-			category: "fromHousehold",
+function mockSettlementResponse(overrides?: Partial<SettlementDetailResponse>) {
+	return mockJsonResponse(
+		makeSettlementDetail({
 			amount: 5000,
 			occurredOn: "2026-03-20",
-			originalId: "stl-1",
-			cancelled: false,
-			createdAt: 1742000000000,
 			versions: [
-				{
-					id: "stl-1",
-					category: "fromHousehold",
+				makeSettlementVersion({
 					amount: 5000,
 					occurredOn: "2026-03-20",
-					cancelled: false,
-					latest: true,
 					createdAt: 1742000000000,
-				},
+				}),
 			],
 			...overrides,
 		}),
-		{ status: 200, headers: jsonHeaders },
 	);
 }
 
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockGet.mockResolvedValue(mockSettlementResponse());
-	mockModifyPost.mockResolvedValue(
-		new Response(JSON.stringify({}), { status: 201, headers: jsonHeaders }),
-	);
+	mockModifyPost.mockResolvedValue(mockJsonResponse({}, 201));
 });
 
 describe("ModifySettlementScreen", () => {
@@ -212,10 +203,7 @@ describe("ModifySettlementScreen", () => {
 
 	it("精算データの取得に失敗した場合にエラーメッセージが表示される", async () => {
 		mockGet.mockResolvedValue(
-			new Response(JSON.stringify({ error: "精算が見つかりません" }), {
-				status: 404,
-				headers: jsonHeaders,
-			}),
+			mockJsonResponse({ error: "精算が見つかりません" }, 404),
 		);
 		render(<ModifySettlementScreen />, { wrapper: TestQueryWrapper });
 
@@ -226,10 +214,7 @@ describe("ModifySettlementScreen", () => {
 
 	it("修正APIエラー時にエラーメッセージが表示される", async () => {
 		mockModifyPost.mockResolvedValue(
-			new Response(JSON.stringify({ error: "変更がありません" }), {
-				status: 400,
-				headers: jsonHeaders,
-			}),
+			mockJsonResponse({ error: "変更がありません" }, 400),
 		);
 		render(<ModifySettlementScreen />, { wrapper: TestQueryWrapper });
 

@@ -4,6 +4,12 @@ import {
 	userEvent,
 	waitFor,
 } from "@testing-library/react-native";
+import {
+	type EntryDetailResponse,
+	makeEntryDetail,
+	makeEntryVersion,
+	mockJsonResponse,
+} from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockBack = jest.fn();
@@ -39,46 +45,29 @@ jest.mock("@/lib/api-client", () => ({
 
 import ModifyEntryScreen from "./[id]";
 
-const jsonHeaders = { "Content-Type": "application/json" };
-
-function mockEntryResponse(overrides: Record<string, unknown> = {}) {
-	return new Response(
-		JSON.stringify({
-			id: "entry-1",
-			userId: "user-1",
+function mockEntryResponse(overrides?: Partial<EntryDetailResponse>) {
+	return mockJsonResponse(
+		makeEntryDetail({
 			category: "deposit",
 			amount: 3000,
-			occurredOn: "2026-03-15",
 			label: "お釣り",
-			memo: null,
-			originalId: "entry-1",
-			cancelled: false,
-			createdAt: 1742000000000,
 			versions: [
-				{
-					id: "entry-1",
+				makeEntryVersion({
 					category: "deposit",
 					amount: 3000,
-					occurredOn: "2026-03-15",
 					label: "お釣り",
-					memo: null,
-					cancelled: false,
-					latest: true,
 					createdAt: 1742000000000,
-				},
+				}),
 			],
 			...overrides,
 		}),
-		{ status: 200, headers: jsonHeaders },
 	);
 }
 
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockGet.mockResolvedValue(mockEntryResponse());
-	mockModifyPost.mockResolvedValue(
-		new Response(JSON.stringify({}), { status: 201, headers: jsonHeaders }),
-	);
+	mockModifyPost.mockResolvedValue(mockJsonResponse({}, 201));
 });
 
 describe("ModifyEntryScreen", () => {
@@ -106,17 +95,12 @@ describe("ModifyEntryScreen", () => {
 				amount: 1000,
 				label: "テスト",
 				versions: [
-					{
-						id: "entry-1",
+					makeEntryVersion({
 						category: "advance",
 						amount: 1000,
-						occurredOn: "2026-03-15",
 						label: "テスト",
-						memo: null,
-						cancelled: false,
-						latest: true,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -137,17 +121,12 @@ describe("ModifyEntryScreen", () => {
 				amount: 1000,
 				label: "テスト",
 				versions: [
-					{
-						id: "entry-1",
+					makeEntryVersion({
 						category: "advance",
 						amount: 1000,
-						occurredOn: "2026-03-15",
 						label: "テスト",
-						memo: null,
-						cancelled: false,
-						latest: true,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);

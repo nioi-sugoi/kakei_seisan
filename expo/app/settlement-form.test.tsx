@@ -5,6 +5,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react-native";
+import { makeBalanceResponse, mockJsonResponse } from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockReplace = jest.fn();
@@ -32,31 +33,15 @@ jest.mock("@/lib/api-client", () => ({
 
 import SettlementFormScreen from "./settlement-form";
 
-function mockBalanceResponse(balance: number) {
+function mockBalance(balance: number) {
 	mockBalanceGet.mockImplementation(() =>
-		Promise.resolve(
-			new Response(
-				JSON.stringify({
-					advanceTotal: 0,
-					depositTotal: 0,
-					fromHouseholdTotal: 0,
-					fromUserTotal: 0,
-					balance,
-				}),
-				{ headers: { "Content-Type": "application/json" } },
-			),
-		),
+		Promise.resolve(mockJsonResponse(makeBalanceResponse({ balance }))),
 	);
 }
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	mockSettlementsPost.mockResolvedValue(
-		new Response(JSON.stringify({}), {
-			status: 201,
-			headers: { "Content-Type": "application/json" },
-		}),
-	);
+	mockSettlementsPost.mockResolvedValue(mockJsonResponse({}, 201));
 });
 
 describe("SettlementFormScreen", () => {
@@ -69,7 +54,7 @@ describe("SettlementFormScreen", () => {
 	// --- 表示 ---
 
 	it("残高が正の場合に「家計から受け取り」と表示される", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -79,7 +64,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("残高が負の場合に「家計へ入金」と表示される", async () => {
-		mockBalanceResponse(-3000);
+		mockBalance(-3000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -89,7 +74,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("精算額に残高の絶対値がデフォルトで入力されている", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -101,7 +86,7 @@ describe("SettlementFormScreen", () => {
 	// --- 全額精算ボタン ---
 
 	it("金額を変更した後「全額精算」ボタンで残高全額が入力される", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -118,7 +103,7 @@ describe("SettlementFormScreen", () => {
 	// --- バリデーション ---
 
 	it("金額が空の場合にバリデーションエラーが表示される", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -138,7 +123,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("金額が残高を超える場合にバリデーションエラーが表示される", async () => {
-		mockBalanceResponse(3000);
+		mockBalance(3000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -161,7 +146,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("小数の金額を入力するとバリデーションエラーになる", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -184,7 +169,7 @@ describe("SettlementFormScreen", () => {
 	// --- 正常送信 ---
 
 	it("精算残高が正の場合に精算を新規作成するとcategory=fromHouseholdでAPIに渡される", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -204,7 +189,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("精算残高が負の場合に精算を新規作成するとcategory=fromUserでAPIに渡される", async () => {
-		mockBalanceResponse(-2000);
+		mockBalance(-2000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -224,7 +209,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("送信成功後にタイムラインへ遷移する", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -239,7 +224,7 @@ describe("SettlementFormScreen", () => {
 	});
 
 	it("金額を変更して送信すると変更後の金額がAPIに渡される", async () => {
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -263,12 +248,9 @@ describe("SettlementFormScreen", () => {
 
 	it("APIエラー時にエラーメッセージが表示される", async () => {
 		mockSettlementsPost.mockResolvedValue(
-			new Response(JSON.stringify({ error: "サーバーエラー" }), {
-				status: 500,
-				headers: { "Content-Type": "application/json" },
-			}),
+			mockJsonResponse({ error: "サーバーエラー" }, 500),
 		);
-		mockBalanceResponse(5000);
+		mockBalance(5000);
 		render(<SettlementFormScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
