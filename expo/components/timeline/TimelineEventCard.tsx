@@ -11,12 +11,23 @@ const typeConfig = {
 	deposit: { label: "預り", className: "text-orange-600" },
 } as const;
 
+const statusConfig = {
+	approved: { icon: "✓", label: "承認済み", className: "text-emerald-600" },
+	pending: { icon: "●", label: "承認待ち", className: "text-amber-600" },
+	rejected: { icon: "✕", label: "差し戻し", className: "text-red-500" },
+} as const;
+
 interface TimelineEventCardProps {
 	event: TimelineEvent;
 	onPress: (event: TimelineEvent) => void;
+	showApprovalStatus?: boolean;
 }
 
-export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
+export function TimelineEventCard({
+	event,
+	onPress,
+	showApprovalStatus = false,
+}: TimelineEventCardProps) {
 	const isV1 = event.id === event.originalId;
 	const isCancelled = event.cancelled;
 	const isExpense = event.type === "entry";
@@ -33,6 +44,18 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 		? (entryConfig?.className ?? "text-primary")
 		: "text-emerald-600";
 
+	const status =
+		event.status === "approved" ||
+		event.status === "pending" ||
+		event.status === "rejected"
+			? statusConfig[event.status]
+			: null;
+
+	const showApprovalComment =
+		showApprovalStatus &&
+		(event.status === "rejected" || event.status === "approved") &&
+		event.approvalComment;
+
 	return (
 		<Pressable
 			onPress={() => onPress(event)}
@@ -44,6 +67,7 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 					: `精算 ${formatAmount(event.amount)}`,
 				isModified ? "修正済み" : null,
 				isCancelled ? "取消済み" : null,
+				showApprovalStatus && status ? status.label : null,
 			]
 				.filter(Boolean)
 				.join(" ")}
@@ -72,17 +96,30 @@ export function TimelineEventCard({ event, onPress }: TimelineEventCardProps) {
 						<Text className="text-lg font-medium text-foreground">{label}</Text>
 					) : null}
 				</View>
-				{/* 金額 */}
-				<Text
-					className={`text-2xl font-bold tabular-nums ${
-						isCancelled
-							? "line-through text-muted-foreground"
-							: "text-foreground"
-					}`}
-				>
-					{formatAmount(event.amount)}
-				</Text>
+				<View className="items-end">
+					<Text
+						className={`text-2xl font-bold tabular-nums ${
+							isCancelled
+								? "line-through text-muted-foreground"
+								: "text-foreground"
+						}`}
+					>
+						{formatAmount(event.amount)}
+					</Text>
+					{showApprovalStatus && status ? (
+						<Text className={`text-xs ${status.className}`}>
+							{status.icon} {status.label}
+						</Text>
+					) : null}
+				</View>
 			</View>
+			{showApprovalComment ? (
+				<Text
+					className={`mt-2 text-xs ${event.status === "rejected" ? "text-red-500" : "text-emerald-600"}`}
+				>
+					{event.approvalComment}
+				</Text>
+			) : null}
 		</Pressable>
 	);
 }

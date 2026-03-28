@@ -44,6 +44,7 @@ export function makeTimelineEvent(
 		cancelled: false,
 		latest: true,
 		status: "approved",
+		approvalComment: null,
 		createdAt: 1773676800000,
 		...overrides,
 	};
