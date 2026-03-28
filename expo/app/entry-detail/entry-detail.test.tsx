@@ -5,6 +5,12 @@ import {
 	waitFor,
 } from "@testing-library/react-native";
 import { Alert } from "react-native";
+import {
+	type EntryDetailResponse,
+	makeEntryDetail,
+	makeEntryVersion,
+	mockJsonResponse,
+} from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockBack = jest.fn();
@@ -52,47 +58,31 @@ jest.mock("@/lib/api-client", () => ({
 
 import EntryDetailScreen from "./[id]";
 
-const jsonHeaders = { "Content-Type": "application/json" };
-
-function mockEntryResponse(overrides: Record<string, unknown> = {}) {
-	return new Response(
-		JSON.stringify({
-			id: "entry-1",
-			userId: "user-1",
-			category: "advance",
+function mockEntryResponse(overrides?: Partial<EntryDetailResponse>) {
+	const memo = "memo" in (overrides ?? {}) ? overrides?.memo : "夕食の材料";
+	return mockJsonResponse(
+		makeEntryDetail({
 			amount: 4280,
-			occurredOn: "2026-03-15",
 			label: "スーパー買い物",
-			memo: "夕食の材料",
-			originalId: "entry-1",
-			cancelled: false,
-			status: "approved",
-			approvedBy: null,
-			approvedAt: null,
-			approvalComment: null,
-			createdAt: 1742000000000,
+			memo,
 			versions: [
-				{
-					id: "entry-1",
-					cancelled: false,
+				makeEntryVersion({
 					amount: 4280,
-					latest: true,
+					label: "スーパー買い物",
+					memo,
 					createdAt: 1742000000000,
-				},
+				}),
 			],
 			images: [],
 			...overrides,
 		}),
-		{ status: 200, headers: jsonHeaders },
 	);
 }
 
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockGet.mockResolvedValue(mockEntryResponse());
-	mockCancelPost.mockResolvedValue(
-		new Response(JSON.stringify({}), { status: 201, headers: jsonHeaders }),
-	);
+	mockCancelPost.mockResolvedValue(mockJsonResponse({}, 201));
 });
 
 describe("EntryDetailScreen", () => {
@@ -114,13 +104,11 @@ describe("EntryDetailScreen", () => {
 				category: "deposit",
 				amount: 3000,
 				versions: [
-					{
-						id: "entry-1",
-						cancelled: false,
+					makeEntryVersion({
+						category: "deposit",
 						amount: 3000,
-						latest: true,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -144,10 +132,7 @@ describe("EntryDetailScreen", () => {
 
 	it("APIエラー時にエラーメッセージが表示される", async () => {
 		mockGet.mockResolvedValue(
-			new Response(JSON.stringify({ error: "記録が見つかりません" }), {
-				status: 404,
-				headers: jsonHeaders,
-			}),
+			mockJsonResponse({ error: "記録が見つかりません" }, 404),
 		);
 		render(<EntryDetailScreen />, { wrapper: TestQueryWrapper });
 
@@ -204,20 +189,17 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
-					{
+					makeEntryVersion({
 						id: "cancel-1",
 						cancelled: true,
 						amount: 4280,
-						latest: true,
 						createdAt: 1742000100000,
-					},
-					{
-						id: "entry-1",
-						cancelled: false,
+					}),
+					makeEntryVersion({
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -234,20 +216,16 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
-					{
+					makeEntryVersion({
 						id: "v2-entry",
-						cancelled: false,
 						amount: 3000,
-						latest: true,
 						createdAt: 1742000100000,
-					},
-					{
-						id: "entry-1",
-						cancelled: false,
+					}),
+					makeEntryVersion({
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -263,20 +241,18 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				originalId: "parent-1",
 				versions: [
-					{
-						id: "entry-1",
-						cancelled: false,
+					makeEntryVersion({
+						originalId: "parent-1",
 						amount: 4280,
-						latest: true,
 						createdAt: 1742000100000,
-					},
-					{
+					}),
+					makeEntryVersion({
 						id: "parent-1",
-						cancelled: false,
+						originalId: "parent-1",
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -291,20 +267,17 @@ describe("EntryDetailScreen", () => {
 		mockGet.mockResolvedValue(
 			mockEntryResponse({
 				versions: [
-					{
+					makeEntryVersion({
 						id: "cancel-1",
 						cancelled: true,
 						amount: 4280,
-						latest: true,
 						createdAt: 1742000100000,
-					},
-					{
-						id: "entry-1",
-						cancelled: false,
+					}),
+					makeEntryVersion({
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -322,34 +295,29 @@ describe("EntryDetailScreen", () => {
 			mockEntryResponse({
 				originalId: "entry-1",
 				versions: [
-					{
+					makeEntryVersion({
 						id: "modify-1",
-						cancelled: false,
 						amount: 5000,
-						latest: true,
 						createdAt: 1742000300000,
-					},
-					{
+					}),
+					makeEntryVersion({
 						id: "restore-1",
-						cancelled: false,
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000200000,
-					},
-					{
+					}),
+					makeEntryVersion({
 						id: "cancel-1",
 						cancelled: true,
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000100000,
-					},
-					{
-						id: "entry-1",
-						cancelled: false,
+					}),
+					makeEntryVersion({
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);
@@ -367,20 +335,19 @@ describe("EntryDetailScreen", () => {
 				cancelled: true,
 				originalId: "parent-1",
 				versions: [
-					{
-						id: "entry-1",
+					makeEntryVersion({
+						originalId: "parent-1",
 						cancelled: true,
 						amount: 4280,
-						latest: true,
 						createdAt: 1742000100000,
-					},
-					{
+					}),
+					makeEntryVersion({
 						id: "parent-1",
-						cancelled: false,
+						originalId: "parent-1",
 						amount: 4280,
 						latest: false,
 						createdAt: 1742000000000,
-					},
+					}),
 				],
 			}),
 		);

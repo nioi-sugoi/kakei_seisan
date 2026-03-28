@@ -4,6 +4,12 @@ import {
 	userEvent,
 	waitFor,
 } from "@testing-library/react-native";
+import {
+	makeBalanceResponse,
+	makeTimelineEvent,
+	mockJsonResponse,
+	type TimelineResponse,
+} from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 const mockPush = jest.fn();
@@ -30,69 +36,21 @@ jest.mock("@/lib/api-client", () => ({
 
 import TimelineScreen from "./index";
 
-function mockTimelineResponse(body: unknown) {
+function mockTimelineResponse(body: TimelineResponse) {
 	mockTimelineGet.mockImplementation(() =>
-		Promise.resolve(
-			new Response(JSON.stringify(body), {
-				headers: { "Content-Type": "application/json" },
-			}),
-		),
+		Promise.resolve(mockJsonResponse(body)),
 	);
 }
 
-function mockBalanceResponse(balance: number) {
+function mockBalance(balance: number) {
 	mockBalanceGet.mockImplementation(() =>
-		Promise.resolve(
-			new Response(
-				JSON.stringify({
-					advanceTotal: 0,
-					depositTotal: 0,
-					fromHouseholdTotal: 0,
-					fromUserTotal: 0,
-					balance,
-				}),
-				{ headers: { "Content-Type": "application/json" } },
-			),
-		),
+		Promise.resolve(mockJsonResponse(makeBalanceResponse({ balance }))),
 	);
-}
-
-function makeEvent(overrides: Record<string, unknown> = {}) {
-	return {
-		id: "entry-1",
-		userId: "user-1",
-		type: "entry",
-		category: "advance",
-		amount: 1500,
-		occurredOn: "2026-03-15",
-		label: "スーパー買い物",
-		memo: null,
-		originalId: "entry-1",
-		cancelled: false,
-		latest: true,
-		status: "approved",
-		approvalComment: null,
-		createdAt: 1773676800000,
-		...overrides,
-	};
 }
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	mockBalanceGet.mockImplementation(() =>
-		Promise.resolve(
-			new Response(
-				JSON.stringify({
-					advanceTotal: 0,
-					depositTotal: 0,
-					fromHouseholdTotal: 0,
-					fromUserTotal: 0,
-					balance: 0,
-				}),
-				{ headers: { "Content-Type": "application/json" } },
-			),
-		),
-	);
+	mockBalance(0);
 });
 
 describe("TimelineScreen", () => {
@@ -114,7 +72,10 @@ describe("TimelineScreen", () => {
 	});
 
 	it("立替の記録カードが正しく表示される", async () => {
-		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
+		mockTimelineResponse({
+			data: [makeTimelineEvent()],
+			nextCursor: null,
+		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -128,7 +89,7 @@ describe("TimelineScreen", () => {
 	it("預りの記録カードが正しく表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "entry-2",
 					category: "deposit",
 					amount: 3000,
@@ -149,8 +110,12 @@ describe("TimelineScreen", () => {
 	it("月ごとのセクションヘッダーが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({ id: "e1", originalId: "e1", occurredOn: "2026-03-15" }),
-				makeEvent({
+				makeTimelineEvent({
+					id: "e1",
+					originalId: "e1",
+					occurredOn: "2026-03-15",
+				}),
+				makeTimelineEvent({
 					id: "e2",
 					originalId: "e2",
 					occurredOn: "2026-02-28",
@@ -170,19 +135,19 @@ describe("TimelineScreen", () => {
 	it("記録が月ごとに正しくグルーピングされている", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "e1",
 					originalId: "e1",
 					occurredOn: "2026-03-20",
 					label: "3月の記録A",
 				}),
-				makeEvent({
+				makeTimelineEvent({
 					id: "e2",
 					originalId: "e2",
 					occurredOn: "2026-03-10",
 					label: "3月の記録B",
 				}),
-				makeEvent({
+				makeTimelineEvent({
 					id: "e3",
 					originalId: "e3",
 					occurredOn: "2026-02-15",
@@ -221,7 +186,7 @@ describe("TimelineScreen", () => {
 
 	it("記録カードをタップすると詳細画面に遷移する", async () => {
 		mockTimelineResponse({
-			data: [makeEvent({ id: "abc-123", originalId: "abc-123" })],
+			data: [makeTimelineEvent({ id: "abc-123", originalId: "abc-123" })],
 			nextCursor: null,
 		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
@@ -249,7 +214,7 @@ describe("TimelineScreen", () => {
 	it("修正バージョン(v2)にペンシルアイコンが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "mod-1",
 					originalId: "entry-1",
 					latest: true,
@@ -271,7 +236,7 @@ describe("TimelineScreen", () => {
 	it("取消済みの記録が取消済みラベル付きで表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "cancel-1",
 					originalId: "entry-1",
 					cancelled: true,
@@ -292,11 +257,11 @@ describe("TimelineScreen", () => {
 	it("精算カードにバッジとラベルが表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "stl-1",
 					originalId: "stl-1",
 					type: "settlement",
-					category: null,
+					category: "fromHousehold",
 					amount: 5000,
 					label: null,
 				}),
@@ -315,7 +280,7 @@ describe("TimelineScreen", () => {
 	it("記録と精算が混在するタイムラインが正しく表示される", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "e1",
 					originalId: "e1",
 					type: "entry",
@@ -324,16 +289,16 @@ describe("TimelineScreen", () => {
 					label: "スーパー",
 					occurredOn: "2026-03-20",
 				}),
-				makeEvent({
+				makeTimelineEvent({
 					id: "stl-1",
 					originalId: "stl-1",
 					type: "settlement",
-					category: null,
+					category: "fromHousehold",
 					amount: 5000,
 					label: null,
 					occurredOn: "2026-03-18",
 				}),
-				makeEvent({
+				makeTimelineEvent({
 					id: "e2",
 					originalId: "e2",
 					type: "entry",
@@ -364,11 +329,11 @@ describe("TimelineScreen", () => {
 	it("精算カードをタップすると精算詳細画面に遷移する", async () => {
 		mockTimelineResponse({
 			data: [
-				makeEvent({
+				makeTimelineEvent({
 					id: "stl-1",
 					originalId: "stl-1",
 					type: "settlement",
-					category: null,
+					category: "fromHousehold",
 					amount: 5000,
 					label: null,
 				}),
@@ -387,8 +352,11 @@ describe("TimelineScreen", () => {
 	});
 
 	it("残高が正の場合「家計から受け取り」と表示される", async () => {
-		mockBalanceResponse(3000);
-		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
+		mockBalance(3000);
+		mockTimelineResponse({
+			data: [makeTimelineEvent()],
+			nextCursor: null,
+		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -398,8 +366,11 @@ describe("TimelineScreen", () => {
 	});
 
 	it("残高がゼロの場合「精算する」ボタンが表示されない", async () => {
-		mockBalanceResponse(0);
-		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
+		mockBalance(0);
+		mockTimelineResponse({
+			data: [makeTimelineEvent()],
+			nextCursor: null,
+		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -409,8 +380,11 @@ describe("TimelineScreen", () => {
 	});
 
 	it("残高が負の場合「家計へ入金」と表示される", async () => {
-		mockBalanceResponse(-2000);
-		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
+		mockBalance(-2000);
+		mockTimelineResponse({
+			data: [makeTimelineEvent()],
+			nextCursor: null,
+		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -420,8 +394,11 @@ describe("TimelineScreen", () => {
 	});
 
 	it("残高が負の場合「精算する」ボタンが表示される", async () => {
-		mockBalanceResponse(-2000);
-		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
+		mockBalance(-2000);
+		mockTimelineResponse({
+			data: [makeTimelineEvent()],
+			nextCursor: null,
+		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
@@ -432,8 +409,11 @@ describe("TimelineScreen", () => {
 	});
 
 	it("残高が正の場合「精算する」ボタンが表示されタップで精算フォームに遷移する", async () => {
-		mockBalanceResponse(5000);
-		mockTimelineResponse({ data: [makeEvent()], nextCursor: null });
+		mockBalance(5000);
+		mockTimelineResponse({
+			data: [makeTimelineEvent()],
+			nextCursor: null,
+		});
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
