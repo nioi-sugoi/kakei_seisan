@@ -334,7 +334,7 @@ describe("GET /api/timeline", () => {
 		expect(body.data[0].approvalComment).toBeNull();
 	});
 
-	it("差し戻しステータスの記録にコメントが含まれる", async () => {
+	it("差し戻し記録の approvalComment が正しく返される", async () => {
 		await insertEntry(TEST_USER.id, {
 			label: "差し戻し記録",
 			status: "rejected",
@@ -372,10 +372,11 @@ describe("GET /api/timeline", () => {
 		expect(body.data[0].approvalComment).toBe("精算額が違います");
 	});
 
-	it("承認済みの記録は approvalComment が null で返される", async () => {
+	it("承認済み記録の approvalComment が正しく返される", async () => {
 		await insertEntry(TEST_USER.id, {
 			label: "承認済み記録",
 			status: "approved",
+			approvalComment: "確認しました",
 		});
 
 		const res = await client.api.timeline.$get(
@@ -387,7 +388,7 @@ describe("GET /api/timeline", () => {
 		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.data[0].status).toBe("approved");
-		expect(body.data[0].approvalComment).toBeNull();
+		expect(body.data[0].approvalComment).toBe("確認しました");
 	});
 
 	it("異なる承認ステータスの記録が混在して正しく返される", async () => {
