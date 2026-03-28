@@ -25,6 +25,7 @@ const modifyEntrySchema = v.object({
 	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
+	hasImageChanges: v.optional(v.boolean()),
 });
 
 const entriesApp = new Hono<{
@@ -100,7 +101,8 @@ const entriesApp = new Hono<{
 			if (
 				input.amount === latestEntry.amount &&
 				input.label === latestEntry.label &&
-				(input.memo ?? null) === latestEntry.memo
+				(input.memo ?? null) === latestEntry.memo &&
+				!input.hasImageChanges
 			) {
 				return c.json({ error: "変更がありません" as const }, 400);
 			}

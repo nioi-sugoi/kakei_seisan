@@ -21,6 +21,7 @@ const createSettlementSchema = v.object({
 
 const modifySettlementSchema = v.object({
 	amount: v.pipe(v.number(), v.integer(), v.minValue(1)),
+	hasImageChanges: v.optional(v.boolean()),
 });
 
 const settlementsApp = new Hono<{
@@ -97,7 +98,7 @@ const settlementsApp = new Hono<{
 				);
 			}
 
-			if (input.amount === latestSettlement.amount) {
+			if (input.amount === latestSettlement.amount && !input.hasImageChanges) {
 				return c.json({ error: "変更がありません" as const }, 400);
 			}
 

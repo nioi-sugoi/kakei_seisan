@@ -120,19 +120,20 @@ export function useModifySettlementForm(
 
 	const mutation = useMutation({
 		mutationFn: async (parsed: { amount: number }) => {
-			const fieldsChanged = parsed.amount !== target.amount;
+			const hasImageChanges =
+				imageOps.newImages.length > 0 || imageOps.pendingDeletes.length > 0;
 
-			if (fieldsChanged) {
-				const res = await client.api.settlements[":originalId"].modify.$post({
-					param: { originalId: target.id },
-					json: parsed,
-				});
-				if (!res.ok) {
-					const body = await res.json();
-					throw new Error("error" in body ? body.error : "修正に失敗しました");
-				}
+			// フィールド変更・画像変更のいずれかがあれば新バージョンを作成
+			const res = await client.api.settlements[":originalId"].modify.$post({
+				param: { originalId: target.id },
+				json: { ...parsed, hasImageChanges },
+			});
+			if (!res.ok) {
+				const body = await res.json();
+				throw new Error("error" in body ? body.error : "修正に失敗しました");
 			}
 
+			// バージョン作成後に画像操作を実行
 			await Promise.all(
 				imageOps.newImages.map((img) =>
 					uploadImageRaw("settlements", target.id, img),

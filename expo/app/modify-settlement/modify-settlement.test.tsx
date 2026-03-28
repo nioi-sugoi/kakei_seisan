@@ -204,7 +204,7 @@ describe("ModifySettlementScreen", () => {
 		await waitFor(() => {
 			expect(mockModifyPost).toHaveBeenCalledWith({
 				param: { originalId: "stl-1" },
-				json: { amount: 3000 },
+				json: { amount: 3000, hasImageChanges: false },
 			});
 		});
 	});

@@ -123,22 +123,20 @@ export function useModifyEntryForm(
 			label: string;
 			memo?: string;
 		}) => {
-			const fieldsChanged =
-				parsed.amount !== target.amount ||
-				parsed.label !== target.label ||
-				(parsed.memo ?? null) !== target.memo;
+			const hasImageChanges =
+				imageOps.newImages.length > 0 || imageOps.pendingDeletes.length > 0;
 
-			if (fieldsChanged) {
-				const res = await client.api.entries[":originalId"].modify.$post({
-					param: { originalId: target.id },
-					json: parsed,
-				});
-				if (!res.ok) {
-					const body = await res.json();
-					throw new Error("error" in body ? body.error : "修正に失敗しました");
-				}
+			// フィールド変更・画像変更のいずれかがあれば新バージョンを作成
+			const res = await client.api.entries[":originalId"].modify.$post({
+				param: { originalId: target.id },
+				json: { ...parsed, hasImageChanges },
+			});
+			if (!res.ok) {
+				const body = await res.json();
+				throw new Error("error" in body ? body.error : "修正に失敗しました");
 			}
 
+			// バージョン作成後に画像操作を実行
 			await Promise.all(
 				imageOps.newImages.map((img) =>
 					uploadImageRaw("entries", target.id, img),
