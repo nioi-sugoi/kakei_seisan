@@ -104,7 +104,7 @@ function ModifySettlementForm({
 							))}
 						</View>
 					) : null}
-					{totalAfterChanges < 2 ? (
+					{totalAfterChanges < 2 || newImages.length > 0 ? (
 						<ImagePicker
 							images={newImages}
 							onChange={setNewImages}
