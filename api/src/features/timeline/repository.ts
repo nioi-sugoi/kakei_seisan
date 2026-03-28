@@ -32,6 +32,7 @@ export function listByUser(
 			cancelled: entries.cancelled,
 			latest: entries.latest,
 			status: entries.status,
+			approvalComment: entries.approvalComment,
 			createdAt: entries.createdAt,
 			imageCount: entryImageCountSql.as("image_count"),
 		})
@@ -59,6 +60,7 @@ export function listByUser(
 			cancelled: settlements.cancelled,
 			latest: settlements.latest,
 			status: settlements.status,
+			approvalComment: settlements.approvalComment,
 			createdAt: settlements.createdAt,
 			imageCount: settlementImageCountSql.as("image_count"),
 		})

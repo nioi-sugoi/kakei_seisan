@@ -43,6 +43,7 @@ const timelineApp = new Hono<{
 			cancelled: Boolean(row.cancelled),
 			latest: Boolean(row.latest),
 			status: row.status,
+			approvalComment: row.approvalComment,
 			createdAt: row.createdAt,
 			imageCount: row.imageCount,
 		}));
