@@ -112,10 +112,10 @@ function ModifyEntryForm({
 					)}
 				</form.Field>
 
-				{/* レシート画像 */}
+				{/* 画像 */}
 				<View className="gap-2">
 					<Text className="text-sm font-medium text-foreground">
-						レシート画像
+						画像
 						<Text className="text-xs text-muted-foreground">
 							{" "}
 							任意・最大2枚
@@ -127,7 +127,7 @@ function ModifyEntryForm({
 								<View key={img.id} className="relative">
 									<ImageThumbnail
 										source={getImageSource("entries", target.id, img.id)}
-										accessibilityLabel={`レシート画像 ${index + 1}`}
+										accessibilityLabel={`画像 ${index + 1}`}
 									/>
 									<Pressable
 										onPress={() =>

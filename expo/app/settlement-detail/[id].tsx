@@ -103,12 +103,10 @@ export default function SettlementDetailScreen() {
 					occurredOn={settlement.occurredOn}
 				/>
 
-				{/* 証跡画像 */}
+				{/* 画像 */}
 				{settlement.images.length > 0 ? (
 					<View className="rounded-xl bg-card px-4 py-4">
-						<Text className="mb-3 text-sm font-bold text-foreground">
-							証跡画像
-						</Text>
+						<Text className="mb-3 text-sm font-bold text-foreground">画像</Text>
 						<View className="flex-row flex-wrap gap-3">
 							{settlement.images.map((img, index) => (
 								<ImageThumbnail
@@ -119,7 +117,7 @@ export default function SettlementDetailScreen() {
 										img.id,
 									)}
 									onPress={() => setViewerIndex(index)}
-									accessibilityLabel={`証跡画像 ${index + 1}`}
+									accessibilityLabel={`画像 ${index + 1}`}
 								/>
 							))}
 						</View>

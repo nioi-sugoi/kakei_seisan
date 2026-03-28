@@ -88,7 +88,7 @@ export function ImagePicker({
 	return (
 		<View className="gap-2">
 			<Text className="text-sm font-medium text-foreground">
-				レシート画像
+				画像
 				<Text className="text-xs text-muted-foreground">
 					{" "}
 					任意・最大{maxImages}枚
@@ -103,7 +103,7 @@ export function ImagePicker({
 							<Image
 								source={{ uri: image.uri }}
 								className="h-24 w-24 rounded-lg"
-								accessibilityLabel={`レシート画像 ${index + 1}`}
+								accessibilityLabel={`画像 ${index + 1}`}
 							/>
 							<Pressable
 								onPress={() => handleRemove(index)}

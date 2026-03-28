@@ -74,10 +74,10 @@ function ModifySettlementForm({
 					)}
 				</form.Field>
 
-				{/* 証跡画像 */}
+				{/* 画像 */}
 				<View className="gap-2">
 					<Text className="text-sm font-medium text-foreground">
-						証跡画像
+						画像
 						<Text className="text-xs text-muted-foreground">
 							{" "}
 							任意・最大2枚
@@ -89,7 +89,7 @@ function ModifySettlementForm({
 								<View key={img.id} className="relative">
 									<ImageThumbnail
 										source={getImageSource("settlements", target.id, img.id)}
-										accessibilityLabel={`証跡画像 ${index + 1}`}
+										accessibilityLabel={`画像 ${index + 1}`}
 									/>
 									<Pressable
 										onPress={() =>
