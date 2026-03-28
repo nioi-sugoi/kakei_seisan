@@ -16,6 +16,8 @@ type ImagePickerProps = {
 	maxImages?: number;
 	/** ラベルを非表示にする（外側でラベルを表示する場合） */
 	hideLabel?: boolean;
+	/** プレビューを非表示にする（外側でプレビューを表示する場合） */
+	hidePreview?: boolean;
 };
 
 function pickResultToImages(
@@ -34,6 +36,7 @@ export function ImagePicker({
 	onChange,
 	maxImages = MAX_IMAGES,
 	hideLabel = false,
+	hidePreview = false,
 }: ImagePickerProps) {
 	const canAdd = images.length < maxImages;
 
@@ -101,7 +104,7 @@ export function ImagePicker({
 			) : null}
 
 			{/* プレビュー */}
-			{images.length > 0 ? (
+			{!hidePreview && images.length > 0 ? (
 				<View className="flex-row gap-3">
 					{images.map((image, index) => (
 						<View key={image.uri} className="relative">

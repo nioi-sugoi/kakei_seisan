@@ -2,6 +2,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
 	ActivityIndicator,
+	Image,
 	KeyboardAvoidingView,
 	Platform,
 	Pressable,
@@ -83,7 +84,7 @@ function ModifySettlementForm({
 							任意・最大2枚
 						</Text>
 					</Text>
-					{visibleExisting.length > 0 ? (
+					{visibleExisting.length > 0 || newImages.length > 0 ? (
 						<View className="flex-row flex-wrap gap-3">
 							{visibleExisting.map((img, index) => (
 								<View key={img.id} className="relative">
@@ -102,14 +103,34 @@ function ModifySettlementForm({
 									</Pressable>
 								</View>
 							))}
+							{newImages.map((img, index) => (
+								<View key={img.uri} className="relative">
+									<Image
+										source={{ uri: img.uri }}
+										style={{ width: 96, height: 96 }}
+										className="rounded-lg"
+										accessibilityLabel={`画像 ${visibleExisting.length + index + 1}`}
+									/>
+									<Pressable
+										onPress={() =>
+											setNewImages((prev) => prev.filter((_, i) => i !== index))
+										}
+										accessibilityLabel={`画像${visibleExisting.length + index + 1}を削除`}
+										className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
+									>
+										<Text className="text-xs font-bold text-white">✕</Text>
+									</Pressable>
+								</View>
+							))}
 						</View>
 					) : null}
-					{totalAfterChanges < 2 || newImages.length > 0 ? (
+					{totalAfterChanges < 2 ? (
 						<ImagePicker
 							images={newImages}
 							onChange={setNewImages}
 							maxImages={2 - visibleExisting.length}
 							hideLabel
+							hidePreview
 						/>
 					) : null}
 				</View>
