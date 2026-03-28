@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react-native";
-import type { ComponentProps } from "react";
+import { makeTimelineEvent } from "@/testing/api-mocks";
 
 jest.mock("@/lib/api-client", () => ({
 	client: {
@@ -13,28 +13,6 @@ jest.mock("@/lib/api-client", () => ({
 
 import { TimelineEventCard } from "./TimelineEventCard";
 
-type TimelineEvent = ComponentProps<typeof TimelineEventCard>["event"];
-
-function makeEvent(overrides: Partial<TimelineEvent> = {}): TimelineEvent {
-	return {
-		id: "entry-1",
-		userId: "user-1",
-		type: "entry",
-		category: "advance",
-		amount: 1500,
-		occurredOn: "2026-03-15",
-		label: "スーパー買い物",
-		memo: null,
-		originalId: "entry-1",
-		cancelled: false,
-		latest: true,
-		status: "approved",
-		approvalComment: null,
-		createdAt: 1773676800000,
-		...overrides,
-	};
-}
-
 const mockOnPress = jest.fn();
 
 beforeEach(() => {
@@ -45,7 +23,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("showApprovalStatus=false の場合、承認ステータスインジケーターが表示されない", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({ status: "pending" })}
+				event={makeTimelineEvent({ status: "pending" })}
 				onPress={mockOnPress}
 			/>,
 		);
@@ -58,7 +36,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("showApprovalStatus=true の場合、承認待ちインジケーターが表示される", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({ status: "pending" })}
+				event={makeTimelineEvent({ status: "pending" })}
 				onPress={mockOnPress}
 				showApprovalStatus
 			/>,
@@ -70,7 +48,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("showApprovalStatus=true の場合、承認済みインジケーターが表示される", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({ status: "approved" })}
+				event={makeTimelineEvent({ status: "approved" })}
 				onPress={mockOnPress}
 				showApprovalStatus
 			/>,
@@ -82,7 +60,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("showApprovalStatus=true の場合、差し戻しインジケーターが表示される", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({
+				event={makeTimelineEvent({
 					status: "rejected",
 					approvalComment: "金額を確認してください",
 				})}
@@ -97,7 +75,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("差し戻しコメントがインライン表示される", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({
+				event={makeTimelineEvent({
 					status: "rejected",
 					approvalComment: "金額を確認してください",
 				})}
@@ -112,7 +90,10 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("差し戻しコメントがない場合はコメントが表示されない", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({ status: "rejected", approvalComment: null })}
+				event={makeTimelineEvent({
+					status: "rejected",
+					approvalComment: null,
+				})}
 				onPress={mockOnPress}
 				showApprovalStatus
 			/>,
@@ -125,7 +106,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("承認コメントがインライン表示される", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({
+				event={makeTimelineEvent({
 					status: "approved",
 					approvalComment: "確認しました",
 				})}
@@ -140,7 +121,10 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("承認コメントがない場合はコメントが表示されない", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({ status: "approved", approvalComment: null })}
+				event={makeTimelineEvent({
+					status: "approved",
+					approvalComment: null,
+				})}
 				onPress={mockOnPress}
 				showApprovalStatus
 			/>,
@@ -153,7 +137,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("取消済みの記録にも承認ステータスインジケーターが表示される", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({
+				event={makeTimelineEvent({
 					id: "cancel-1",
 					originalId: "entry-1",
 					cancelled: true,
@@ -172,7 +156,7 @@ describe("TimelineEventCard 承認ステータス表示", () => {
 	it("承認ステータスがアクセシビリティラベルに含まれる", () => {
 		render(
 			<TimelineEventCard
-				event={makeEvent({ status: "pending" })}
+				event={makeTimelineEvent({ status: "pending" })}
 				onPress={mockOnPress}
 				showApprovalStatus
 			/>,
