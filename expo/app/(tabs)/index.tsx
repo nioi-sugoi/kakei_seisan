@@ -10,13 +10,7 @@ import { BalanceSummary } from "@/components/balance/BalanceSummary";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
 import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
 
-interface TimelineScreenProps {
-	showApprovalStatus?: boolean;
-}
-
-export default function TimelineScreen({
-	showApprovalStatus = false,
-}: TimelineScreenProps) {
+export default function TimelineScreen() {
 	const {
 		items,
 		isLoading,
@@ -63,7 +57,6 @@ export default function TimelineScreen({
 								<TimelineEventCard
 									event={item.event}
 									onPress={handleEventPress}
-									showApprovalStatus={showApprovalStatus}
 								/>
 							</View>
 						);

@@ -94,7 +94,6 @@ export function TimelineEventCard({
 						<Text className="text-lg font-medium text-foreground">{label}</Text>
 					) : null}
 				</View>
-				{/* 右側: 金額 + ステータス */}
 				<View className="items-end">
 					<Text
 						className={`text-2xl font-bold tabular-nums ${
