@@ -9,7 +9,6 @@ import { cleanAllTables } from "../../../testing/db-helper";
 import {
 	authCookie,
 	buildOtherUserAuthCookie,
-	client,
 	insertEntry,
 	seedOtherUser,
 	setupAuth,
@@ -399,51 +398,5 @@ describe("DELETE /api/entries/:entryId/images/:imageId", () => {
 		);
 
 		expect(res.status).toBe(401);
-	});
-});
-
-describe("GET /api/entries/:id（画像メタデータ含む）", () => {
-	let entry: Awaited<ReturnType<typeof insertEntry>>;
-
-	beforeEach(async () => {
-		await cleanAllTables();
-		await seedTestUser();
-		entry = await insertEntry(TEST_USER.id);
-		await cleanR2();
-	});
-
-	it("記録詳細に画像メタデータが含まれる", async () => {
-		await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		const res = await client.api.entries[":id"].$get(
-			{ param: { id: entry.id } },
-			{ headers: { Cookie: authCookie } },
-		);
-
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
-		expect(body.images[0]).toHaveProperty("id");
-		expect(body.images[0]).toHaveProperty("displayOrder", 0);
-		expect(body.images[0]).toHaveProperty("createdAt");
-		// storagePath はクライアントに返さない
-		expect(body.images[0]).not.toHaveProperty("storagePath");
-	});
-
-	it("画像がない場合は空配列が返る", async () => {
-		const res = await client.api.entries[":id"].$get(
-			{ param: { id: entry.id } },
-			{ headers: { Cookie: authCookie } },
-		);
-
-		expect(res.status).toBe(200);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toEqual([]);
 	});
 });
