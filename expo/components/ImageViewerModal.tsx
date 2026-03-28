@@ -8,7 +8,11 @@ import {
 	Text,
 	View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import {
+	Gesture,
+	GestureDetector,
+	GestureHandlerRootView,
+} from "react-native-gesture-handler";
 import Animated, {
 	runOnJS,
 	useAnimatedStyle,
@@ -175,7 +179,9 @@ export function ImageViewerModal({
 			statusBarTranslucent
 			onRequestClose={onClose}
 		>
-			<View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.95)" }}>
+			<GestureHandlerRootView
+				style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.95)" }}
+			>
 				{/* ヘッダー */}
 				<View className="flex-row items-center justify-between px-4 pt-14 pb-2">
 					{images.length > 1 ? (
@@ -245,7 +251,7 @@ export function ImageViewerModal({
 				) : (
 					<View className="pb-12" />
 				)}
-			</View>
+			</GestureHandlerRootView>
 		</Modal>
 	);
 }
