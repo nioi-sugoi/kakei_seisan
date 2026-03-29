@@ -21,12 +21,14 @@ interface TimelineEventCardProps {
 	event: TimelineEvent;
 	onPress: (event: TimelineEvent) => void;
 	showApprovalStatus?: boolean;
+	updatedAt?: number;
 }
 
 export function TimelineEventCard({
 	event,
 	onPress,
 	showApprovalStatus = false,
+	updatedAt,
 }: TimelineEventCardProps) {
 	const isV1 = event.id === event.originalId;
 	const isCancelled = event.cancelled;
@@ -80,7 +82,9 @@ export function TimelineEventCard({
 							{typeLabel}
 						</Text>
 						<Text className="text-base text-muted-foreground">
-							{formatDateShort(event.occurredOn)}
+							{updatedAt
+								? `${formatDateShort(updatedAt)}に${isCancelled ? "削除" : isModified ? "修正" : "登録"}`
+								: formatDateShort(event.occurredOn)}
 						</Text>
 						{isModified && (
 							<Text

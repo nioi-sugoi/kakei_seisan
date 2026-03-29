@@ -1,0 +1,1 @@
+CREATE INDEX `settlements_user_created_idx` ON `settlements` (`user_id`,`created_at`);

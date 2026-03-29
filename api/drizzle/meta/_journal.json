@@ -71,6 +71,13 @@
 			"when": 1774283064870,
 			"tag": "0009_partial_unique_index_latest",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "6",
+			"when": 1774769019457,
+			"tag": "0010_ancient_squadron_sinister",
+			"breakpoints": true
 		}
 	]
 }

@@ -1,44 +1,101 @@
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { unionAll } from "drizzle-orm/sqlite-core";
 import { entries, settlements } from "../../db/schema";
+
+type SortBy = "occurredOn" | "createdAt";
+type SortOrder = "desc" | "asc";
+
+export type CursorValue =
+	| { occurredOn: string; createdAt: number }
+	| { createdAt: number };
 
 export function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
 	options: {
 		limit: number;
-		cursor?: number;
+		cursor?: CursorValue;
 		category?: "advance" | "deposit" | "settlement";
+		sortBy: SortBy;
+		sortOrder: SortOrder;
 	},
 ) {
+	const { sortBy, sortOrder } = options;
+	const orderBy = buildOrderBy(sortBy, sortOrder);
+
 	if (options.category === "settlement") {
-		return buildSettlementsQuery(db, userId, options.cursor)
-			.orderBy(desc(sql`created_at`))
+		return buildSettlementsQuery(db, userId, options.cursor, sortBy, sortOrder)
+			.orderBy(...orderBy)
 			.limit(options.limit);
 	}
 
 	if (options.category === "advance" || options.category === "deposit") {
-		return buildEntriesQuery(db, userId, options.cursor, options.category)
-			.orderBy(desc(sql`created_at`))
+		return buildEntriesQuery(
+			db,
+			userId,
+			options.cursor,
+			options.category,
+			sortBy,
+			sortOrder,
+		)
+			.orderBy(...orderBy)
 			.limit(options.limit);
 	}
 
 	return unionAll(
-		buildEntriesQuery(db, userId, options.cursor),
-		buildSettlementsQuery(db, userId, options.cursor),
+		buildEntriesQuery(db, userId, options.cursor, undefined, sortBy, sortOrder),
+		buildSettlementsQuery(db, userId, options.cursor, sortBy, sortOrder),
 	)
-		.orderBy(desc(sql`created_at`))
+		.orderBy(...orderBy)
 		.limit(options.limit);
+}
+
+function buildOrderBy(sortBy: SortBy, sortOrder: SortOrder) {
+	const dir = sortOrder === "desc" ? desc : asc;
+	if (sortBy === "createdAt") {
+		return [dir(sql`created_at`)] as const;
+	}
+	return [dir(sql`occurred_on`), dir(sql`created_at`)] as const;
+}
+
+function buildCursorFilter(
+	table: typeof entries | typeof settlements,
+	cursor: CursorValue | undefined,
+	sortBy: SortBy,
+	sortOrder: SortOrder,
+) {
+	if (!cursor) return undefined;
+
+	if (sortBy === "createdAt") {
+		return sortOrder === "desc"
+			? lt(table.createdAt, cursor.createdAt)
+			: gt(table.createdAt, cursor.createdAt);
+	}
+
+	if ("occurredOn" in cursor) {
+		const cmp = sortOrder === "desc" ? lt : gt;
+		return or(
+			cmp(table.occurredOn, cursor.occurredOn),
+			and(
+				eq(table.occurredOn, cursor.occurredOn),
+				cmp(table.createdAt, cursor.createdAt),
+			),
+		);
+	}
+
+	return undefined;
 }
 
 function buildEntriesQuery(
 	db: DrizzleD1Database,
 	userId: string,
-	cursor?: number,
-	category?: "advance" | "deposit",
+	cursor: CursorValue | undefined,
+	category: "advance" | "deposit" | undefined,
+	sortBy: SortBy,
+	sortOrder: SortOrder,
 ) {
-	const cursorFilter = cursor ? lt(entries.createdAt, cursor) : undefined;
+	const cursorFilter = buildCursorFilter(entries, cursor, sortBy, sortOrder);
 	const categoryFilter = category ? eq(entries.category, category) : undefined;
 
 	return db
@@ -72,9 +129,16 @@ function buildEntriesQuery(
 function buildSettlementsQuery(
 	db: DrizzleD1Database,
 	userId: string,
-	cursor?: number,
+	cursor: CursorValue | undefined,
+	sortBy: SortBy,
+	sortOrder: SortOrder,
 ) {
-	const cursorFilter = cursor ? lt(settlements.createdAt, cursor) : undefined;
+	const cursorFilter = buildCursorFilter(
+		settlements,
+		cursor,
+		sortBy,
+		sortOrder,
+	);
 
 	return db
 		.select({
