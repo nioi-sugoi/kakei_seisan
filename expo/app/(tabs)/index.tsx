@@ -92,19 +92,19 @@ export default function TimelineScreen() {
 	const sortButton = (
 		<Pressable
 			onPress={() => setSortMenuOpen((prev) => !prev)}
-			className="flex-row items-center gap-1 px-4 py-0.5"
+			className="flex-row items-center gap-1 px-4 pb-1 pt-2"
 			accessibilityRole="button"
 			accessibilityLabel={`並び替え: ${currentSortLabel}`}
 		>
 			<MaterialIcons
 				name="swap-vert"
-				size={14}
+				size={16}
 				className="text-muted-foreground"
 			/>
-			<Text className="text-xs font-medium text-primary">
+			<Text className="text-sm font-medium text-primary">
 				{currentSortLabel}
 			</Text>
-			<MaterialIcons name="expand-more" size={12} className="text-primary" />
+			<MaterialIcons name="expand-more" size={14} className="text-primary" />
 		</Pressable>
 	);
 
@@ -134,7 +134,7 @@ export default function TimelineScreen() {
 					renderItem={({ item }) => {
 						if (item.type === "header") {
 							return (
-								<Text className="px-4 pb-2 pt-4 text-sm font-semibold text-muted-foreground">
+								<Text className="px-4 pb-2 pt-4 text-base font-semibold text-muted-foreground">
 									{item.title}
 								</Text>
 							);
@@ -194,7 +194,7 @@ export default function TimelineScreen() {
 								accessibilityState={{ selected: isSelected }}
 							>
 								<Text
-									className={`text-xs ${isSelected ? "font-semibold text-primary" : "text-foreground"}`}
+									className={`text-sm ${isSelected ? "font-semibold text-primary" : "text-foreground"}`}
 								>
 									{option.label}
 								</Text>
