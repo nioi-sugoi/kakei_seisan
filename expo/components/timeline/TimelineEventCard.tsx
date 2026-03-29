@@ -83,7 +83,9 @@ export function TimelineEventCard({
 						</Text>
 						<Text className="text-base text-muted-foreground">
 							{formatDateShort(event.occurredOn)}
-							{updatedAt ? `（更新：${formatDateShort(updatedAt)}）` : ""}
+							{updatedAt
+								? `（${isV1 && !isCancelled ? "登録" : "更新"}：${formatDateShort(updatedAt)}）`
+								: ""}
 						</Text>
 						{isModified && (
 							<Text
