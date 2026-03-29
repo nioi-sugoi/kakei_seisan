@@ -30,10 +30,10 @@ const SORT_OPTIONS: {
 	sortOrder: SortOption["sortOrder"];
 	label: string;
 }[] = [
-	{ sortBy: "occurredOn", sortOrder: "desc", label: "発生日（新しい順）" },
-	{ sortBy: "occurredOn", sortOrder: "asc", label: "発生日（古い順）" },
-	{ sortBy: "createdAt", sortOrder: "desc", label: "登録日（新しい順）" },
-	{ sortBy: "createdAt", sortOrder: "asc", label: "登録日（古い順）" },
+	{ sortBy: "occurredOn", sortOrder: "desc", label: "日付順（新しい順）" },
+	{ sortBy: "occurredOn", sortOrder: "asc", label: "日付順（古い順）" },
+	{ sortBy: "createdAt", sortOrder: "desc", label: "更新順（新しい順）" },
+	{ sortBy: "createdAt", sortOrder: "asc", label: "更新順（古い順）" },
 ];
 
 export default function TimelineScreen() {
@@ -144,6 +144,11 @@ export default function TimelineScreen() {
 								<TimelineEventCard
 									event={item.event}
 									onPress={handleEventPress}
+									displayDate={
+										sort.sortBy === "createdAt"
+											? item.event.createdAt
+											: undefined
+									}
 								/>
 							</View>
 						);

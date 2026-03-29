@@ -860,7 +860,7 @@ describe("TimelineScreen", () => {
 	});
 
 	describe("並び替え", () => {
-		it("並び替えボタンが表示されデフォルトで「発生日（新しい順）」が選択されている", async () => {
+		it("並び替えボタンが表示されデフォルトで「日付順（新しい順）」が選択されている", async () => {
 			mockTimelineResponse({
 				data: [makeTimelineEvent()],
 				nextCursor: null,
@@ -872,7 +872,7 @@ describe("TimelineScreen", () => {
 			});
 
 			const sortButton = screen.getByRole("button", {
-				name: "並び替え: 発生日（新しい順）",
+				name: "並び替え: 日付順（新しい順）",
 			});
 			expect(sortButton).toBeOnTheScreen();
 		});
@@ -890,27 +890,27 @@ describe("TimelineScreen", () => {
 
 			await user.press(
 				screen.getByRole("button", {
-					name: "並び替え: 発生日（新しい順）",
+					name: "並び替え: 日付順（新しい順）",
 				}),
 			);
 
 			await waitFor(() => {
 				expect(
-					screen.getByRole("button", { name: "発生日（新しい順）で並び替え" }),
+					screen.getByRole("button", { name: "日付順（新しい順）で並び替え" }),
 				).toBeOnTheScreen();
 			});
 			expect(
-				screen.getByRole("button", { name: "発生日（古い順）で並び替え" }),
+				screen.getByRole("button", { name: "日付順（古い順）で並び替え" }),
 			).toBeOnTheScreen();
 			expect(
-				screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+				screen.getByRole("button", { name: "更新順（新しい順）で並び替え" }),
 			).toBeOnTheScreen();
 			expect(
-				screen.getByRole("button", { name: "登録日（古い順）で並び替え" }),
+				screen.getByRole("button", { name: "更新順（古い順）で並び替え" }),
 			).toBeOnTheScreen();
 		});
 
-		it("「登録日（新しい順）」を選択すると sortBy=createdAt, sortOrder=desc でAPIが呼ばれる", async () => {
+		it("「更新順（新しい順）」を選択すると sortBy=createdAt, sortOrder=desc でAPIが呼ばれる", async () => {
 			mockTimelineResponse({
 				data: [makeTimelineEvent()],
 				nextCursor: null,
@@ -924,13 +924,13 @@ describe("TimelineScreen", () => {
 			// ドロップダウンを開く
 			await user.press(
 				screen.getByRole("button", {
-					name: "並び替え: 発生日（新しい順）",
+					name: "並び替え: 日付順（新しい順）",
 				}),
 			);
 
 			await waitFor(() => {
 				expect(
-					screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+					screen.getByRole("button", { name: "更新順（新しい順）で並び替え" }),
 				).toBeOnTheScreen();
 			});
 
@@ -939,9 +939,9 @@ describe("TimelineScreen", () => {
 				nextCursor: null,
 			});
 
-			// 「登録日（新しい順）」を選択
+			// 「更新順（新しい順）」を選択
 			await user.press(
-				screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+				screen.getByRole("button", { name: "更新順（新しい順）で並び替え" }),
 			);
 
 			await waitFor(() => {
@@ -956,12 +956,12 @@ describe("TimelineScreen", () => {
 			// ドロップダウンが閉じ、ラベルが更新される
 			expect(
 				screen.getByRole("button", {
-					name: "並び替え: 登録日（新しい順）",
+					name: "並び替え: 更新順（新しい順）",
 				}),
 			).toBeOnTheScreen();
 		});
 
-		it("「発生日（古い順）」を選択すると sortBy=occurredOn, sortOrder=asc でAPIが呼ばれる", async () => {
+		it("「日付順（古い順）」を選択すると sortBy=occurredOn, sortOrder=asc でAPIが呼ばれる", async () => {
 			mockTimelineResponse({
 				data: [makeTimelineEvent()],
 				nextCursor: null,
@@ -974,13 +974,13 @@ describe("TimelineScreen", () => {
 
 			await user.press(
 				screen.getByRole("button", {
-					name: "並び替え: 発生日（新しい順）",
+					name: "並び替え: 日付順（新しい順）",
 				}),
 			);
 
 			await waitFor(() => {
 				expect(
-					screen.getByRole("button", { name: "発生日（古い順）で並び替え" }),
+					screen.getByRole("button", { name: "日付順（古い順）で並び替え" }),
 				).toBeOnTheScreen();
 			});
 
@@ -990,7 +990,7 @@ describe("TimelineScreen", () => {
 			});
 
 			await user.press(
-				screen.getByRole("button", { name: "発生日（古い順）で並び替え" }),
+				screen.getByRole("button", { name: "日付順（古い順）で並び替え" }),
 			);
 
 			await waitFor(() => {
@@ -1003,7 +1003,7 @@ describe("TimelineScreen", () => {
 			});
 		});
 
-		it("登録日ソート時に createdAt を基準に月グルーピングされる", async () => {
+		it("更新順ソート時に createdAt を基準に月グルーピングされる", async () => {
 			mockTimelineResponse({
 				data: [makeTimelineEvent()],
 				nextCursor: null,
@@ -1017,14 +1017,14 @@ describe("TimelineScreen", () => {
 			// 登録日ソートに切り替え
 			await user.press(
 				screen.getByRole("button", {
-					name: "並び替え: 発生日（新しい順）",
+					name: "並び替え: 日付順（新しい順）",
 				}),
 			);
 
 			await waitFor(() => {
 				expect(
 					screen.getByRole("button", {
-						name: "登録日（新しい順）で並び替え",
+						name: "更新順（新しい順）で並び替え",
 					}),
 				).toBeOnTheScreen();
 			});
@@ -1045,7 +1045,7 @@ describe("TimelineScreen", () => {
 			});
 
 			await user.press(
-				screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+				screen.getByRole("button", { name: "更新順（新しい順）で並び替え" }),
 			);
 
 			// createdAt 基準の月ヘッダーが表示される（2026年2月）
@@ -1055,6 +1055,8 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("2月に登録した記録")).toBeOnTheScreen();
 			// occurredOn 基準の月ヘッダーは表示されない
 			expect(screen.queryByText("2026年3月")).toBeNull();
+			// カード上の日付も createdAt ベース（2月15日）
+			expect(screen.getByText("2月15日")).toBeOnTheScreen();
 		});
 
 		it("ソート選択でドロップダウンのアクティブ状態が正しく更新される", async () => {
@@ -1071,26 +1073,26 @@ describe("TimelineScreen", () => {
 			// ドロップダウンを開く
 			await user.press(
 				screen.getByRole("button", {
-					name: "並び替え: 発生日（新しい順）",
+					name: "並び替え: 日付順（新しい順）",
 				}),
 			);
 
 			await waitFor(() => {
 				expect(
-					screen.getByRole("button", { name: "発生日（新しい順）で並び替え" }),
+					screen.getByRole("button", { name: "日付順（新しい順）で並び替え" }),
 				).toBeOnTheScreen();
 			});
 
-			// デフォルトで「発生日（新しい順）」が selected
+			// デフォルトで「日付順（新しい順）」が selected
 			expect(
 				screen.getByRole("button", {
-					name: "発生日（新しい順）で並び替え",
+					name: "日付順（新しい順）で並び替え",
 					selected: true,
 				}),
 			).toBeOnTheScreen();
 			expect(
 				screen.getByRole("button", {
-					name: "登録日（新しい順）で並び替え",
+					name: "更新順（新しい順）で並び替え",
 					selected: false,
 				}),
 			).toBeOnTheScreen();
