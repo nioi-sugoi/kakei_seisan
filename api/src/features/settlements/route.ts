@@ -135,18 +135,11 @@ const settlementsApp = new Hono<{
 				deleteIds,
 			);
 
-			// 削除対象の画像: 他バージョンからの参照がなければ R2 からも削除
+			// 削除対象の画像: DBレコードは旧バージョンに残すが R2 からは即削除（コスト最適化）
 			for (const imageId of deleteIds) {
 				const image = await settlementsRepository.findImageById(db, imageId);
 				if (image) {
-					const refCount =
-						await settlementsRepository.countImageRefsByStoragePath(
-							db,
-							image.storagePath,
-						);
-					if (refCount === 0) {
-						await c.env.R2.delete(image.storagePath);
-					}
+					await c.env.R2.delete(image.storagePath);
 				}
 			}
 

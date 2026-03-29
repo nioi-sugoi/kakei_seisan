@@ -269,7 +269,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(dbVersions).toHaveLength(2);
 	});
 
-	it("修正で削除した画像は旧バージョンに残りR2も保持される", async () => {
+	it("修正で削除した画像はR2から削除されるがDBレコードは旧バージョンに残る", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -298,11 +298,11 @@ describe("POST /api/settlements/:originalId/modify", () => {
 			{ headers: { Cookie: authCookie } },
 		);
 
-		// 旧バージョンの画像レコードが残っているため R2 は保持される
+		// R2 からは削除される（コスト最適化）
 		const r2Object = await env.R2.get(storagePath);
-		expect(r2Object).not.toBeNull();
+		expect(r2Object).toBeNull();
 
-		// 旧バージョンの画像レコードは DB に残っている
+		// 旧バージョンの画像レコードは DB に残っている（履歴用）
 		const oldImage = await db
 			.select()
 			.from(settlementImages)
