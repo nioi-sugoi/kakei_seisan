@@ -2,7 +2,7 @@ import { and, eq, sql, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type { Env } from "../../bindings";
-import { entries, settlements } from "../../db/schema";
+import { entryVersions, settlementVersions } from "../../db/schema";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 
@@ -17,36 +17,36 @@ const balanceApp = new Hono<{
 		db
 			.select({
 				advanceTotal: sum(
-					sql`CASE WHEN ${entries.category} = 'advance' THEN ${entries.amount} ELSE 0 END`,
+					sql`CASE WHEN ${entryVersions.category} = 'advance' THEN ${entryVersions.amount} ELSE 0 END`,
 				),
 				depositTotal: sum(
-					sql`CASE WHEN ${entries.category} = 'deposit' THEN ${entries.amount} ELSE 0 END`,
+					sql`CASE WHEN ${entryVersions.category} = 'deposit' THEN ${entryVersions.amount} ELSE 0 END`,
 				),
 			})
-			.from(entries)
+			.from(entryVersions)
 			.where(
 				and(
-					eq(entries.userId, user.id),
-					eq(entries.latest, true),
-					eq(entries.cancelled, false),
+					eq(entryVersions.userId, user.id),
+					eq(entryVersions.latest, true),
+					eq(entryVersions.cancelled, false),
 				),
 			)
 			.get(),
 		db
 			.select({
 				fromHouseholdTotal: sum(
-					sql`CASE WHEN ${settlements.category} = 'fromHousehold' THEN ${settlements.amount} ELSE 0 END`,
+					sql`CASE WHEN ${settlementVersions.category} = 'fromHousehold' THEN ${settlementVersions.amount} ELSE 0 END`,
 				),
 				fromUserTotal: sum(
-					sql`CASE WHEN ${settlements.category} = 'fromUser' THEN ${settlements.amount} ELSE 0 END`,
+					sql`CASE WHEN ${settlementVersions.category} = 'fromUser' THEN ${settlementVersions.amount} ELSE 0 END`,
 				),
 			})
-			.from(settlements)
+			.from(settlementVersions)
 			.where(
 				and(
-					eq(settlements.userId, user.id),
-					eq(settlements.latest, true),
-					eq(settlements.cancelled, false),
+					eq(settlementVersions.userId, user.id),
+					eq(settlementVersions.latest, true),
+					eq(settlementVersions.cancelled, false),
 				),
 			)
 			.get(),

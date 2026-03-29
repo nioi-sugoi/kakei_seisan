@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { entries, settlements } from "../../../db/schema";
+import { entryVersions, settlementVersions } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
@@ -24,12 +24,12 @@ export {
 
 export async function insertSettlement(
 	userId: string,
-	overrides?: Partial<typeof settlements.$inferInsert>,
+	overrides?: Partial<typeof settlementVersions.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
 	const [settlement] = await db
-		.insert(settlements)
+		.insert(settlementVersions)
 		.values({
 			id,
 			userId,
@@ -48,20 +48,20 @@ export function queryVersionsByOriginalId(originalId: string) {
 	const db = drizzle(env.DB);
 	return db
 		.select()
-		.from(settlements)
-		.where(eq(settlements.originalId, originalId))
-		.orderBy(desc(settlements.createdAt))
+		.from(settlementVersions)
+		.where(eq(settlementVersions.originalId, originalId))
+		.orderBy(desc(settlementVersions.createdAt))
 		.all();
 }
 
 export async function insertEntry(
 	userId: string,
-	overrides?: Partial<typeof entries.$inferInsert>,
+	overrides?: Partial<typeof entryVersions.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
 	const [entry] = await db
-		.insert(entries)
+		.insert(entryVersions)
 		.values({
 			id,
 			userId,

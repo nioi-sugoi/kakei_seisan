@@ -150,8 +150,8 @@ export const partnerInvitations = sqliteTable(
 	],
 );
 
-export const entries = sqliteTable(
-	"entries",
+export const entryVersions = sqliteTable(
+	"entry_versions",
 	{
 		id: text("id")
 			.primaryKey()
@@ -166,7 +166,7 @@ export const entries = sqliteTable(
 		memo: text("memo"),
 		originalId: text("original_id")
 			.notNull()
-			.references((): AnySQLiteColumn => entries.id),
+			.references((): AnySQLiteColumn => entryVersions.id),
 		cancelled: integer("cancelled", { mode: "boolean" })
 			.notNull()
 			.default(false),
@@ -182,26 +182,32 @@ export const entries = sqliteTable(
 			.$defaultFn(() => Date.now()),
 	},
 	(table) => [
-		index("entries_user_status_idx").on(table.userId, table.status),
-		index("entries_user_occurred_on_idx").on(table.userId, table.occurredOn),
-		index("entries_user_created_idx").on(table.userId, table.createdAt),
-		index("entries_original_idx").on(table.originalId),
-		index("entries_original_created_idx").on(table.originalId, table.createdAt),
-		index("entries_user_latest_idx").on(table.userId, table.latest),
+		index("entry_versions_user_status_idx").on(table.userId, table.status),
+		index("entry_versions_user_occurred_on_idx").on(
+			table.userId,
+			table.occurredOn,
+		),
+		index("entry_versions_user_created_idx").on(table.userId, table.createdAt),
+		index("entry_versions_original_idx").on(table.originalId),
+		index("entry_versions_original_created_idx").on(
+			table.originalId,
+			table.createdAt,
+		),
+		index("entry_versions_user_latest_idx").on(table.userId, table.latest),
 		check(
-			"entries_category_check",
+			"entry_versions_category_check",
 			sql`${table.category} IN ('advance', 'deposit')`,
 		),
 		check(
-			"entries_status_check",
+			"entry_versions_status_check",
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,
 		),
-		check("entries_amount_check", sql`${table.amount} >= 0`),
+		check("entry_versions_amount_check", sql`${table.amount} >= 0`),
 	],
 );
 
-export const settlements = sqliteTable(
-	"settlements",
+export const settlementVersions = sqliteTable(
+	"settlement_versions",
 	{
 		id: text("id").primaryKey(),
 		userId: text("user_id")
@@ -214,7 +220,7 @@ export const settlements = sqliteTable(
 		occurredOn: text("occurred_on").notNull(),
 		originalId: text("original_id")
 			.notNull()
-			.references((): AnySQLiteColumn => settlements.id),
+			.references((): AnySQLiteColumn => settlementVersions.id),
 		cancelled: integer("cancelled", { mode: "boolean" })
 			.notNull()
 			.default(false),
@@ -228,56 +234,63 @@ export const settlements = sqliteTable(
 		createdAt: integer("created_at").notNull(),
 	},
 	(table) => [
-		index("settlements_user_status_idx").on(table.userId, table.status),
-		index("settlements_user_occurred_on_idx").on(
+		index("settlement_versions_user_status_idx").on(table.userId, table.status),
+		index("settlement_versions_user_occurred_on_idx").on(
 			table.userId,
 			table.occurredOn,
 		),
-		index("settlements_user_created_idx").on(table.userId, table.createdAt),
-		index("settlements_original_idx").on(table.originalId),
-		index("settlements_user_latest_idx").on(table.userId, table.latest),
-		index("settlements_original_created_idx").on(
+		index("settlement_versions_user_created_idx").on(
+			table.userId,
+			table.createdAt,
+		),
+		index("settlement_versions_original_idx").on(table.originalId),
+		index("settlement_versions_user_latest_idx").on(table.userId, table.latest),
+		index("settlement_versions_original_created_idx").on(
 			table.originalId,
 			table.createdAt,
 		),
 		check(
-			"settlements_category_check",
+			"settlement_versions_category_check",
 			sql`${table.category} IN ('fromUser', 'fromHousehold')`,
 		),
 		check(
-			"settlements_status_check",
+			"settlement_versions_status_check",
 			sql`${table.status} IN ('approved', 'pending', 'rejected')`,
 		),
-		check("settlements_amount_check", sql`${table.amount} >= 0`),
+		check("settlement_versions_amount_check", sql`${table.amount} >= 0`),
 	],
 );
 
-export const entryImages = sqliteTable(
-	"entry_images",
+export const entryImageVersions = sqliteTable(
+	"entry_image_versions",
 	{
 		id: text("id").primaryKey(),
-		entryId: text("entry_id")
+		entryVersionId: text("entry_version_id")
 			.notNull()
-			.references(() => entries.id),
+			.references(() => entryVersions.id),
 		storagePath: text("storage_path").notNull(),
 		displayOrder: integer("display_order").notNull().default(0),
 		createdAt: integer("created_at").notNull(),
 	},
-	(table) => [index("entry_images_entry_idx").on(table.entryId)],
+	(table) => [index("entry_image_versions_entry_idx").on(table.entryVersionId)],
 );
 
-export const settlementImages = sqliteTable(
-	"settlement_images",
+export const settlementImageVersions = sqliteTable(
+	"settlement_image_versions",
 	{
 		id: text("id").primaryKey(),
-		settlementId: text("settlement_id")
+		settlementVersionId: text("settlement_version_id")
 			.notNull()
-			.references(() => settlements.id),
+			.references(() => settlementVersions.id),
 		storagePath: text("storage_path").notNull(),
 		displayOrder: integer("display_order").notNull().default(0),
 		createdAt: integer("created_at").notNull(),
 	},
-	(table) => [index("settlement_images_settlement_idx").on(table.settlementId)],
+	(table) => [
+		index("settlement_image_versions_settlement_idx").on(
+			table.settlementVersionId,
+		),
+	],
 );
 
 // ============================================================
@@ -290,8 +303,8 @@ export const userRelations = relations(user, ({ many }) => ({
 	invitedPartnerships: many(partnerships, { relationName: "inviter" }),
 	acceptedPartnerships: many(partnerships, { relationName: "invitee" }),
 	partnerInvitations: many(partnerInvitations),
-	entries: many(entries, { relationName: "entryUser" }),
-	settlements: many(settlements, { relationName: "settlementUser" }),
+	entries: many(entryVersions, { relationName: "entryUser" }),
+	settlements: many(settlementVersions, { relationName: "settlementUser" }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -331,59 +344,68 @@ export const partnerInvitationsRelations = relations(
 	}),
 );
 
-export const entriesRelations = relations(entries, ({ one, many }) => ({
-	user: one(user, {
-		fields: [entries.userId],
-		references: [user.id],
-		relationName: "entryUser",
+export const entryVersionsRelations = relations(
+	entryVersions,
+	({ one, many }) => ({
+		user: one(user, {
+			fields: [entryVersions.userId],
+			references: [user.id],
+			relationName: "entryUser",
+		}),
+		original: one(entryVersions, {
+			fields: [entryVersions.originalId],
+			references: [entryVersions.id],
+			relationName: "entryVersions",
+		}),
+		versions: many(entryVersions, { relationName: "entryVersions" }),
+		approver: one(user, {
+			fields: [entryVersions.approvedBy],
+			references: [user.id],
+			relationName: "entryApprover",
+		}),
+		images: many(entryImageVersions),
 	}),
-	original: one(entries, {
-		fields: [entries.originalId],
-		references: [entries.id],
-		relationName: "entryVersions",
-	}),
-	versions: many(entries, { relationName: "entryVersions" }),
-	approver: one(user, {
-		fields: [entries.approvedBy],
-		references: [user.id],
-		relationName: "entryApprover",
-	}),
-	images: many(entryImages),
-}));
+);
 
-export const settlementsRelations = relations(settlements, ({ one, many }) => ({
-	user: one(user, {
-		fields: [settlements.userId],
-		references: [user.id],
-		relationName: "settlementUser",
+export const settlementVersionsRelations = relations(
+	settlementVersions,
+	({ one, many }) => ({
+		user: one(user, {
+			fields: [settlementVersions.userId],
+			references: [user.id],
+			relationName: "settlementUser",
+		}),
+		original: one(settlementVersions, {
+			fields: [settlementVersions.originalId],
+			references: [settlementVersions.id],
+			relationName: "settlementVersions",
+		}),
+		versions: many(settlementVersions, { relationName: "settlementVersions" }),
+		approver: one(user, {
+			fields: [settlementVersions.approvedBy],
+			references: [user.id],
+			relationName: "settlementApprover",
+		}),
+		images: many(settlementImageVersions),
 	}),
-	original: one(settlements, {
-		fields: [settlements.originalId],
-		references: [settlements.id],
-		relationName: "settlementVersions",
-	}),
-	versions: many(settlements, { relationName: "settlementVersions" }),
-	approver: one(user, {
-		fields: [settlements.approvedBy],
-		references: [user.id],
-		relationName: "settlementApprover",
-	}),
-	images: many(settlementImages),
-}));
+);
 
-export const entryImagesRelations = relations(entryImages, ({ one }) => ({
-	entry: one(entries, {
-		fields: [entryImages.entryId],
-		references: [entries.id],
-	}),
-}));
-
-export const settlementImagesRelations = relations(
-	settlementImages,
+export const entryImageVersionsRelations = relations(
+	entryImageVersions,
 	({ one }) => ({
-		settlement: one(settlements, {
-			fields: [settlementImages.settlementId],
-			references: [settlements.id],
+		entry: one(entryVersions, {
+			fields: [entryImageVersions.entryVersionId],
+			references: [entryVersions.id],
+		}),
+	}),
+);
+
+export const settlementImageVersionsRelations = relations(
+	settlementImageVersions,
+	({ one }) => ({
+		settlement: one(settlementVersions, {
+			fields: [settlementImageVersions.settlementVersionId],
+			references: [settlementVersions.id],
 		}),
 	}),
 );
