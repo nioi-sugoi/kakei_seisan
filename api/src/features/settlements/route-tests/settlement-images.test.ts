@@ -18,24 +18,54 @@ function createTestFile(name: string, type: string, sizeBytes = 1024): File {
 	return new File([buffer], name, { type });
 }
 
-/** create/modify API 経由で画像付き精算を作成し、画像IDを返す */
+/** JSON API で精算を作成し、画像アップロードエンドポイントで画像を追加する */
 async function createSettlementWithImage(
 	file?: File,
 ): Promise<{ settlementId: string; imageId: string }> {
+	// 1. JSON API で精算を作成
 	const res = await client.api.settlements.$post(
 		{
-			form: {
+			json: {
 				category: "fromHousehold",
-				amount: "5000",
+				amount: 5000,
 				occurredOn: "2024-03-15",
-				image1: file ?? createTestFile("receipt.jpg", "image/jpeg"),
 			},
 		},
 		{ headers: { Cookie: authCookie } },
 	);
 	const body = await res.json();
 	if ("error" in body) throw new Error("unexpected error");
-	return { settlementId: body.id, imageId: body.images[0].id };
+	const settlementId = body.id;
+
+	// 2. 画像アップロードエンドポイントで画像を追加
+	const formData = new FormData();
+	formData.append("image", file ?? createTestFile("receipt.jpg", "image/jpeg"));
+	const imageRes = await app.request(
+		`/api/settlements/${settlementId}/images`,
+		{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+		env,
+	);
+	const imageBody = (await imageRes.json()) as { id: string };
+	return { settlementId, imageId: imageBody.id };
+}
+
+/** 画像アップロードエンドポイントにリクエストを送る */
+async function uploadImage(
+	settlementId: string,
+	file: File,
+	cookie?: string,
+): Promise<Response> {
+	const formData = new FormData();
+	formData.append("image", file);
+	return app.request(
+		`/api/settlements/${settlementId}/images`,
+		{
+			method: "POST",
+			headers: { Cookie: cookie ?? authCookie },
+			body: formData,
+		},
+		env,
+	);
 }
 
 beforeAll(async () => {
@@ -163,92 +193,58 @@ describe("画像フォーマットのテスト", () => {
 	});
 
 	it("jpeg形式の画像をアップロードできる", async () => {
-		const res = await client.api.settlements.$post(
-			{
-				form: {
-					category: "fromHousehold",
-					amount: "5000",
-					occurredOn: "2024-03-15",
-					image1: createTestFile("receipt.jpg", "image/jpeg"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const settlement = await insertSettlement(TEST_USER.id);
+		const res = await uploadImage(
+			settlement.id,
+			createTestFile("receipt.jpg", "image/jpeg"),
 		);
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		expect(body).toHaveProperty("id");
 	});
 
 	it("png形式の画像をアップロードできる", async () => {
-		const res = await client.api.settlements.$post(
-			{
-				form: {
-					category: "fromHousehold",
-					amount: "5000",
-					occurredOn: "2024-03-15",
-					image1: createTestFile("receipt.png", "image/png"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const settlement = await insertSettlement(TEST_USER.id);
+		const res = await uploadImage(
+			settlement.id,
+			createTestFile("receipt.png", "image/png"),
 		);
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		expect(body).toHaveProperty("id");
 	});
 
 	it("webp形式の画像をアップロードできる", async () => {
-		const res = await client.api.settlements.$post(
-			{
-				form: {
-					category: "fromHousehold",
-					amount: "5000",
-					occurredOn: "2024-03-15",
-					image1: createTestFile("receipt.webp", "image/webp"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const settlement = await insertSettlement(TEST_USER.id);
+		const res = await uploadImage(
+			settlement.id,
+			createTestFile("receipt.webp", "image/webp"),
 		);
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		expect(body).toHaveProperty("id");
 	});
 
 	it("heic形式の画像をアップロードできる", async () => {
-		const res = await client.api.settlements.$post(
-			{
-				form: {
-					category: "fromHousehold",
-					amount: "5000",
-					occurredOn: "2024-03-15",
-					image1: createTestFile("receipt.heic", "image/heic"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const settlement = await insertSettlement(TEST_USER.id);
+		const res = await uploadImage(
+			settlement.id,
+			createTestFile("receipt.heic", "image/heic"),
 		);
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		expect(body).toHaveProperty("id");
 	});
 
 	it("サポートされていないファイル形式は 400 を返す", async () => {
-		const res = await client.api.settlements.$post(
-			{
-				form: {
-					category: "fromHousehold",
-					amount: "5000",
-					occurredOn: "2024-03-15",
-					image1: createTestFile("doc.pdf", "application/pdf"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const settlement = await insertSettlement(TEST_USER.id);
+		const res = await uploadImage(
+			settlement.id,
+			createTestFile("doc.pdf", "application/pdf"),
 		);
 
 		expect(res.status).toBe(400);
@@ -260,16 +256,10 @@ describe("画像フォーマットのテスト", () => {
 	});
 
 	it("10MBを超えるファイルは 400 を返す", async () => {
-		const res = await client.api.settlements.$post(
-			{
-				form: {
-					category: "fromHousehold",
-					amount: "5000",
-					occurredOn: "2024-03-15",
-					image1: createTestFile("big.jpg", "image/jpeg", 11 * 1024 * 1024),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const settlement = await insertSettlement(TEST_USER.id);
+		const res = await uploadImage(
+			settlement.id,
+			createTestFile("big.jpg", "image/jpeg", 11 * 1024 * 1024),
 		);
 
 		expect(res.status).toBe(400);

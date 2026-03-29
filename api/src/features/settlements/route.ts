@@ -7,45 +7,22 @@ import { requireAuth } from "../../middleware/require-auth";
 import { handleValidationError } from "../../middleware/validation-error-handler";
 import {
 	extensionForType,
-	isAllowedImageType,
-	MAX_IMAGE_SIZE,
+	imageUploadSchema,
+	validateImageFile,
 } from "../../shared/image-constants";
 import type { AppVariables } from "../../types";
 import * as settlementsRepository from "./repository";
 
 const createSettlementSchema = v.object({
 	category: v.picklist(["fromUser", "fromHousehold"]),
-	amount: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)),
+	amount: v.pipe(v.number(), v.integer(), v.minValue(1)),
 	occurredOn: v.pipe(v.string(), v.isoDate()),
-	image1: v.optional(v.instance(File)),
-	image2: v.optional(v.instance(File)),
 });
 
 const modifySettlementSchema = v.object({
-	amount: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)),
-	image1: v.optional(v.instance(File)),
-	image2: v.optional(v.instance(File)),
-	deleteImageIds: v.optional(v.string()),
+	amount: v.pipe(v.number(), v.integer(), v.minValue(1)),
+	deleteImageIds: v.optional(v.array(v.string())),
 });
-
-function collectImageFiles(
-	image1: File | undefined,
-	image2: File | undefined,
-): File[] {
-	return [image1, image2].filter((f): f is File => f !== undefined);
-}
-
-function validateImageFiles(files: File[]): string | null {
-	for (const file of files) {
-		if (!isAllowedImageType(file.type)) {
-			return "サポートされていないファイル形式です";
-		}
-		if (file.size > MAX_IMAGE_SIZE) {
-			return "ファイルサイズは10MB以下にしてください";
-		}
-	}
-	return null;
-}
 
 const settlementsApp = new Hono<{
 	Bindings: Env;
@@ -82,72 +59,29 @@ const settlementsApp = new Hono<{
 	.post(
 		"/",
 		requireAuth,
-		vValidator("form", createSettlementSchema, handleValidationError),
+		vValidator("json", createSettlementSchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
-			const { category, amount, occurredOn, image1, image2 } =
-				c.req.valid("form");
+			const input = c.req.valid("json");
 			const db = drizzle(c.env.DB);
-
-			const imageFiles = collectImageFiles(image1, image2);
-			const imageError = validateImageFiles(imageFiles);
-			if (imageError) {
-				return c.json(
-					{
-						error: imageError as
-							| "サポートされていないファイル形式です"
-							| "ファイルサイズは10MB以下にしてください",
-					},
-					400,
-				);
-			}
 
 			const settlement = await settlementsRepository.createSettlement(
 				db,
 				user.id,
-				{ category, amount, occurredOn },
+				input,
 			);
 
-			const images = [];
-			for (const file of imageFiles) {
-				const ext = extensionForType(file.type);
-				const storagePath = `receipts/${user.id}/${settlement.originalId}/${crypto.randomUUID()}.${ext}`;
-
-				const image = await settlementsRepository.createImage(db, {
-					settlementId: settlement.originalId,
-					storagePath,
-				});
-				if (!image) {
-					return c.json({ error: "画像は最大2枚までです" as const }, 400);
-				}
-
-				await c.env.R2.put(storagePath, file.stream(), {
-					httpMetadata: { contentType: file.type },
-				});
-
-				images.push({
-					id: image.id,
-					displayOrder: image.displayOrder,
-					createdAt: image.createdAt,
-				});
-			}
-
-			return c.json({ ...settlement, images }, 201);
+			return c.json({ ...settlement, images: [] }, 201);
 		},
 	)
 	.post(
 		"/:originalId/modify",
 		requireAuth,
-		vValidator("form", modifySettlementSchema, handleValidationError),
+		vValidator("json", modifySettlementSchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
 			const originalId = c.req.param("originalId");
-			const {
-				amount,
-				image1,
-				image2,
-				deleteImageIds: deleteIdsStr,
-			} = c.req.valid("form");
+			const { amount, deleteImageIds } = c.req.valid("json");
 			const db = drizzle(c.env.DB);
 
 			const latestSettlement = await settlementsRepository.findMyLatestVersion(
@@ -165,23 +99,8 @@ const settlementsApp = new Hono<{
 				);
 			}
 
-			const imageFiles = collectImageFiles(image1, image2);
-			const imageError = validateImageFiles(imageFiles);
-			if (imageError) {
-				return c.json(
-					{
-						error: imageError as
-							| "サポートされていないファイル形式です"
-							| "ファイルサイズは10MB以下にしてください",
-					},
-					400,
-				);
-			}
-
-			const deleteIds = deleteIdsStr
-				? deleteIdsStr.split(",").filter(Boolean)
-				: [];
-			const hasImageChanges = imageFiles.length > 0 || deleteIds.length > 0;
+			const deleteIds = deleteImageIds ?? [];
+			const hasImageChanges = deleteIds.length > 0;
 
 			if (amount === latestSettlement.amount && !hasImageChanges) {
 				return c.json({ error: "変更がありません" as const }, 400);
@@ -198,30 +117,12 @@ const settlementsApp = new Hono<{
 				{ amount },
 			);
 
-			// 削除を先に実行（枚数制限のため）
 			for (const imageId of deleteIds) {
 				const image = await settlementsRepository.findImageById(db, imageId);
 				if (image && image.settlementId === originalId) {
 					await settlementsRepository.deleteImage(db, imageId);
 					await c.env.R2.delete(image.storagePath);
 				}
-			}
-
-			for (const file of imageFiles) {
-				const ext = extensionForType(file.type);
-				const storagePath = `receipts/${user.id}/${originalId}/${crypto.randomUUID()}.${ext}`;
-
-				const image = await settlementsRepository.createImage(db, {
-					settlementId: originalId,
-					storagePath,
-				});
-				if (!image) {
-					return c.json({ error: "画像は最大2枚までです" as const }, 400);
-				}
-
-				await c.env.R2.put(storagePath, file.stream(), {
-					httpMetadata: { contentType: file.type },
-				});
 			}
 
 			const images = await settlementsRepository.findImagesBySettlement(
@@ -295,7 +196,81 @@ const settlementsApp = new Hono<{
 
 		return c.json(insertedRows[0], 201);
 	})
-	// ── 画像取得エンドポイント（GET のみ維持）──────────────────────────
+	// ── 画像エンドポイント ──────────────────────────────────────
+	.post(
+		"/:settlementId/images",
+		requireAuth,
+		vValidator("form", imageUploadSchema, handleValidationError),
+		async (c) => {
+			const user = c.get("user");
+			const settlementId = c.req.param("settlementId");
+			const { image } = c.req.valid("form");
+			const db = drizzle(c.env.DB);
+
+			const settlement = await settlementsRepository.findByOwner(
+				db,
+				settlementId,
+				user.id,
+			);
+			if (!settlement) {
+				return c.json({ error: "精算が見つかりません" as const }, 404);
+			}
+
+			const imageError = validateImageFile(image);
+			if (imageError) {
+				return c.json({ error: imageError }, 400);
+			}
+
+			const ext = extensionForType(image.type);
+			const storagePath = `receipts/${user.id}/${settlement.originalId}/${crypto.randomUUID()}.${ext}`;
+
+			const imageRecord = await settlementsRepository.createImage(db, {
+				settlementId: settlement.originalId,
+				storagePath,
+			});
+			if (!imageRecord) {
+				return c.json({ error: "画像は最大2枚までです" as const }, 400);
+			}
+
+			await c.env.R2.put(storagePath, image.stream(), {
+				httpMetadata: { contentType: image.type },
+			});
+
+			return c.json(
+				{
+					id: imageRecord.id,
+					displayOrder: imageRecord.displayOrder,
+					createdAt: imageRecord.createdAt,
+				},
+				201,
+			);
+		},
+	)
+	.delete("/:settlementId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const settlementId = c.req.param("settlementId");
+		const imageId = c.req.param("imageId");
+		const db = drizzle(c.env.DB);
+
+		const settlement = await settlementsRepository.findByOwner(
+			db,
+			settlementId,
+			user.id,
+		);
+		if (!settlement) {
+			return c.json({ error: "精算が見つかりません" as const }, 404);
+		}
+
+		const image = await settlementsRepository.findImageById(db, imageId);
+		if (!image || image.settlementId !== settlement.originalId) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		await settlementsRepository.deleteImage(db, imageId);
+		await c.env.R2.delete(image.storagePath);
+
+		return c.json({ ok: true as const }, 200);
+	})
 	.get("/:settlementId/images/:imageId", requireAuth, async (c) => {
 		const user = c.get("user");
 		const db = drizzle(c.env.DB);

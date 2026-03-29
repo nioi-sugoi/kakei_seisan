@@ -6,8 +6,7 @@ import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
-import { config } from "@/lib/config";
-import { getAuthHeaders } from "./use-image-upload";
+import { uploadImageRaw } from "./use-image-upload";
 
 const entryFieldSchema = {
 	category: v.picklist(["advance", "deposit"]),
@@ -43,19 +42,6 @@ type ModifyTarget = {
 	memo: string | null;
 };
 
-// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける
-function appendImageToFormData(
-	formData: FormData,
-	fieldName: string,
-	image: SelectedImage,
-) {
-	formData.append(fieldName, {
-		uri: image.uri,
-		name: image.fileName,
-		type: image.mimeType,
-	} as unknown as Blob);
-}
-
 async function throwResponseError(res: {
 	json: () => Promise<unknown>;
 }): Promise<never> {
@@ -77,39 +63,28 @@ export function useCreateEntryForm() {
 
 	const mutation = useMutation({
 		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
-			if (selectedImages.length > 0) {
-				// File uploads require raw fetch on React Native
-				const formData = new FormData();
-				formData.append("category", input.category);
-				formData.append("amount", String(input.amount));
-				formData.append("occurredOn", input.occurredOn);
-				formData.append("label", input.label);
-				if (input.memo) formData.append("memo", input.memo);
-				selectedImages.forEach((img, i) => {
-					appendImageToFormData(formData, `image${i + 1}`, img);
-				});
-
-				const res = await fetch(`${config.apiBaseUrl}/api/entries`, {
-					method: "POST",
-					body: formData,
-					headers: getAuthHeaders(),
-					credentials: "include",
-				});
-				if (!res.ok) await throwResponseError(res);
-				return res.json();
-			}
-			// Text-only: use Hono RPC client
 			const res = await client.api.entries.$post({
-				form: {
+				json: {
 					category: input.category,
-					amount: String(input.amount),
+					amount: input.amount,
 					occurredOn: input.occurredOn,
 					label: input.label,
 					memo: input.memo,
 				},
 			});
 			if (!res.ok) await throwResponseError(res);
-			return res.json();
+			const entry = await res.json();
+			if ("error" in entry) throw new Error(entry.error);
+
+			if (selectedImages.length > 0) {
+				await Promise.all(
+					selectedImages.map((img) =>
+						uploadImageRaw("entries", entry.originalId, img),
+					),
+				);
+			}
+
+			return entry;
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
@@ -167,45 +142,35 @@ export function useModifyEntryForm(
 			label: string;
 			memo?: string;
 		}) => {
-			const hasNewImages = imageOps.newImages.length > 0;
 			const deleteImageIds =
 				imageOps.pendingDeletes.length > 0
-					? imageOps.pendingDeletes.join(",")
+					? imageOps.pendingDeletes
 					: undefined;
 
-			if (hasNewImages) {
-				// File uploads require raw fetch on React Native
-				const formData = new FormData();
-				formData.append("amount", String(parsed.amount));
-				formData.append("label", parsed.label);
-				if (parsed.memo) formData.append("memo", parsed.memo);
-				imageOps.newImages.forEach((img, i) => {
-					appendImageToFormData(formData, `image${i + 1}`, img);
-				});
-				if (deleteImageIds) formData.append("deleteImageIds", deleteImageIds);
+			const hasTextChanges =
+				parsed.amount !== target.amount ||
+				parsed.label !== target.label ||
+				(parsed.memo ?? null) !== (target.memo ?? null);
 
-				const res = await fetch(
-					`${config.apiBaseUrl}/api/entries/${target.id}/modify`,
-					{
-						method: "POST",
-						body: formData,
-						headers: getAuthHeaders(),
-						credentials: "include",
-					},
-				);
-				if (!res.ok) await throwResponseError(res);
-			} else {
-				// Text-only: use Hono RPC client
+			if (hasTextChanges || (deleteImageIds && deleteImageIds.length > 0)) {
 				const res = await client.api.entries[":originalId"].modify.$post({
 					param: { originalId: target.id },
-					form: {
-						amount: String(parsed.amount),
+					json: {
+						amount: parsed.amount,
 						label: parsed.label,
 						memo: parsed.memo,
 						deleteImageIds,
 					},
 				});
 				if (!res.ok) await throwResponseError(res);
+			}
+
+			if (imageOps.newImages.length > 0) {
+				await Promise.all(
+					imageOps.newImages.map((img) =>
+						uploadImageRaw("entries", target.id, img),
+					),
+				);
 			}
 		},
 		onSuccess: () => {

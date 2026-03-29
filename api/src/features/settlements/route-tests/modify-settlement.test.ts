@@ -1,4 +1,6 @@
+import { env } from "cloudflare:test";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
@@ -15,6 +17,19 @@ import {
 function createTestFile(name: string, type: string, sizeBytes = 1024): File {
 	const buffer = new ArrayBuffer(sizeBytes);
 	return new File([buffer], name, { type });
+}
+
+/** 画像アップロード用ヘルパー: POST /:settlementId/images に FormData で送信 */
+async function uploadImage(settlementId: string, file?: File): Promise<string> {
+	const formData = new FormData();
+	formData.append("image", file ?? createTestFile("receipt.jpg", "image/jpeg"));
+	const res = await app.request(
+		`/api/settlements/${settlementId}/images`,
+		{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+		env,
+	);
+	const body = (await res.json()) as { id: string };
+	return body.id;
 }
 
 beforeAll(async () => {
@@ -36,7 +51,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "9000" },
+				json: { amount: 9000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -65,7 +80,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "9000" },
+				json: { amount: 9000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -73,7 +88,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "8000" },
+				json: { amount: 8000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -87,38 +102,6 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(dbVersions[0].amount).toBe(8000);
 	});
 
-	it("画像追加で金額変更なしでも新バージョンが作成される", async () => {
-		const settlement = await insertSettlement(TEST_USER.id, {
-			amount: 5000,
-		});
-
-		const res = await client.api.settlements[":originalId"].modify.$post(
-			{
-				param: { originalId: settlement.id },
-				form: {
-					amount: "5000",
-					image1: createTestFile("receipt.jpg", "image/jpeg"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body).toMatchObject({
-			amount: 5000,
-			originalId: settlement.id,
-			latest: true,
-		});
-		expect(body.images).toHaveLength(1);
-
-		const dbVersions = await queryVersionsByOriginalId(settlement.id);
-		expect(dbVersions).toHaveLength(2);
-		expect(dbVersions[0].latest).toBe(true);
-		expect(dbVersions[1].latest).toBe(false);
-	});
-
 	it("画像も金額変更もない場合は 400 を返す", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
@@ -127,7 +110,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "5000" },
+				json: { amount: 5000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -145,7 +128,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "5000" },
+				json: { amount: 5000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -168,7 +151,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "3000" },
+				json: { amount: 3000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -185,7 +168,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "3000" },
+				json: { amount: 3000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -197,7 +180,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: "nonexistent" },
-				form: { amount: "3000" },
+				json: { amount: 3000 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -213,7 +196,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "0" },
+				json: { amount: 0 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -229,7 +212,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "-1" },
+				json: { amount: -1 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -245,7 +228,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: { amount: "100.5" },
+				json: { amount: 100.5 },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -258,40 +241,27 @@ describe("POST /api/settlements/:originalId/modify", () => {
 
 		const res = await client.api.settlements[":originalId"].modify.$post({
 			param: { originalId: settlement.id },
-			form: { amount: "3000" },
+			json: { amount: 3000 },
 		});
 
 		expect(res.status).toBe(401);
 	});
 
-	it("修正時に画像の追加と削除を同時に行える", async () => {
+	it("修正時に画像の削除ができる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
 
 		// 画像を追加
-		const addRes = await client.api.settlements[":originalId"].modify.$post(
-			{
-				param: { originalId: settlement.id },
-				form: {
-					amount: "5000",
-					image1: createTestFile("old.jpg", "image/jpeg"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
-		);
-		const addBody = await addRes.json();
-		if ("error" in addBody) throw new Error("unexpected error");
-		const oldImageId = addBody.images[0].id;
+		const oldImageId = await uploadImage(settlement.id);
 
-		// 古い画像を削除しつつ新しい画像を追加
+		// 古い画像を削除
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				form: {
-					amount: "5000",
-					deleteImageIds: oldImageId,
-					image1: createTestFile("new.png", "image/png"),
+				json: {
+					amount: 5000,
+					deleteImageIds: [oldImageId],
 				},
 			},
 			{ headers: { Cookie: authCookie } },
@@ -300,7 +270,6 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(res.status).toBe(201);
 		const body = await res.json();
 		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
-		expect(body.images[0].id).not.toBe(oldImageId);
+		expect(body.images).toHaveLength(0);
 	});
 });

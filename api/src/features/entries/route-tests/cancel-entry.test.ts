@@ -86,7 +86,7 @@ describe("POST /api/entries/:id/cancel", () => {
 		await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				form: { amount: "9000", label: "食費" },
+				json: { amount: 9000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);

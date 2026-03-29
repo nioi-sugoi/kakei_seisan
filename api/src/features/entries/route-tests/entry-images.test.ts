@@ -18,44 +18,46 @@ function createTestFile(name: string, type: string, sizeBytes = 1024): File {
 	return new File([buffer], name, { type });
 }
 
-/** create-entry API 経由で画像付きエントリーを作成し、画像IDを返す */
+/** JSON API でエントリーを作成し、専用エンドポイント経由で画像をアップロードする */
 async function createEntryWithImage(
 	entryId?: string,
 	file?: File,
 ): Promise<{ entryId: string; imageId: string }> {
+	let targetEntryId: string;
 	if (entryId) {
-		// 既存エントリーに画像を追加（modify経由）
-		const res = await client.api.entries[":originalId"].modify.$post(
+		targetEntryId = entryId;
+	} else {
+		// 新規エントリーを JSON API で作成
+		const res = await client.api.entries.$post(
 			{
-				param: { originalId: entryId },
-				form: {
-					amount: "1500",
+				json: {
+					category: "advance",
+					amount: 1500,
+					occurredOn: "2024-03-15",
 					label: "食費",
-					image1: file ?? createTestFile("receipt.jpg", "image/jpeg"),
 				},
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 		const body = await res.json();
 		if ("error" in body) throw new Error("unexpected error");
-		return { entryId: body.originalId, imageId: body.images[0].id };
+		targetEntryId = body.id;
 	}
-	// 新規エントリー + 画像
-	const res = await client.api.entries.$post(
-		{
-			form: {
-				category: "advance",
-				amount: "1500",
-				occurredOn: "2024-03-15",
-				label: "食費",
-				image1: file ?? createTestFile("receipt.jpg", "image/jpeg"),
-			},
-		},
-		{ headers: { Cookie: authCookie } },
+
+	// 専用エンドポイント経由で画像をアップロード
+	const formData = new FormData();
+	formData.append("image", file ?? createTestFile("receipt.jpg", "image/jpeg"));
+	const imgRes = await app.request(
+		`/api/entries/${targetEntryId}/images`,
+		{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+		env,
 	);
-	const body = await res.json();
-	if ("error" in body) throw new Error("unexpected error");
-	return { entryId: body.id, imageId: body.images[0].id };
+	if (imgRes.status !== 201) {
+		const errBody = await imgRes.text();
+		throw new Error(`image upload failed: ${imgRes.status} ${errBody}`);
+	}
+	const imgBody = (await imgRes.json()) as { id: string };
+	return { entryId: targetEntryId, imageId: imgBody.id };
 }
 
 beforeAll(async () => {
@@ -135,7 +137,7 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 	});
 });
 
-describe("画像フォーマットのテスト", () => {
+describe("POST /api/entries/:entryId/images（画像フォーマット）", () => {
 	beforeEach(async () => {
 		await cleanAllTables();
 		await seedTestUser();
@@ -143,82 +145,108 @@ describe("画像フォーマットのテスト", () => {
 	});
 
 	it("jpeg形式の画像をアップロードできる", async () => {
-		const res = await client.api.entries.$post(
-			{
-				form: {
-					category: "advance",
-					amount: "1500",
-					occurredOn: "2024-03-15",
-					label: "食費",
-					image1: createTestFile("receipt.jpg", "image/jpeg"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const entry = await insertEntry(TEST_USER.id);
+		const formData = new FormData();
+		formData.append("image", createTestFile("receipt.jpg", "image/jpeg"));
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
 		);
 
 		expect(res.status).toBe(201);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		const body = (await res.json()) as { id: string; displayOrder: number };
+		expect(body).toHaveProperty("id");
+		expect(body).toHaveProperty("displayOrder", 0);
 	});
 
 	it("png形式の画像をアップロードできる", async () => {
-		const res = await client.api.entries.$post(
-			{
-				form: {
-					category: "advance",
-					amount: "1500",
-					occurredOn: "2024-03-15",
-					label: "食費",
-					image1: createTestFile("receipt.png", "image/png"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const entry = await insertEntry(TEST_USER.id);
+		const formData = new FormData();
+		formData.append("image", createTestFile("receipt.png", "image/png"));
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
 		);
 
 		expect(res.status).toBe(201);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		const body = (await res.json()) as { id: string };
+		expect(body).toHaveProperty("id");
 	});
 
 	it("webp形式の画像をアップロードできる", async () => {
-		const res = await client.api.entries.$post(
-			{
-				form: {
-					category: "advance",
-					amount: "1500",
-					occurredOn: "2024-03-15",
-					label: "食費",
-					image1: createTestFile("receipt.webp", "image/webp"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const entry = await insertEntry(TEST_USER.id);
+		const formData = new FormData();
+		formData.append("image", createTestFile("receipt.webp", "image/webp"));
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
 		);
 
 		expect(res.status).toBe(201);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		const body = (await res.json()) as { id: string };
+		expect(body).toHaveProperty("id");
 	});
 
 	it("heic形式の画像をアップロードできる", async () => {
-		const res = await client.api.entries.$post(
-			{
-				form: {
-					category: "advance",
-					amount: "1500",
-					occurredOn: "2024-03-15",
-					label: "食費",
-					image1: createTestFile("receipt.heic", "image/heic"),
-				},
-			},
-			{ headers: { Cookie: authCookie } },
+		const entry = await insertEntry(TEST_USER.id);
+		const formData = new FormData();
+		formData.append("image", createTestFile("receipt.heic", "image/heic"));
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
 		);
 
 		expect(res.status).toBe(201);
-		const body = await res.json();
-		if ("error" in body) throw new Error("unexpected error");
-		expect(body.images).toHaveLength(1);
+		const body = (await res.json()) as { id: string };
+		expect(body).toHaveProperty("id");
+	});
+
+	it("サポートされていないファイル形式は 400 を返す", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+		const formData = new FormData();
+		formData.append("image", createTestFile("doc.pdf", "application/pdf"));
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
+		);
+
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string };
+		expect(body).toHaveProperty(
+			"error",
+			"サポートされていないファイル形式です",
+		);
+	});
+
+	it("10MBを超える画像は 400 を返す", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+		const formData = new FormData();
+		formData.append(
+			"image",
+			createTestFile("big.jpg", "image/jpeg", 11 * 1024 * 1024),
+		);
+
+		const res = await app.request(
+			`/api/entries/${entry.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
+		);
+
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error: string };
+		expect(body).toHaveProperty(
+			"error",
+			"ファイルサイズは10MB以下にしてください",
+		);
 	});
 });

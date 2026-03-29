@@ -17,9 +17,9 @@ export function useCreateSettlement() {
 		mutationFn: (input: CreateSettlementInput) =>
 			parseResponse(
 				client.api.settlements.$post({
-					form: {
+					json: {
 						category: input.category,
-						amount: String(input.amount),
+						amount: input.amount,
 						occurredOn: input.occurredOn,
 					},
 				}),

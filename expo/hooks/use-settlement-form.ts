@@ -2,13 +2,11 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
-import { parseResponse } from "hono/client";
 import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
-import { config } from "@/lib/config";
-import { getAuthHeaders } from "./use-image-upload";
+import { uploadImageRaw } from "./use-image-upload";
 
 const settlementFieldSchema = {
 	amount: v.pipe(
@@ -27,19 +25,6 @@ type ModifyTarget = {
 	amount: number;
 	occurredOn: string;
 };
-
-// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける
-function appendImageToFormData(
-	formData: FormData,
-	fieldName: string,
-	image: SelectedImage,
-) {
-	formData.append(fieldName, {
-		uri: image.uri,
-		name: image.fileName,
-		type: image.mimeType,
-	} as unknown as Blob);
-}
 
 async function throwResponseError(res: {
 	json: () => Promise<unknown>;
@@ -81,35 +66,26 @@ export function useCreateSettlementForm(balance: number) {
 			amount: number;
 			occurredOn: string;
 		}) => {
-			if (selectedImages.length > 0) {
-				// File uploads require raw fetch on React Native
-				const formData = new FormData();
-				formData.append("category", input.category);
-				formData.append("amount", String(input.amount));
-				formData.append("occurredOn", input.occurredOn);
-				selectedImages.forEach((img, i) => {
-					appendImageToFormData(formData, `image${i + 1}`, img);
-				});
+			const res = await client.api.settlements.$post({
+				json: {
+					category: input.category,
+					amount: input.amount,
+					occurredOn: input.occurredOn,
+				},
+			});
+			if (!res.ok) await throwResponseError(res);
+			const settlement = await res.json();
+			if ("error" in settlement) throw new Error(settlement.error);
 
-				const res = await fetch(`${config.apiBaseUrl}/api/settlements`, {
-					method: "POST",
-					body: formData,
-					headers: getAuthHeaders(),
-					credentials: "include",
-				});
-				if (!res.ok) await throwResponseError(res);
-				return res.json();
+			if (selectedImages.length > 0) {
+				await Promise.all(
+					selectedImages.map((img) =>
+						uploadImageRaw("settlements", settlement.originalId, img),
+					),
+				);
 			}
-			// Text-only: use Hono RPC client
-			return parseResponse(
-				client.api.settlements.$post({
-					form: {
-						category: input.category,
-						amount: String(input.amount),
-						occurredOn: input.occurredOn,
-					},
-				}),
-			);
+
+			return settlement;
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["settlements"] });
@@ -162,38 +138,30 @@ export function useModifySettlementForm(
 
 	const mutation = useMutation({
 		mutationFn: async (parsed: { amount: number }) => {
-			const hasNewImages = imageOps.newImages.length > 0;
 			const deleteImageIds =
 				imageOps.pendingDeletes.length > 0
-					? imageOps.pendingDeletes.join(",")
+					? imageOps.pendingDeletes
 					: undefined;
 
-			if (hasNewImages) {
-				// File uploads require raw fetch on React Native
-				const formData = new FormData();
-				formData.append("amount", String(parsed.amount));
-				imageOps.newImages.forEach((img, i) => {
-					appendImageToFormData(formData, `image${i + 1}`, img);
-				});
-				if (deleteImageIds) formData.append("deleteImageIds", deleteImageIds);
+			const hasAmountChange = parsed.amount !== target.amount;
 
-				const res = await fetch(
-					`${config.apiBaseUrl}/api/settlements/${target.id}/modify`,
-					{
-						method: "POST",
-						body: formData,
-						headers: getAuthHeaders(),
-						credentials: "include",
-					},
-				);
-				if (!res.ok) await throwResponseError(res);
-			} else {
-				// Text-only: use Hono RPC client
+			if (hasAmountChange || (deleteImageIds && deleteImageIds.length > 0)) {
 				const res = await client.api.settlements[":originalId"].modify.$post({
 					param: { originalId: target.id },
-					form: { amount: String(parsed.amount), deleteImageIds },
+					json: {
+						amount: parsed.amount,
+						deleteImageIds,
+					},
 				});
 				if (!res.ok) await throwResponseError(res);
+			}
+
+			if (imageOps.newImages.length > 0) {
+				await Promise.all(
+					imageOps.newImages.map((img) =>
+						uploadImageRaw("settlements", target.id, img),
+					),
+				);
 			}
 		},
 		onSuccess: () => {

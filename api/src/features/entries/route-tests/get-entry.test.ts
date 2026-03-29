@@ -1,4 +1,6 @@
+import { env } from "cloudflare:test";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
@@ -105,7 +107,7 @@ describe("GET /api/entries/:id", () => {
 		await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				form: { amount: "4000", label: "食費" },
+				json: { amount: 4000, label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -137,21 +139,30 @@ describe("GET /api/entries/:id", () => {
 	});
 
 	it("記録詳細に画像メタデータが含まれる", async () => {
-		// create API 経由で画像付きエントリーを作成
+		// JSON API でエントリーを作成
 		const createRes = await client.api.entries.$post(
 			{
-				form: {
+				json: {
 					category: "advance",
-					amount: "1500",
+					amount: 1500,
 					occurredOn: "2024-03-15",
 					label: "食費",
-					image1: createTestFile("receipt.jpg", "image/jpeg"),
 				},
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 		const created = await createRes.json();
 		if ("error" in created) throw new Error("unexpected error");
+
+		// 専用エンドポイント経由で画像をアップロード
+		const formData = new FormData();
+		formData.append("image", createTestFile("receipt.jpg", "image/jpeg"));
+		const imgRes = await app.request(
+			`/api/entries/${created.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
+		);
+		expect(imgRes.status).toBe(201);
 
 		const res = await client.api.entries[":id"].$get(
 			{ param: { id: created.id } },
@@ -193,9 +204,9 @@ describe("POST → GET の結合テスト", () => {
 	it("POST で作成した記録を GET で取得できる", async () => {
 		const createRes = await client.api.entries.$post(
 			{
-				form: {
+				json: {
 					category: "advance",
-					amount: "3000",
+					amount: 3000,
 					occurredOn: "2024-04-01",
 					label: "会議費",
 					memo: "チームミーティング",
