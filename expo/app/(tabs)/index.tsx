@@ -61,7 +61,7 @@ export default function TimelineScreen() {
 		<ScrollView
 			horizontal
 			showsHorizontalScrollIndicator={false}
-			className="px-4 pb-2 pt-3"
+			className="px-4 pt-3"
 		>
 			{CATEGORY_FILTERS.map((f) => (
 				<Pressable
@@ -91,17 +91,15 @@ export default function TimelineScreen() {
 	const sortButton = (
 		<Pressable
 			onPress={() => setSortMenuOpen((prev) => !prev)}
-			className="flex-row items-center gap-1 px-4 pb-2"
+			className="flex-row items-center gap-1 px-4 py-0.5"
 			accessibilityRole="button"
 			accessibilityLabel={`並び替え: ${currentSortLabel}`}
 		>
-			<Text className="text-sm text-muted-foreground">並び替え:</Text>
-			<Text className="text-sm font-medium text-foreground">
+			<Text className="text-xs text-muted-foreground">↕</Text>
+			<Text className="text-xs font-medium text-primary">
 				{currentSortLabel}
 			</Text>
-			<Text className="text-xs text-muted-foreground">
-				{sortMenuOpen ? "▲" : "▼"}
-			</Text>
+			<Text className="text-xs text-primary">▼</Text>
 		</Pressable>
 	);
 
@@ -131,7 +129,7 @@ export default function TimelineScreen() {
 					renderItem={({ item }) => {
 						if (item.type === "header") {
 							return (
-								<Text className="px-4 pb-2 pt-4 text-lg font-semibold text-muted-foreground">
+								<Text className="px-4 pb-2 pt-4 text-sm font-semibold text-muted-foreground">
 									{item.title}
 								</Text>
 							);
@@ -170,7 +168,7 @@ export default function TimelineScreen() {
 
 			{/* FlatList内だとRNTLのアクセシビリティクエリで検出できないため外に配置 */}
 			{sortMenuOpen && (
-				<View className="absolute left-4 right-4 top-52 z-10 rounded-lg bg-card p-1">
+				<View className="absolute left-4 top-52 z-10 rounded-lg border border-border bg-card">
 					{SORT_OPTIONS.map((option) => {
 						const isSelected =
 							sort.sortBy === option.sortBy &&
@@ -185,13 +183,13 @@ export default function TimelineScreen() {
 									});
 									setSortMenuOpen(false);
 								}}
-								className={`rounded-md px-3 py-2 ${isSelected ? "bg-muted" : ""}`}
+								className={`px-4 py-2 ${isSelected ? "bg-muted" : ""}`}
 								accessibilityRole="button"
 								accessibilityLabel={`${option.label}で並び替え`}
 								accessibilityState={{ selected: isSelected }}
 							>
 								<Text
-									className={`text-sm ${isSelected ? "font-bold text-primary" : "text-foreground"}`}
+									className={`text-xs ${isSelected ? "font-semibold text-primary" : "text-foreground"}`}
 								>
 									{option.label}
 								</Text>
