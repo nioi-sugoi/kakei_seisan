@@ -1055,8 +1055,8 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("2月に登録した記録")).toBeOnTheScreen();
 			// occurredOn 基準の月ヘッダーは表示されない
 			expect(screen.queryByText("2026年3月")).toBeNull();
-			// カード上の日付も createdAt ベース（2月15日）
-			expect(screen.getByText("2月15日")).toBeOnTheScreen();
+			// カード上の日付に更新日が併記される
+			expect(screen.getByText("3月15日（更新：2月15日）")).toBeOnTheScreen();
 		});
 
 		it("ソート選択でドロップダウンのアクティブ状態が正しく更新される", async () => {

@@ -140,7 +140,7 @@ export default function TimelineScreen() {
 								<TimelineEventCard
 									event={item.event}
 									onPress={handleEventPress}
-									displayDate={
+									updatedAt={
 										sort.sortBy === "createdAt"
 											? item.event.createdAt
 											: undefined
