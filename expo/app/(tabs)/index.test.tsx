@@ -696,8 +696,8 @@ describe("TimelineScreen", () => {
 			).toBeOnTheScreen();
 		});
 
-		it("フィルター適用後も月ごとのセクション区切りが正しく表示される", async () => {
-			// 初回: 全種別混在
+		it("フィルター適用で該当月の記録がなくなるとその月のセクション区切りも消える", async () => {
+			// 初回: 3月と2月に記録がある（2月は預りのみ）
 			mockTimelineResponse({
 				data: [
 					makeAdvanceEvent({
@@ -709,8 +709,8 @@ describe("TimelineScreen", () => {
 					makeDepositEvent({
 						id: "dep-1",
 						originalId: "dep-1",
-						occurredOn: "2026-03-10",
-						label: "3月の預り",
+						occurredOn: "2026-02-10",
+						label: "2月の預り",
 					}),
 				],
 				nextCursor: null,
@@ -718,10 +718,11 @@ describe("TimelineScreen", () => {
 			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 			await waitFor(() => {
-				expect(screen.getByText("3月の立替")).toBeOnTheScreen();
+				expect(screen.getByText("2026年3月")).toBeOnTheScreen();
 			});
+			expect(screen.getByText("2026年2月")).toBeOnTheScreen();
 
-			// 立替フィルター適用 → 月をまたぐ立替のみ返却
+			// 立替フィルター適用 → 3月の立替のみ（2月の預りは除外）
 			mockTimelineResponse({
 				data: [
 					makeAdvanceEvent({
@@ -730,23 +731,16 @@ describe("TimelineScreen", () => {
 						occurredOn: "2026-03-15",
 						label: "3月の立替",
 					}),
-					makeAdvanceEvent({
-						id: "adv-2",
-						originalId: "adv-2",
-						occurredOn: "2026-02-10",
-						label: "2月の立替",
-					}),
 				],
 				nextCursor: null,
 			});
 			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
 
 			await waitFor(() => {
-				expect(screen.getByText("2026年3月")).toBeOnTheScreen();
+				expect(screen.queryByText("2026年2月")).toBeNull();
 			});
-			expect(screen.getByText("2026年2月")).toBeOnTheScreen();
+			expect(screen.getByText("2026年3月")).toBeOnTheScreen();
 			expect(screen.getByText("3月の立替")).toBeOnTheScreen();
-			expect(screen.getByText("2月の立替")).toBeOnTheScreen();
 		});
 
 		it("フィルター適用でAPIが空配列を返した場合、空状態メッセージが表示される", async () => {
