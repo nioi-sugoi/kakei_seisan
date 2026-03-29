@@ -697,6 +697,31 @@ describe("TimelineScreen", () => {
 		});
 
 		it("フィルター適用後も月ごとのセクション区切りが正しく表示される", async () => {
+			// 初回: 全種別混在
+			mockTimelineResponse({
+				data: [
+					makeAdvanceEvent({
+						id: "adv-1",
+						originalId: "adv-1",
+						occurredOn: "2026-03-15",
+						label: "3月の立替",
+					}),
+					makeDepositEvent({
+						id: "dep-1",
+						originalId: "dep-1",
+						occurredOn: "2026-03-10",
+						label: "3月の預り",
+					}),
+				],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("3月の立替")).toBeOnTheScreen();
+			});
+
+			// 立替フィルター適用 → 月をまたぐ立替のみ返却
 			mockTimelineResponse({
 				data: [
 					makeAdvanceEvent({
@@ -714,9 +739,8 @@ describe("TimelineScreen", () => {
 				],
 				nextCursor: null,
 			});
-			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
 
-			// 立替フィルター適用（初回表示で全件=立替のみのデータ）
 			await waitFor(() => {
 				expect(screen.getByText("2026年3月")).toBeOnTheScreen();
 			});
