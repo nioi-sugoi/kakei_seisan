@@ -2,7 +2,7 @@ import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { settlementImages } from "../../../db/schema";
+import { settlementImageVersions } from "../../../db/schema";
 import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
@@ -281,8 +281,8 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const db = drizzle(env.DB);
 		const [imageMeta] = await db
 			.select()
-			.from(settlementImages)
-			.where(eq(settlementImages.id, imageId))
+			.from(settlementImageVersions)
+			.where(eq(settlementImageVersions.id, imageId))
 			.all();
 		const storagePath = imageMeta.storagePath;
 
@@ -305,8 +305,8 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		// 旧バージョンの画像レコードは DB に残っている（履歴用）
 		const oldImage = await db
 			.select()
-			.from(settlementImages)
-			.where(eq(settlementImages.id, imageId))
+			.from(settlementImageVersions)
+			.where(eq(settlementImageVersions.id, imageId))
 			.get();
 		expect(oldImage).toBeTruthy();
 	});

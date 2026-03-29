@@ -2,10 +2,10 @@ import { and, asc, desc, eq, gt, lt, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { unionAll } from "drizzle-orm/sqlite-core";
 import {
-	entries,
-	entryImages,
-	settlementImages,
-	settlements,
+	entryImageVersions,
+	entryVersions,
+	settlementImageVersions,
+	settlementVersions,
 } from "../../db/schema";
 
 type SortBy = "occurredOn" | "createdAt";
@@ -65,7 +65,7 @@ function buildOrderBy(sortBy: SortBy, sortOrder: SortOrder) {
 }
 
 function buildCursorFilter(
-	table: typeof entries | typeof settlements,
+	table: typeof entryVersions | typeof settlementVersions,
 	cursor: CursorValue | undefined,
 	sortBy: SortBy,
 	sortOrder: SortOrder,
@@ -100,34 +100,41 @@ function buildEntriesQuery(
 	sortBy: SortBy,
 	sortOrder: SortOrder,
 ) {
-	const cursorFilter = buildCursorFilter(entries, cursor, sortBy, sortOrder);
-	const categoryFilter = category ? eq(entries.category, category) : undefined;
+	const cursorFilter = buildCursorFilter(
+		entryVersions,
+		cursor,
+		sortBy,
+		sortOrder,
+	);
+	const categoryFilter = category
+		? eq(entryVersions.category, category)
+		: undefined;
 
-	const entryImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${entryImages} WHERE ${entryImages.entryId} = "entries"."id")`;
+	const entryImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${entryImageVersions} WHERE ${entryImageVersions.entryVersionId} = "entry_versions"."id")`;
 
 	return db
 		.select({
-			id: entries.id,
-			userId: entries.userId,
+			id: entryVersions.id,
+			userId: entryVersions.userId,
 			type: sql<string>`'entry'`.as("type"),
-			category: sql<string>`${entries.category}`,
-			amount: entries.amount,
-			occurredOn: entries.occurredOn,
-			label: sql<string | null>`${entries.label}`,
-			memo: entries.memo,
-			originalId: entries.originalId,
-			cancelled: entries.cancelled,
-			latest: entries.latest,
-			status: entries.status,
-			approvalComment: entries.approvalComment,
-			createdAt: entries.createdAt,
+			category: sql<string>`${entryVersions.category}`,
+			amount: entryVersions.amount,
+			occurredOn: entryVersions.occurredOn,
+			label: sql<string | null>`${entryVersions.label}`,
+			memo: entryVersions.memo,
+			originalId: entryVersions.originalId,
+			cancelled: entryVersions.cancelled,
+			latest: entryVersions.latest,
+			status: entryVersions.status,
+			approvalComment: entryVersions.approvalComment,
+			createdAt: entryVersions.createdAt,
 			imageCount: entryImageCountSql.as("image_count"),
 		})
-		.from(entries)
+		.from(entryVersions)
 		.where(
 			and(
-				eq(entries.userId, userId),
-				eq(entries.latest, true),
+				eq(entryVersions.userId, userId),
+				eq(entryVersions.latest, true),
 				cursorFilter,
 				categoryFilter,
 			),
@@ -142,37 +149,37 @@ function buildSettlementsQuery(
 	sortOrder: SortOrder,
 ) {
 	const cursorFilter = buildCursorFilter(
-		settlements,
+		settlementVersions,
 		cursor,
 		sortBy,
 		sortOrder,
 	);
 
-	const settlementImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${settlementImages} WHERE ${settlementImages.settlementId} = "settlements"."id")`;
+	const settlementImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${settlementImageVersions} WHERE ${settlementImageVersions.settlementVersionId} = "settlement_versions"."id")`;
 
 	return db
 		.select({
-			id: settlements.id,
-			userId: settlements.userId,
+			id: settlementVersions.id,
+			userId: settlementVersions.userId,
 			type: sql<string>`'settlement'`.as("type"),
-			category: sql<string>`${settlements.category}`,
-			amount: settlements.amount,
-			occurredOn: settlements.occurredOn,
+			category: sql<string>`${settlementVersions.category}`,
+			amount: settlementVersions.amount,
+			occurredOn: settlementVersions.occurredOn,
 			label: sql<string | null>`null`,
 			memo: sql<string | null>`null`,
-			originalId: settlements.originalId,
-			cancelled: settlements.cancelled,
-			latest: settlements.latest,
-			status: settlements.status,
-			approvalComment: settlements.approvalComment,
-			createdAt: settlements.createdAt,
+			originalId: settlementVersions.originalId,
+			cancelled: settlementVersions.cancelled,
+			latest: settlementVersions.latest,
+			status: settlementVersions.status,
+			approvalComment: settlementVersions.approvalComment,
+			createdAt: settlementVersions.createdAt,
 			imageCount: settlementImageCountSql.as("image_count"),
 		})
-		.from(settlements)
+		.from(settlementVersions)
 		.where(
 			and(
-				eq(settlements.userId, userId),
-				eq(settlements.latest, true),
+				eq(settlementVersions.userId, userId),
+				eq(settlementVersions.latest, true),
 				cursorFilter,
 			),
 		);

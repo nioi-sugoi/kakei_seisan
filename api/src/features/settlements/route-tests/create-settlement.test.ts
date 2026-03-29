@@ -2,7 +2,7 @@ import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { settlements } from "../../../db/schema";
+import { settlementVersions } from "../../../db/schema";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import { authCookie, client, setupAuth, setupDB } from "./helpers";
@@ -12,7 +12,7 @@ beforeAll(async () => {
 	await setupAuth();
 });
 
-describe("POST /api/settlements", () => {
+describe("POST /api/settlementVersions", () => {
 	beforeEach(async () => {
 		await cleanAllTables();
 		await seedTestUser();
@@ -82,8 +82,8 @@ describe("POST /api/settlements", () => {
 		const db = drizzle(env.DB);
 		const result = await db
 			.select()
-			.from(settlements)
-			.where(eq(settlements.userId, TEST_USER.id))
+			.from(settlementVersions)
+			.where(eq(settlementVersions.userId, TEST_USER.id))
 			.all();
 
 		expect(result).toHaveLength(1);

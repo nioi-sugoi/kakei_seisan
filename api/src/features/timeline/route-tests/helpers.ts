@@ -1,10 +1,10 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import {
-	entries,
-	entryImages,
-	settlementImages,
-	settlements,
+	entryImageVersions,
+	entryVersions,
+	settlementImageVersions,
+	settlementVersions,
 } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
@@ -19,12 +19,12 @@ export { authCookie, client, OTHER_USER, seedOtherUser, setupAuth, setupDB };
 
 export async function insertEntry(
 	userId: string,
-	overrides?: Partial<typeof entries.$inferInsert>,
+	overrides?: Partial<typeof entryVersions.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
 	const [entry] = await db
-		.insert(entries)
+		.insert(entryVersions)
 		.values({
 			id,
 			userId,
@@ -41,12 +41,12 @@ export async function insertEntry(
 
 export async function insertSettlement(
 	userId: string,
-	overrides?: Partial<typeof settlements.$inferInsert>,
+	overrides?: Partial<typeof settlementVersions.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
 	const [settlement] = await db
-		.insert(settlements)
+		.insert(settlementVersions)
 		.values({
 			id,
 			userId,
@@ -65,10 +65,10 @@ export async function insertEntryImage(entryId: string) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
 	const [image] = await db
-		.insert(entryImages)
+		.insert(entryImageVersions)
 		.values({
 			id,
-			entryId,
+			entryVersionId: entryId,
 			storagePath: `receipts/test/${entryId}/${id}.jpg`,
 			createdAt: Date.now(),
 		})
@@ -80,10 +80,10 @@ export async function insertSettlementImage(settlementId: string) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
 	const [image] = await db
-		.insert(settlementImages)
+		.insert(settlementImageVersions)
 		.values({
 			id,
-			settlementId,
+			settlementVersionId: settlementId,
 			storagePath: `receipts/test/${settlementId}/${id}.jpg`,
 			createdAt: Date.now(),
 		})

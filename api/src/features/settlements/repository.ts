@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { settlementImages, settlements } from "../../db/schema";
+import { settlementImageVersions, settlementVersions } from "../../db/schema";
 import type {
 	CreateSettlementInput,
 	ModifySettlementInput,
@@ -14,7 +14,7 @@ export function createSettlement(
 ) {
 	const id = crypto.randomUUID();
 	return db
-		.insert(settlements)
+		.insert(settlementVersions)
 		.values({
 			id,
 			userId,
@@ -31,17 +31,19 @@ export function createSettlement(
 export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 	return db
 		.select()
-		.from(settlements)
-		.where(and(eq(settlements.id, id), eq(settlements.userId, userId)))
+		.from(settlementVersions)
+		.where(
+			and(eq(settlementVersions.id, id), eq(settlementVersions.userId, userId)),
+		)
 		.get();
 }
 
 export function findVersions(db: DrizzleD1Database, originalId: string) {
 	return db
 		.select()
-		.from(settlements)
-		.where(eq(settlements.originalId, originalId))
-		.orderBy(desc(settlements.createdAt))
+		.from(settlementVersions)
+		.where(eq(settlementVersions.originalId, originalId))
+		.orderBy(desc(settlementVersions.createdAt))
 		.all();
 }
 
@@ -52,12 +54,12 @@ export function findMyLatestVersion(
 ) {
 	return db
 		.select()
-		.from(settlements)
+		.from(settlementVersions)
 		.where(
 			and(
-				eq(settlements.originalId, originalId),
-				eq(settlements.userId, userId),
-				eq(settlements.latest, true),
+				eq(settlementVersions.originalId, originalId),
+				eq(settlementVersions.userId, userId),
+				eq(settlementVersions.latest, true),
 			),
 		)
 		.get();
@@ -77,16 +79,16 @@ export function createModification(
 	const now = Date.now();
 	return db.batch([
 		db
-			.update(settlements)
+			.update(settlementVersions)
 			.set({ latest: false })
 			.where(
 				and(
-					eq(settlements.originalId, original.originalId),
-					eq(settlements.latest, true),
+					eq(settlementVersions.originalId, original.originalId),
+					eq(settlementVersions.latest, true),
 				),
 			),
 		db
-			.insert(settlements)
+			.insert(settlementVersions)
 			.values({
 				id: newId,
 				userId,
@@ -116,16 +118,16 @@ export function createCancellation(
 	const now = Date.now();
 	return db.batch([
 		db
-			.update(settlements)
+			.update(settlementVersions)
 			.set({ latest: false })
 			.where(
 				and(
-					eq(settlements.originalId, latestSettlement.originalId),
-					eq(settlements.latest, true),
+					eq(settlementVersions.originalId, latestSettlement.originalId),
+					eq(settlementVersions.latest, true),
 				),
 			),
 		db
-			.insert(settlements)
+			.insert(settlementVersions)
 			.values({
 				id: newId,
 				userId,
@@ -155,16 +157,16 @@ export function createRestoration(
 	const now = Date.now();
 	return db.batch([
 		db
-			.update(settlements)
+			.update(settlementVersions)
 			.set({ latest: false })
 			.where(
 				and(
-					eq(settlements.originalId, latestSettlement.originalId),
-					eq(settlements.latest, true),
+					eq(settlementVersions.originalId, latestSettlement.originalId),
+					eq(settlementVersions.latest, true),
 				),
 			),
 		db
-			.insert(settlements)
+			.insert(settlementVersions)
 			.values({
 				id: newId,
 				userId,
@@ -195,15 +197,15 @@ export async function createImage(
 		settlementId: string;
 		storagePath: string;
 	},
-): Promise<typeof settlementImages.$inferSelect | null> {
+): Promise<typeof settlementImageVersions.$inferSelect | null> {
 	const id = crypto.randomUUID();
 	const now = Date.now();
 	const result = await db.run(sql`
-		INSERT INTO settlement_images (id, settlement_id, storage_path, display_order, created_at)
+		INSERT INTO settlement_image_versions (id, settlement_version_id, storage_path, display_order, created_at)
 		SELECT ${id}, ${input.settlementId}, ${input.storagePath},
 			COALESCE(MAX(display_order) + 1, 0), ${now}
-		FROM settlement_images
-		WHERE settlement_id = ${input.settlementId}
+		FROM settlement_image_versions
+		WHERE settlement_version_id = ${input.settlementId}
 		HAVING COUNT(*) < 2
 	`);
 	if (!result.meta.rows_written || result.meta.rows_written === 0) {
@@ -211,8 +213,8 @@ export async function createImage(
 	}
 	const row = await db
 		.select()
-		.from(settlementImages)
-		.where(eq(settlementImages.id, id))
+		.from(settlementImageVersions)
+		.where(eq(settlementImageVersions.id, id))
 		.get();
 	return row ?? null;
 }
@@ -223,24 +225,24 @@ export function findImagesBySettlement(
 ) {
 	return db
 		.select()
-		.from(settlementImages)
-		.where(eq(settlementImages.settlementId, settlementId))
-		.orderBy(settlementImages.displayOrder)
+		.from(settlementImageVersions)
+		.where(eq(settlementImageVersions.settlementVersionId, settlementId))
+		.orderBy(settlementImageVersions.displayOrder)
 		.all();
 }
 
 export function findImageById(db: DrizzleD1Database, imageId: string) {
 	return db
 		.select()
-		.from(settlementImages)
-		.where(eq(settlementImages.id, imageId))
+		.from(settlementImageVersions)
+		.where(eq(settlementImageVersions.id, imageId))
 		.get();
 }
 
 export function deleteImage(db: DrizzleD1Database, imageId: string) {
 	return db
-		.delete(settlementImages)
-		.where(eq(settlementImages.id, imageId))
+		.delete(settlementImageVersions)
+		.where(eq(settlementImageVersions.id, imageId))
 		.run();
 }
 
@@ -253,22 +255,22 @@ export async function copyImagesToVersion(
 ) {
 	const images = await findImagesBySettlement(db, fromVersionId);
 	const deleteSet = new Set(deleteIds);
-	const copied: (typeof settlementImages.$inferSelect)[] = [];
+	const copied: (typeof settlementImageVersions.$inferSelect)[] = [];
 	for (const img of images) {
 		if (deleteSet.has(img.id)) continue;
 		const id = crypto.randomUUID();
 		const now = Date.now();
-		await db.insert(settlementImages).values({
+		await db.insert(settlementImageVersions).values({
 			id,
-			settlementId: toVersionId,
+			settlementVersionId: toVersionId,
 			storagePath: img.storagePath,
 			displayOrder: img.displayOrder,
 			createdAt: now,
 		});
 		const row = await db
 			.select()
-			.from(settlementImages)
-			.where(eq(settlementImages.id, id))
+			.from(settlementImageVersions)
+			.where(eq(settlementImageVersions.id, id))
 			.get();
 		if (row) copied.push(row);
 	}
@@ -282,8 +284,8 @@ export async function countImageRefsByStoragePath(
 ) {
 	const result = await db
 		.select({ count: sql<number>`COUNT(*)` })
-		.from(settlementImages)
-		.where(eq(settlementImages.storagePath, storagePath))
+		.from(settlementImageVersions)
+		.where(eq(settlementImageVersions.storagePath, storagePath))
 		.get();
 	return result?.count ?? 0;
 }
@@ -298,11 +300,11 @@ export async function findImageWithOwnershipCheck(
 	if (!image) return null;
 	const version = await db
 		.select()
-		.from(settlements)
+		.from(settlementVersions)
 		.where(
 			and(
-				eq(settlements.id, image.settlementId),
-				eq(settlements.originalId, originalId),
+				eq(settlementVersions.id, image.settlementVersionId),
+				eq(settlementVersions.originalId, originalId),
 			),
 		)
 		.get();

@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { entries, entryImages } from "../../db/schema";
+import { entryImageVersions, entryVersions } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
 
 export function createEntry(
@@ -10,7 +10,7 @@ export function createEntry(
 ) {
 	const id = crypto.randomUUID();
 	return db
-		.insert(entries)
+		.insert(entryVersions)
 		.values({
 			id,
 			userId,
@@ -26,14 +26,14 @@ export function createEntry(
 }
 
 export function findById(db: DrizzleD1Database, id: string) {
-	return db.select().from(entries).where(eq(entries.id, id)).get();
+	return db.select().from(entryVersions).where(eq(entryVersions.id, id)).get();
 }
 
 export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 	return db
 		.select()
-		.from(entries)
-		.where(and(eq(entries.id, id), eq(entries.userId, userId)))
+		.from(entryVersions)
+		.where(and(eq(entryVersions.id, id), eq(entryVersions.userId, userId)))
 		.get();
 }
 
@@ -41,9 +41,9 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 export function findVersions(db: DrizzleD1Database, originalId: string) {
 	return db
 		.select()
-		.from(entries)
-		.where(eq(entries.originalId, originalId))
-		.orderBy(desc(entries.createdAt))
+		.from(entryVersions)
+		.where(eq(entryVersions.originalId, originalId))
+		.orderBy(desc(entryVersions.createdAt))
 		.all();
 }
 
@@ -55,12 +55,12 @@ export function findMyLatestVersion(
 ) {
 	return db
 		.select()
-		.from(entries)
+		.from(entryVersions)
 		.where(
 			and(
-				eq(entries.originalId, originalId),
-				eq(entries.userId, userId),
-				eq(entries.latest, true),
+				eq(entryVersions.originalId, originalId),
+				eq(entryVersions.userId, userId),
+				eq(entryVersions.latest, true),
 			),
 		)
 		.get();
@@ -84,16 +84,16 @@ export function createModification(
 	const now = Date.now();
 	return db.batch([
 		db
-			.update(entries)
+			.update(entryVersions)
 			.set({ latest: false })
 			.where(
 				and(
-					eq(entries.originalId, original.originalId),
-					eq(entries.latest, true),
+					eq(entryVersions.originalId, original.originalId),
+					eq(entryVersions.latest, true),
 				),
 			),
 		db
-			.insert(entries)
+			.insert(entryVersions)
 			.values({
 				id: newId,
 				userId,
@@ -131,16 +131,16 @@ export function createRestoration(
 	const now = Date.now();
 	return db.batch([
 		db
-			.update(entries)
+			.update(entryVersions)
 			.set({ latest: false })
 			.where(
 				and(
-					eq(entries.originalId, latestEntry.originalId),
-					eq(entries.latest, true),
+					eq(entryVersions.originalId, latestEntry.originalId),
+					eq(entryVersions.latest, true),
 				),
 			),
 		db
-			.insert(entries)
+			.insert(entryVersions)
 			.values({
 				id: newId,
 				userId,
@@ -177,16 +177,16 @@ export function createCancellation(
 	const now = Date.now();
 	return db.batch([
 		db
-			.update(entries)
+			.update(entryVersions)
 			.set({ latest: false })
 			.where(
 				and(
-					eq(entries.originalId, latestEntry.originalId),
-					eq(entries.latest, true),
+					eq(entryVersions.originalId, latestEntry.originalId),
+					eq(entryVersions.latest, true),
 				),
 			),
 		db
-			.insert(entries)
+			.insert(entryVersions)
 			.values({
 				id: newId,
 				userId,
@@ -219,15 +219,15 @@ export async function createImage(
 		entryId: string;
 		storagePath: string;
 	},
-): Promise<typeof entryImages.$inferSelect | null> {
+): Promise<typeof entryImageVersions.$inferSelect | null> {
 	const id = crypto.randomUUID();
 	const now = Date.now();
 	const result = await db.run(sql`
-		INSERT INTO entry_images (id, entry_id, storage_path, display_order, created_at)
+		INSERT INTO entry_image_versions (id, entry_version_id, storage_path, display_order, created_at)
 		SELECT ${id}, ${input.entryId}, ${input.storagePath},
 			COALESCE(MAX(display_order) + 1, 0), ${now}
-		FROM entry_images
-		WHERE entry_id = ${input.entryId}
+		FROM entry_image_versions
+		WHERE entry_version_id = ${input.entryId}
 		HAVING COUNT(*) < 2
 	`);
 	if (!result.meta.rows_written || result.meta.rows_written === 0) {
@@ -235,8 +235,8 @@ export async function createImage(
 	}
 	const row = await db
 		.select()
-		.from(entryImages)
-		.where(eq(entryImages.id, id))
+		.from(entryImageVersions)
+		.where(eq(entryImageVersions.id, id))
 		.get();
 	return row ?? null;
 }
@@ -244,18 +244,25 @@ export async function createImage(
 export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
 	return db
 		.select()
-		.from(entryImages)
-		.where(eq(entryImages.entryId, entryId))
-		.orderBy(entryImages.displayOrder)
+		.from(entryImageVersions)
+		.where(eq(entryImageVersions.entryVersionId, entryId))
+		.orderBy(entryImageVersions.displayOrder)
 		.all();
 }
 
 export function findImageById(db: DrizzleD1Database, imageId: string) {
-	return db.select().from(entryImages).where(eq(entryImages.id, imageId)).get();
+	return db
+		.select()
+		.from(entryImageVersions)
+		.where(eq(entryImageVersions.id, imageId))
+		.get();
 }
 
 export function deleteImage(db: DrizzleD1Database, imageId: string) {
-	return db.delete(entryImages).where(eq(entryImages.id, imageId)).run();
+	return db
+		.delete(entryImageVersions)
+		.where(eq(entryImageVersions.id, imageId))
+		.run();
 }
 
 /** 指定バージョンの画像を新バージョンにコピーする（deleteIds に含まれる画像は除外） */
@@ -267,22 +274,22 @@ export async function copyImagesToVersion(
 ) {
 	const images = await findImagesByEntry(db, fromVersionId);
 	const deleteSet = new Set(deleteIds);
-	const copied: (typeof entryImages.$inferSelect)[] = [];
+	const copied: (typeof entryImageVersions.$inferSelect)[] = [];
 	for (const img of images) {
 		if (deleteSet.has(img.id)) continue;
 		const id = crypto.randomUUID();
 		const now = Date.now();
-		await db.insert(entryImages).values({
+		await db.insert(entryImageVersions).values({
 			id,
-			entryId: toVersionId,
+			entryVersionId: toVersionId,
 			storagePath: img.storagePath,
 			displayOrder: img.displayOrder,
 			createdAt: now,
 		});
 		const row = await db
 			.select()
-			.from(entryImages)
-			.where(eq(entryImages.id, id))
+			.from(entryImageVersions)
+			.where(eq(entryImageVersions.id, id))
 			.get();
 		if (row) copied.push(row);
 	}
@@ -296,8 +303,8 @@ export async function countImageRefsByStoragePath(
 ) {
 	const result = await db
 		.select({ count: sql<number>`COUNT(*)` })
-		.from(entryImages)
-		.where(eq(entryImages.storagePath, storagePath))
+		.from(entryImageVersions)
+		.where(eq(entryImageVersions.storagePath, storagePath))
 		.get();
 	return result?.count ?? 0;
 }
@@ -310,12 +317,15 @@ export async function findImageWithOwnershipCheck(
 ) {
 	const image = await findImageById(db, imageId);
 	if (!image) return null;
-	// image.entryId はバージョンID → そのバージョンの originalId を確認
+	// image.entryVersionId はバージョンID → そのバージョンの originalId を確認
 	const version = await db
 		.select()
-		.from(entries)
+		.from(entryVersions)
 		.where(
-			and(eq(entries.id, image.entryId), eq(entries.originalId, originalId)),
+			and(
+				eq(entryVersions.id, image.entryVersionId),
+				eq(entryVersions.originalId, originalId),
+			),
 		)
 		.get();
 	if (!version) return null;

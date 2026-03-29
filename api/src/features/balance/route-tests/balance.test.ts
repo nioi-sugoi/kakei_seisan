@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { entries, settlements } from "../../../db/schema";
+import { entryVersions, settlementVersions } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
@@ -20,11 +20,11 @@ beforeAll(async () => {
 
 async function insertEntry(
 	userId: string,
-	overrides: Partial<typeof entries.$inferInsert>,
+	overrides: Partial<typeof entryVersions.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
-	await db.insert(entries).values({
+	await db.insert(entryVersions).values({
 		id,
 		userId,
 		category: "advance",
@@ -38,11 +38,11 @@ async function insertEntry(
 
 async function insertSettlement(
 	userId: string,
-	overrides: Partial<typeof settlements.$inferInsert>,
+	overrides: Partial<typeof settlementVersions.$inferInsert>,
 ) {
 	const db = drizzle(env.DB);
 	const id = crypto.randomUUID();
-	await db.insert(settlements).values({
+	await db.insert(settlementVersions).values({
 		id,
 		userId,
 		category: "fromHousehold",

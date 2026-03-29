@@ -1,8 +1,8 @@
 {
+	"id": "feb1aa5c-6455-423e-af95-b35d2383e3dc",
+	"prevId": "9611e766-78a0-4494-899d-711d71b8ad80",
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "9611e766-78a0-4494-899d-711d71b8ad80",
-	"prevId": "92735630-6829-49d4-b10e-9a664e9a5a96",
 	"tables": {
 		"account": {
 			"name": "account",
@@ -111,19 +111,19 @@
 				"account_user_id_user_id_fk": {
 					"name": "account_user_id_user_id_fk",
 					"tableFrom": "account",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"entries": {
-			"name": "entries",
+		"entry_versions": {
+			"name": "entry_versions",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -235,64 +235,64 @@
 				}
 			},
 			"indexes": {
-				"entries_user_status_idx": {
-					"name": "entries_user_status_idx",
+				"entry_versions_user_status_idx": {
+					"name": "entry_versions_user_status_idx",
 					"columns": ["user_id", "status"],
 					"isUnique": false
 				},
-				"entries_user_occurred_on_idx": {
-					"name": "entries_user_occurred_on_idx",
+				"entry_versions_user_occurred_on_idx": {
+					"name": "entry_versions_user_occurred_on_idx",
 					"columns": ["user_id", "occurred_on"],
 					"isUnique": false
 				},
-				"entries_user_created_idx": {
-					"name": "entries_user_created_idx",
+				"entry_versions_user_created_idx": {
+					"name": "entry_versions_user_created_idx",
 					"columns": ["user_id", "created_at"],
 					"isUnique": false
 				},
-				"entries_original_idx": {
-					"name": "entries_original_idx",
+				"entry_versions_original_idx": {
+					"name": "entry_versions_original_idx",
 					"columns": ["original_id"],
 					"isUnique": false
 				},
-				"entries_original_created_idx": {
-					"name": "entries_original_created_idx",
+				"entry_versions_original_created_idx": {
+					"name": "entry_versions_original_created_idx",
 					"columns": ["original_id", "created_at"],
 					"isUnique": false
 				},
-				"entries_user_latest_idx": {
-					"name": "entries_user_latest_idx",
+				"entry_versions_user_latest_idx": {
+					"name": "entry_versions_user_latest_idx",
 					"columns": ["user_id", "latest"],
 					"isUnique": false
 				}
 			},
 			"foreignKeys": {
-				"entries_user_id_user_id_fk": {
-					"name": "entries_user_id_user_id_fk",
-					"tableFrom": "entries",
-					"tableTo": "user",
+				"entry_versions_user_id_user_id_fk": {
+					"name": "entry_versions_user_id_user_id_fk",
+					"tableFrom": "entry_versions",
 					"columnsFrom": ["user_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"entries_original_id_entries_id_fk": {
-					"name": "entries_original_id_entries_id_fk",
-					"tableFrom": "entries",
-					"tableTo": "entries",
-					"columnsFrom": ["original_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"entries_approved_by_user_id_fk": {
-					"name": "entries_approved_by_user_id_fk",
-					"tableFrom": "entries",
 					"tableTo": "user",
-					"columnsFrom": ["approved_by"],
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
+				},
+				"entry_versions_original_id_entry_versions_id_fk": {
+					"name": "entry_versions_original_id_entry_versions_id_fk",
+					"tableFrom": "entry_versions",
+					"columnsFrom": ["original_id"],
+					"tableTo": "entry_versions",
+					"columnsTo": ["id"],
+					"onUpdate": "no action",
+					"onDelete": "no action"
+				},
+				"entry_versions_approved_by_user_id_fk": {
+					"name": "entry_versions_approved_by_user_id_fk",
+					"tableFrom": "entry_versions",
+					"columnsFrom": ["approved_by"],
+					"tableTo": "user",
+					"columnsTo": ["id"],
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -312,20 +312,13 @@
 				}
 			}
 		},
-		"entry_images": {
-			"name": "entry_images",
+		"entry_image_versions": {
+			"name": "entry_image_versions",
 			"columns": {
 				"id": {
 					"name": "id",
 					"type": "text",
 					"primaryKey": true,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"entry_id": {
-					"name": "entry_id",
-					"type": "text",
-					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
 				},
@@ -350,24 +343,31 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
+				},
+				"entry_version_id": {
+					"name": "entry_version_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
 				}
 			},
 			"indexes": {
-				"entry_images_entry_idx": {
-					"name": "entry_images_entry_idx",
-					"columns": ["entry_id"],
+				"entry_image_versions_entry_idx": {
+					"name": "entry_image_versions_entry_idx",
+					"columns": ["entry_version_id"],
 					"isUnique": false
 				}
 			},
 			"foreignKeys": {
-				"entry_images_entry_id_entries_id_fk": {
-					"name": "entry_images_entry_id_entries_id_fk",
-					"tableFrom": "entry_images",
-					"tableTo": "entries",
-					"columnsFrom": ["entry_id"],
+				"entry_image_versions_entry_version_id_entry_versions_id_fk": {
+					"name": "entry_image_versions_entry_version_id_entry_versions_id_fk",
+					"tableFrom": "entry_image_versions",
+					"columnsFrom": ["entry_version_id"],
+					"tableTo": "entry_versions",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -426,11 +426,11 @@
 				"partner_invitations_inviter_id_user_id_fk": {
 					"name": "partner_invitations_inviter_id_user_id_fk",
 					"tableFrom": "partner_invitations",
-					"tableTo": "user",
 					"columnsFrom": ["inviter_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -506,20 +506,20 @@
 				"partnerships_inviter_id_user_id_fk": {
 					"name": "partnerships_inviter_id_user_id_fk",
 					"tableFrom": "partnerships",
-					"tableTo": "user",
 					"columnsFrom": ["inviter_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				},
 				"partnerships_invitee_id_user_id_fk": {
 					"name": "partnerships_invitee_id_user_id_fk",
 					"tableFrom": "partnerships",
-					"tableTo": "user",
 					"columnsFrom": ["invitee_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -608,31 +608,24 @@
 				"session_user_id_user_id_fk": {
 					"name": "session_user_id_user_id_fk",
 					"tableFrom": "session",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"settlement_images": {
-			"name": "settlement_images",
+		"settlement_image_versions": {
+			"name": "settlement_image_versions",
 			"columns": {
 				"id": {
 					"name": "id",
 					"type": "text",
 					"primaryKey": true,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"settlement_id": {
-					"name": "settlement_id",
-					"type": "text",
-					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
 				},
@@ -657,32 +650,39 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
+				},
+				"settlement_version_id": {
+					"name": "settlement_version_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
 				}
 			},
 			"indexes": {
-				"settlement_images_settlement_idx": {
-					"name": "settlement_images_settlement_idx",
-					"columns": ["settlement_id"],
+				"settlement_image_versions_settlement_idx": {
+					"name": "settlement_image_versions_settlement_idx",
+					"columns": ["settlement_version_id"],
 					"isUnique": false
 				}
 			},
 			"foreignKeys": {
-				"settlement_images_settlement_id_settlements_id_fk": {
-					"name": "settlement_images_settlement_id_settlements_id_fk",
-					"tableFrom": "settlement_images",
-					"tableTo": "settlements",
-					"columnsFrom": ["settlement_id"],
+				"settlement_image_versions_settlement_version_id_settlement_versions_id_fk": {
+					"name": "settlement_image_versions_settlement_version_id_settlement_versions_id_fk",
+					"tableFrom": "settlement_image_versions",
+					"columnsFrom": ["settlement_version_id"],
+					"tableTo": "settlement_versions",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"settlements": {
-			"name": "settlements",
+		"settlement_versions": {
+			"name": "settlement_versions",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -780,64 +780,64 @@
 				}
 			},
 			"indexes": {
-				"settlements_user_status_idx": {
-					"name": "settlements_user_status_idx",
+				"settlement_versions_user_status_idx": {
+					"name": "settlement_versions_user_status_idx",
 					"columns": ["user_id", "status"],
 					"isUnique": false
 				},
-				"settlements_user_occurred_on_idx": {
-					"name": "settlements_user_occurred_on_idx",
+				"settlement_versions_user_occurred_on_idx": {
+					"name": "settlement_versions_user_occurred_on_idx",
 					"columns": ["user_id", "occurred_on"],
 					"isUnique": false
 				},
-				"settlements_user_created_idx": {
-					"name": "settlements_user_created_idx",
+				"settlement_versions_user_created_idx": {
+					"name": "settlement_versions_user_created_idx",
 					"columns": ["user_id", "created_at"],
 					"isUnique": false
 				},
-				"settlements_original_idx": {
-					"name": "settlements_original_idx",
+				"settlement_versions_original_idx": {
+					"name": "settlement_versions_original_idx",
 					"columns": ["original_id"],
 					"isUnique": false
 				},
-				"settlements_user_latest_idx": {
-					"name": "settlements_user_latest_idx",
+				"settlement_versions_user_latest_idx": {
+					"name": "settlement_versions_user_latest_idx",
 					"columns": ["user_id", "latest"],
 					"isUnique": false
 				},
-				"settlements_original_created_idx": {
-					"name": "settlements_original_created_idx",
+				"settlement_versions_original_created_idx": {
+					"name": "settlement_versions_original_created_idx",
 					"columns": ["original_id", "created_at"],
 					"isUnique": false
 				}
 			},
 			"foreignKeys": {
-				"settlements_user_id_user_id_fk": {
-					"name": "settlements_user_id_user_id_fk",
-					"tableFrom": "settlements",
-					"tableTo": "user",
+				"settlement_versions_user_id_user_id_fk": {
+					"name": "settlement_versions_user_id_user_id_fk",
+					"tableFrom": "settlement_versions",
 					"columnsFrom": ["user_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"settlements_original_id_settlements_id_fk": {
-					"name": "settlements_original_id_settlements_id_fk",
-					"tableFrom": "settlements",
-					"tableTo": "settlements",
-					"columnsFrom": ["original_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"settlements_approved_by_user_id_fk": {
-					"name": "settlements_approved_by_user_id_fk",
-					"tableFrom": "settlements",
 					"tableTo": "user",
-					"columnsFrom": ["approved_by"],
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
+				},
+				"settlement_versions_original_id_settlement_versions_id_fk": {
+					"name": "settlement_versions_original_id_settlement_versions_id_fk",
+					"tableFrom": "settlement_versions",
+					"columnsFrom": ["original_id"],
+					"tableTo": "settlement_versions",
+					"columnsTo": ["id"],
+					"onUpdate": "no action",
+					"onDelete": "no action"
+				},
+				"settlement_versions_approved_by_user_id_fk": {
+					"name": "settlement_versions_approved_by_user_id_fk",
+					"tableFrom": "settlement_versions",
+					"columnsFrom": ["approved_by"],
+					"tableTo": "user",
+					"columnsTo": ["id"],
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -989,9 +989,9 @@
 	"views": {},
 	"enums": {},
 	"_meta": {
+		"columns": {},
 		"schemas": {},
-		"tables": {},
-		"columns": {}
+		"tables": {}
 	},
 	"internal": {
 		"indexes": {}
