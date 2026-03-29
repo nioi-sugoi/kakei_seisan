@@ -96,15 +96,11 @@ export default function TimelineScreen() {
 			accessibilityRole="button"
 			accessibilityLabel={`並び替え: ${currentSortLabel}`}
 		>
-			<MaterialIcons
-				name="swap-vert"
-				size={16}
-				className="text-muted-foreground"
-			/>
+			<MaterialIcons name="swap-vert" size={16} color="rgb(93, 100, 111)" />
 			<Text className="text-sm font-medium text-primary">
 				{currentSortLabel}
 			</Text>
-			<MaterialIcons name="expand-more" size={14} className="text-primary" />
+			<MaterialIcons name="expand-more" size={14} color="rgb(0, 126, 183)" />
 		</Pressable>
 	);
 
