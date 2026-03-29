@@ -217,7 +217,13 @@ describe("GET /api/timeline", () => {
 		await insertEntry(TEST_USER.id, { label: "新しい記録", createdAt: t3 });
 
 		const res = await client.api.timeline.$get(
-			{ query: { cursor: String(t2) } },
+			{
+				query: {
+					cursor: String(t2),
+					sortBy: "createdAt",
+					sortOrder: "desc",
+				},
+			},
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -242,7 +248,7 @@ describe("GET /api/timeline", () => {
 		await Promise.all(inserts);
 
 		const firstRes = await client.api.timeline.$get(
-			{ query: {} },
+			{ query: { sortBy: "createdAt", sortOrder: "desc" } },
 			{ headers: { Cookie: authCookie } },
 		);
 		expect(firstRes.ok).toBe(true);
@@ -252,7 +258,13 @@ describe("GET /api/timeline", () => {
 		expect(firstBody.nextCursor).not.toBeNull();
 
 		const secondRes = await client.api.timeline.$get(
-			{ query: { cursor: String(firstBody.nextCursor) } },
+			{
+				query: {
+					cursor: String(firstBody.nextCursor),
+					sortBy: "createdAt",
+					sortOrder: "desc",
+				},
+			},
 			{ headers: { Cookie: authCookie } },
 		);
 		expect(secondRes.ok).toBe(true);
@@ -710,6 +722,501 @@ describe("GET /api/timeline", () => {
 			const res = await client.api.timeline.$get(
 				// @ts-expect-error テスト用に不正な値を送信
 				{ query: { category: "invalid" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(400);
+		});
+	});
+
+	describe("ソート", () => {
+		it("デフォルトで発生日降順にソートされる", async () => {
+			const t = Date.now();
+			await insertEntry(TEST_USER.id, {
+				label: "3月の記録",
+				occurredOn: "2024-03-15",
+				createdAt: t,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "1月の記録",
+				occurredOn: "2024-01-10",
+				createdAt: t + 1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "2月の記録",
+				occurredOn: "2024-02-20",
+				createdAt: t + 2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: {} },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+			expect(body.data[0].label).toBe("3月の記録");
+			expect(body.data[1].label).toBe("2月の記録");
+			expect(body.data[2].label).toBe("1月の記録");
+		});
+
+		it("sortBy=occurredOn, sortOrder=asc で発生日昇順にソートされる", async () => {
+			const t = Date.now();
+			await insertEntry(TEST_USER.id, {
+				label: "3月の記録",
+				occurredOn: "2024-03-15",
+				createdAt: t,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "1月の記録",
+				occurredOn: "2024-01-10",
+				createdAt: t + 1,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(2);
+			expect(body.data[0].label).toBe("1月の記録");
+			expect(body.data[1].label).toBe("3月の記録");
+		});
+
+		it("sortBy=createdAt で登録日降順にソートされる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+			const t3 = new Date("2024-01-03").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				label: "最初に登録",
+				occurredOn: "2024-03-15",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "最後に登録",
+				occurredOn: "2024-01-10",
+				createdAt: t3,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "2番目に登録",
+				occurredOn: "2024-02-20",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "createdAt", sortOrder: "desc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+			expect(body.data[0].label).toBe("最後に登録");
+			expect(body.data[1].label).toBe("2番目に登録");
+			expect(body.data[2].label).toBe("最初に登録");
+		});
+
+		it("sortBy=createdAt, sortOrder=asc で登録日昇順にソートされる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				label: "古い登録",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "新しい登録",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "createdAt", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(2);
+			expect(body.data[0].label).toBe("古い登録");
+			expect(body.data[1].label).toBe("新しい登録");
+		});
+
+		it("同じ発生日の記録は createdAt で二次ソートされる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				label: "先に登録",
+				occurredOn: "2024-03-15",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "後に登録",
+				occurredOn: "2024-03-15",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "desc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(2);
+			expect(body.data[0].label).toBe("後に登録");
+			expect(body.data[1].label).toBe("先に登録");
+		});
+
+		it("記録と精算が発生日でまとめてソートされる", async () => {
+			const t = Date.now();
+			await insertEntry(TEST_USER.id, {
+				label: "3月の立替",
+				occurredOn: "2024-03-15",
+				createdAt: t,
+			});
+			await insertSettlement(TEST_USER.id, {
+				amount: 2000,
+				occurredOn: "2024-02-10",
+				createdAt: t + 1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "1月の記録",
+				occurredOn: "2024-01-05",
+				createdAt: t + 2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "desc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+			expect(body.data[0].label).toBe("3月の立替");
+			expect(body.data[1].type).toBe("settlement");
+			expect(body.data[2].label).toBe("1月の記録");
+		});
+
+		it("同じ発生日の記録は昇順でも createdAt で二次ソートされる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				label: "先に登録",
+				occurredOn: "2024-03-15",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "後に登録",
+				occurredOn: "2024-03-15",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(2);
+			expect(body.data[0].label).toBe("先に登録");
+			expect(body.data[1].label).toBe("後に登録");
+		});
+
+		it("記録と精算が発生日昇順でまとめてソートされる", async () => {
+			const t = Date.now();
+			await insertEntry(TEST_USER.id, {
+				label: "3月の立替",
+				occurredOn: "2024-03-15",
+				createdAt: t,
+			});
+			await insertSettlement(TEST_USER.id, {
+				amount: 2000,
+				occurredOn: "2024-02-10",
+				createdAt: t + 1,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "1月の記録",
+				occurredOn: "2024-01-05",
+				createdAt: t + 2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+			expect(body.data[0].label).toBe("1月の記録");
+			expect(body.data[1].type).toBe("settlement");
+			expect(body.data[2].label).toBe("3月の立替");
+		});
+
+		it("記録と精算が登録日降順でまとめてソートされる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+			const t3 = new Date("2024-01-03").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				label: "最初に登録した立替",
+				occurredOn: "2024-03-15",
+				createdAt: t1,
+			});
+			await insertSettlement(TEST_USER.id, {
+				amount: 2000,
+				createdAt: t2,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "最後に登録した記録",
+				occurredOn: "2024-01-05",
+				createdAt: t3,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "createdAt", sortOrder: "desc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+			expect(body.data[0].label).toBe("最後に登録した記録");
+			expect(body.data[1].type).toBe("settlement");
+			expect(body.data[2].label).toBe("最初に登録した立替");
+		});
+
+		it("記録と精算が登録日昇順でまとめてソートされる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+			const t3 = new Date("2024-01-03").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				label: "最初に登録した立替",
+				occurredOn: "2024-03-15",
+				createdAt: t1,
+			});
+			await insertSettlement(TEST_USER.id, {
+				amount: 2000,
+				createdAt: t2,
+			});
+			await insertEntry(TEST_USER.id, {
+				label: "最後に登録した記録",
+				occurredOn: "2024-01-05",
+				createdAt: t3,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { sortBy: "createdAt", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+			expect(body.data[0].label).toBe("最初に登録した立替");
+			expect(body.data[1].type).toBe("settlement");
+			expect(body.data[2].label).toBe("最後に登録した記録");
+		});
+
+		it("発生日降順ソートでカーソルページネーションが正しく動作する", async () => {
+			const t = Date.now();
+			const inserts = [];
+			for (let i = 0; i < 55; i++) {
+				const month = String(Math.floor(i / 28) + 1).padStart(2, "0");
+				const day = String((i % 28) + 1).padStart(2, "0");
+				inserts.push(
+					insertEntry(TEST_USER.id, {
+						label: `記録${i}`,
+						occurredOn: `2024-${month}-${day}`,
+						createdAt: t + i,
+					}),
+				);
+			}
+			await Promise.all(inserts);
+
+			const firstRes = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "desc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(firstRes.ok).toBe(true);
+			if (!firstRes.ok) return;
+			const firstBody = await firstRes.json();
+			expect(firstBody.data).toHaveLength(50);
+			expect(firstBody.nextCursor).not.toBeNull();
+
+			const secondRes = await client.api.timeline.$get(
+				{
+					query: {
+						cursor: String(firstBody.nextCursor),
+						sortBy: "occurredOn",
+						sortOrder: "desc",
+					},
+				},
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(secondRes.ok).toBe(true);
+			if (!secondRes.ok) return;
+			const secondBody = await secondRes.json();
+			expect(secondBody.data).toHaveLength(5);
+			expect(secondBody.nextCursor).toBeNull();
+		});
+
+		it("発生日昇順ソートでカーソルページネーションが正しく動作する", async () => {
+			const t = Date.now();
+			const inserts = [];
+			for (let i = 0; i < 55; i++) {
+				const month = String(Math.floor(i / 28) + 1).padStart(2, "0");
+				const day = String((i % 28) + 1).padStart(2, "0");
+				inserts.push(
+					insertEntry(TEST_USER.id, {
+						label: `記録${i}`,
+						occurredOn: `2024-${month}-${day}`,
+						createdAt: t + i,
+					}),
+				);
+			}
+			await Promise.all(inserts);
+
+			const firstRes = await client.api.timeline.$get(
+				{ query: { sortBy: "occurredOn", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(firstRes.ok).toBe(true);
+			if (!firstRes.ok) return;
+			const firstBody = await firstRes.json();
+			expect(firstBody.data).toHaveLength(50);
+			expect(firstBody.nextCursor).not.toBeNull();
+
+			const secondRes = await client.api.timeline.$get(
+				{
+					query: {
+						cursor: String(firstBody.nextCursor),
+						sortBy: "occurredOn",
+						sortOrder: "asc",
+					},
+				},
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(secondRes.ok).toBe(true);
+			if (!secondRes.ok) return;
+			const secondBody = await secondRes.json();
+			expect(secondBody.data).toHaveLength(5);
+			expect(secondBody.nextCursor).toBeNull();
+		});
+
+		it("登録日降順ソートでカーソルページネーションが正しく動作する", async () => {
+			const base = new Date("2024-01-01").getTime();
+			const inserts = [];
+			for (let i = 0; i < 55; i++) {
+				inserts.push(
+					insertEntry(TEST_USER.id, {
+						label: `記録${i}`,
+						createdAt: base + i,
+					}),
+				);
+			}
+			await Promise.all(inserts);
+
+			const firstRes = await client.api.timeline.$get(
+				{ query: { sortBy: "createdAt", sortOrder: "desc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(firstRes.ok).toBe(true);
+			if (!firstRes.ok) return;
+			const firstBody = await firstRes.json();
+			expect(firstBody.data).toHaveLength(50);
+			expect(firstBody.nextCursor).not.toBeNull();
+
+			const secondRes = await client.api.timeline.$get(
+				{
+					query: {
+						cursor: String(firstBody.nextCursor),
+						sortBy: "createdAt",
+						sortOrder: "desc",
+					},
+				},
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(secondRes.ok).toBe(true);
+			if (!secondRes.ok) return;
+			const secondBody = await secondRes.json();
+			expect(secondBody.data).toHaveLength(5);
+			expect(secondBody.nextCursor).toBeNull();
+		});
+
+		it("登録日昇順ソートでカーソルページネーションが正しく動作する", async () => {
+			const base = new Date("2024-01-01").getTime();
+			const inserts = [];
+			for (let i = 0; i < 55; i++) {
+				inserts.push(
+					insertEntry(TEST_USER.id, {
+						label: `記録${i}`,
+						createdAt: base + i,
+					}),
+				);
+			}
+			await Promise.all(inserts);
+
+			const firstRes = await client.api.timeline.$get(
+				{ query: { sortBy: "createdAt", sortOrder: "asc" } },
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(firstRes.ok).toBe(true);
+			if (!firstRes.ok) return;
+			const firstBody = await firstRes.json();
+			expect(firstBody.data).toHaveLength(50);
+			expect(firstBody.nextCursor).not.toBeNull();
+
+			const secondRes = await client.api.timeline.$get(
+				{
+					query: {
+						cursor: String(firstBody.nextCursor),
+						sortBy: "createdAt",
+						sortOrder: "asc",
+					},
+				},
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(secondRes.ok).toBe(true);
+			if (!secondRes.ok) return;
+			const secondBody = await secondRes.json();
+			expect(secondBody.data).toHaveLength(5);
+			expect(secondBody.nextCursor).toBeNull();
+		});
+
+		it("不正な sortBy パラメータで400エラーが返却される", async () => {
+			const res = await client.api.timeline.$get(
+				// @ts-expect-error テスト用に不正な値を送信
+				{ query: { sortBy: "invalid" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(400);
+		});
+
+		it("不正な sortOrder パラメータで400エラーが返却される", async () => {
+			const res = await client.api.timeline.$get(
+				// @ts-expect-error テスト用に不正な値を送信
+				{ query: { sortOrder: "invalid" } },
 				{ headers: { Cookie: authCookie } },
 			);
 

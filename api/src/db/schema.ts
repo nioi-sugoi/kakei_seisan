@@ -233,6 +233,7 @@ export const settlements = sqliteTable(
 			table.userId,
 			table.occurredOn,
 		),
+		index("settlements_user_created_idx").on(table.userId, table.createdAt),
 		index("settlements_original_idx").on(table.originalId),
 		index("settlements_user_latest_idx").on(table.userId, table.latest),
 		index("settlements_original_created_idx").on(

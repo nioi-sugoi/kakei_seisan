@@ -5,8 +5,9 @@ export function formatAmount(amount: number): string {
 	return `¥${amount.toLocaleString()}`;
 }
 
-export function formatDateShort(dateStr: string): string {
-	return format(parseISO(dateStr), "M月d日");
+export function formatDateShort(date: string | number): string {
+	const d = typeof date === "string" ? parseISO(date) : new Date(date);
+	return format(d, "M月d日");
 }
 
 export function formatDateFull(dateStr: string): string {
