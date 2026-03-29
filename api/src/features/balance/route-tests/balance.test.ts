@@ -1,11 +1,7 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import {
-	entryVersions,
-	partnerships,
-	settlementVersions,
-} from "../../../db/schema";
+import { entryVersions, settlementVersions } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
@@ -18,6 +14,7 @@ import {
 	THIRD_USER,
 } from "../../../testing/auth-helper";
 import { cleanAllTables, setupDB } from "../../../testing/db-helper";
+import { insertPartnership } from "../../partner/route-tests/helpers";
 
 beforeAll(async () => {
 	await setupDB();
@@ -343,16 +340,6 @@ describe("GET /api/balance", () => {
 	});
 
 	describe("パートナーの残高 (userId パラメータ)", () => {
-		async function insertPartnership(inviterId: string, inviteeId: string) {
-			const db = drizzle(env.DB);
-			await db.insert(partnerships).values({
-				id: crypto.randomUUID(),
-				inviterId,
-				inviteeId,
-				createdAt: Date.now(),
-			});
-		}
-
 		it("パートナーの残高を取得できる", async () => {
 			await seedOtherUser();
 			await insertPartnership(TEST_USER.id, OTHER_USER.id);

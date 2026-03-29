@@ -7,7 +7,7 @@ import type { Env } from "../../bindings";
 import { entryVersions, settlementVersions } from "../../db/schema";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
-import { findPartnerByUser } from "../partner/repository";
+import { resolvePartnerUserId } from "../partner/repository";
 
 const balanceApp = new Hono<{
 	Bindings: Env;
@@ -26,21 +26,13 @@ const balanceApp = new Hono<{
 		const { userId: targetUserId } = c.req.valid("query");
 		const db = drizzle(c.env.DB);
 
-		// パートナーの残高を取得する場合は認可チェック
-		let effectiveUserId = user.id;
-		if (targetUserId && targetUserId !== user.id) {
-			const partnership = await findPartnerByUser(db, user.id);
-			if (!partnership) {
-				return c.json({ error: "パートナーが見つかりません" }, 403);
-			}
-			const partnerId =
-				partnership.inviterId === user.id
-					? partnership.inviteeId
-					: partnership.inviterId;
-			if (partnerId !== targetUserId) {
-				return c.json({ error: "パートナーが見つかりません" }, 403);
-			}
-			effectiveUserId = targetUserId;
+		const effectiveUserId = await resolvePartnerUserId(
+			db,
+			user.id,
+			targetUserId,
+		);
+		if (!effectiveUserId) {
+			return c.json({ error: "パートナーが見つかりません" }, 403);
 		}
 
 		const [entryResult, settlementResult] = await Promise.all([

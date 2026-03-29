@@ -52,3 +52,25 @@ export function findPartnerByUser(db: DrizzleD1Database, userId: string) {
 		)
 		.get();
 }
+
+/**
+ * targetUserId がリクエストユーザーのパートナーかどうかを検証し、
+ * 実際にクエリすべき userId を返す。
+ * - targetUserId が未指定または自分自身なら自分の userId を返す
+ * - パートナーなら targetUserId を返す
+ * - 非パートナーなら null を返す（403 相当）
+ */
+export async function resolvePartnerUserId(
+	db: DrizzleD1Database,
+	currentUserId: string,
+	targetUserId: string | undefined,
+): Promise<string | null> {
+	if (!targetUserId || targetUserId === currentUserId) {
+		return currentUserId;
+	}
+	const partner = await findPartner(db, currentUserId);
+	if (!partner || partner.partnerId !== targetUserId) {
+		return null;
+	}
+	return targetUserId;
+}

@@ -5,7 +5,7 @@ import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
-import { findPartnerByUser } from "../partner/repository";
+import { resolvePartnerUserId } from "../partner/repository";
 import type { CursorValue } from "./repository";
 import * as timelineRepository from "./repository";
 
@@ -57,21 +57,13 @@ const timelineApp = new Hono<{
 		const limit = 50;
 		const db = drizzle(c.env.DB);
 
-		// パートナーのタイムラインを取得する場合は認可チェック
-		let effectiveUserId = user.id;
-		if (targetUserId && targetUserId !== user.id) {
-			const partnership = await findPartnerByUser(db, user.id);
-			if (!partnership) {
-				return c.json({ error: "パートナーが見つかりません" }, 403);
-			}
-			const partnerId =
-				partnership.inviterId === user.id
-					? partnership.inviteeId
-					: partnership.inviterId;
-			if (partnerId !== targetUserId) {
-				return c.json({ error: "パートナーが見つかりません" }, 403);
-			}
-			effectiveUserId = targetUserId;
+		const effectiveUserId = await resolvePartnerUserId(
+			db,
+			user.id,
+			targetUserId,
+		);
+		if (!effectiveUserId) {
+			return c.json({ error: "パートナーが見つかりません" }, 403);
 		}
 
 		const sortBy = sortByParam ?? "occurredOn";

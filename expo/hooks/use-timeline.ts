@@ -16,6 +16,24 @@ export type TimelineItem =
 	| { type: "header"; title: string; key: string }
 	| { type: "record"; event: TimelineEvent };
 
+export const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
+	{ value: "all", label: "すべて" },
+	{ value: "advance", label: "立替" },
+	{ value: "deposit", label: "預り" },
+	{ value: "settlement", label: "精算" },
+];
+
+export const SORT_OPTIONS: {
+	sortBy: SortOption["sortBy"];
+	sortOrder: SortOption["sortOrder"];
+	label: string;
+}[] = [
+	{ sortBy: "occurredOn", sortOrder: "desc", label: "日付順（新しい順）" },
+	{ sortBy: "occurredOn", sortOrder: "asc", label: "日付順（古い順）" },
+	{ sortBy: "createdAt", sortOrder: "desc", label: "更新順（新しい順）" },
+	{ sortBy: "createdAt", sortOrder: "asc", label: "更新順（古い順）" },
+];
+
 function toMonthLabel(value: string | number) {
 	if (typeof value === "string") {
 		// "YYYY-MM-DD" をカレンダー日付として解釈（new Date() だとUTCになりTZ次第で月がずれる）
