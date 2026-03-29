@@ -5,6 +5,11 @@ import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import { handleValidationError } from "../../middleware/validation-error-handler";
+import {
+	extensionForType,
+	imageUploadSchema,
+	validateImageFile,
+} from "../../shared/image-constants";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
@@ -20,6 +25,7 @@ const modifyEntrySchema = v.object({
 	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
+	deleteImageIds: v.optional(v.array(v.string())),
 });
 
 const entriesApp = new Hono<{
@@ -36,9 +42,31 @@ const entriesApp = new Hono<{
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
 
-		const versions = await entriesRepository.findVersions(db, entry.originalId);
+		const latestVersion = await entriesRepository.findMyLatestVersion(
+			db,
+			entry.originalId,
+			user.id,
+		);
+		const [versions, images] = await Promise.all([
+			entriesRepository.findVersions(db, entry.originalId),
+			entriesRepository.findImagesByEntry(
+				db,
+				latestVersion ? latestVersion.id : entry.id,
+			),
+		]);
 
-		return c.json({ ...entry, versions }, 200);
+		return c.json(
+			{
+				...entry,
+				versions,
+				images: images.map((img) => ({
+					id: img.id,
+					displayOrder: img.displayOrder,
+					createdAt: img.createdAt,
+				})),
+			},
+			200,
+		);
 	})
 	.post(
 		"/",
@@ -48,9 +76,10 @@ const entriesApp = new Hono<{
 			const user = c.get("user");
 			const input = c.req.valid("json");
 			const db = drizzle(c.env.DB);
+
 			const entry = await entriesRepository.createEntry(db, user.id, input);
 
-			return c.json(entry, 201);
+			return c.json({ ...entry, images: [] }, 201);
 		},
 	)
 	.post(
@@ -60,7 +89,7 @@ const entriesApp = new Hono<{
 		async (c) => {
 			const user = c.get("user");
 			const originalId = c.req.param("originalId");
-			const input = c.req.valid("json");
+			const { amount, label, memo, deleteImageIds } = c.req.valid("json");
 			const db = drizzle(c.env.DB);
 
 			const latestEntry = await entriesRepository.findMyLatestVersion(
@@ -78,10 +107,14 @@ const entriesApp = new Hono<{
 				);
 			}
 
+			const deleteIds = deleteImageIds ?? [];
+			const hasImageChanges = deleteIds.length > 0;
+
 			if (
-				input.amount === latestEntry.amount &&
-				input.label === latestEntry.label &&
-				(input.memo ?? null) === latestEntry.memo
+				amount === latestEntry.amount &&
+				label === latestEntry.label &&
+				(memo || null) === latestEntry.memo &&
+				!hasImageChanges
 			) {
 				return c.json({ error: "変更がありません" as const }, 400);
 			}
@@ -94,10 +127,38 @@ const entriesApp = new Hono<{
 					category: latestEntry.category,
 					occurredOn: latestEntry.occurredOn,
 				},
-				input,
+				{ amount, label, memo },
 			);
 
-			return c.json(insertedRows[0], 201);
+			const newVersionId = insertedRows[0].id;
+
+			// 前バージョンの画像を新バージョンにコピー（削除対象は除外）
+			const images = await entriesRepository.copyImagesToVersion(
+				db,
+				latestEntry.id,
+				newVersionId,
+				deleteIds,
+			);
+
+			// 削除対象の画像: DBレコードは旧バージョンに残すが R2 からは即削除（コスト最適化）
+			for (const imageId of deleteIds) {
+				const image = await entriesRepository.findImageById(db, imageId);
+				if (image) {
+					await c.env.R2.delete(image.storagePath);
+				}
+			}
+
+			return c.json(
+				{
+					...insertedRows[0],
+					images: images.map((img) => ({
+						id: img.id,
+						displayOrder: img.displayOrder,
+						createdAt: img.createdAt,
+					})),
+				},
+				201,
+			);
 		},
 	)
 	.post("/:originalId/cancel", requireAuth, async (c) => {
@@ -152,6 +213,120 @@ const entriesApp = new Hono<{
 		);
 
 		return c.json(insertedRows[0], 201);
+	})
+	// ── 画像エンドポイント ──────────────────────────────────────
+	.post(
+		"/:entryId/images",
+		requireAuth,
+		vValidator("form", imageUploadSchema, handleValidationError),
+		async (c) => {
+			const user = c.get("user");
+			const entryId = c.req.param("entryId");
+			const { image } = c.req.valid("form");
+			const db = drizzle(c.env.DB);
+
+			const entry = await entriesRepository.findMyLatestVersion(
+				db,
+				entryId,
+				user.id,
+			);
+			if (!entry) {
+				return c.json({ error: "記録が見つかりません" as const }, 404);
+			}
+
+			const imageError = validateImageFile(image);
+			if (imageError) {
+				return c.json({ error: imageError }, 400);
+			}
+
+			const ext = extensionForType(image.type);
+			const storagePath = `receipts/${user.id}/${entry.originalId}/${crypto.randomUUID()}.${ext}`;
+
+			const imageRecord = await entriesRepository.createImage(db, {
+				entryId: entry.id,
+				storagePath,
+			});
+			if (!imageRecord) {
+				return c.json({ error: "画像は最大2枚までです" as const }, 400);
+			}
+
+			await c.env.R2.put(storagePath, image.stream(), {
+				httpMetadata: { contentType: image.type },
+			});
+
+			return c.json(
+				{
+					id: imageRecord.id,
+					displayOrder: imageRecord.displayOrder,
+					createdAt: imageRecord.createdAt,
+				},
+				201,
+			);
+		},
+	)
+	.delete("/:entryId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const entryId = c.req.param("entryId");
+		const imageId = c.req.param("imageId");
+		const db = drizzle(c.env.DB);
+
+		const entry = await entriesRepository.findByOwner(db, entryId, user.id);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+
+		const image = await entriesRepository.findImageWithOwnershipCheck(
+			db,
+			imageId,
+			entry.originalId,
+		);
+		if (!image) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		await entriesRepository.deleteImage(db, imageId);
+		const refCount = await entriesRepository.countImageRefsByStoragePath(
+			db,
+			image.storagePath,
+		);
+		if (refCount === 0) {
+			await c.env.R2.delete(image.storagePath);
+		}
+
+		return c.json({ ok: true as const }, 200);
+	})
+	.get("/:entryId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const db = drizzle(c.env.DB);
+
+		const entry = await entriesRepository.findByOwner(
+			db,
+			c.req.param("entryId"),
+			user.id,
+		);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		const image = await entriesRepository.findImageWithOwnershipCheck(
+			db,
+			c.req.param("imageId"),
+			entry.originalId,
+		);
+		if (!image) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const object = await c.env.R2.get(image.storagePath);
+		if (!object) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const headers = new Headers();
+		object.writeHttpMetadata(headers);
+		headers.set("etag", object.httpEtag);
+		headers.set("cache-control", "private, max-age=3600");
+
+		return new Response(object.body, { headers });
 	});
 
 export { entriesApp };

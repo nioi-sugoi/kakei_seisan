@@ -1,4 +1,6 @@
+import { env } from "cloudflare:test";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
@@ -10,6 +12,11 @@ import {
 	setupAuth,
 	setupDB,
 } from "./helpers";
+
+function createTestFile(name: string, type: string, sizeBytes = 1024): File {
+	const buffer = new ArrayBuffer(sizeBytes);
+	return new File([buffer], name, { type });
+}
 
 beforeAll(async () => {
 	await setupDB();
@@ -129,6 +136,62 @@ describe("GET /api/entries/:id", () => {
 		});
 
 		expect(res.status).toBe(401);
+	});
+
+	it("記録詳細に画像メタデータが含まれる", async () => {
+		// JSON API でエントリーを作成
+		const createRes = await client.api.entries.$post(
+			{
+				json: {
+					category: "advance",
+					amount: 1500,
+					occurredOn: "2024-03-15",
+					label: "食費",
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const created = await createRes.json();
+		if ("error" in created) throw new Error("unexpected error");
+
+		// 専用エンドポイント経由で画像をアップロード
+		const formData = new FormData();
+		formData.append("image", createTestFile("receipt.jpg", "image/jpeg"));
+		const imgRes = await app.request(
+			`/api/entries/${created.id}/images`,
+			{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+			env,
+		);
+		expect(imgRes.status).toBe(201);
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: created.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
+		expect(body.images[0]).toHaveProperty("id");
+		expect(body.images[0]).toHaveProperty("displayOrder", 0);
+		expect(body.images[0]).toHaveProperty("createdAt");
+		// storagePath はクライアントに返さない
+		expect(body.images[0]).not.toHaveProperty("storagePath");
+	});
+
+	it("画像がない場合は空配列が返る", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toEqual([]);
 	});
 });
 

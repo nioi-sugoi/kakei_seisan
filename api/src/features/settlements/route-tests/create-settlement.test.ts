@@ -43,6 +43,7 @@ describe("POST /api/settlements", () => {
 			status: "approved",
 		});
 		expect(body.originalId).toBe(body.id);
+		expect(body.images).toEqual([]);
 	});
 
 	it("ユーザーからの精算を登録できる", async () => {

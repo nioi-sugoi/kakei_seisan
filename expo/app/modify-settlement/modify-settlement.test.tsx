@@ -24,6 +24,23 @@ jest.mock("expo-router", () => ({
 const mockGet = jest.fn();
 const mockModifyPost = jest.fn();
 
+jest.mock("@/hooks/use-image-upload", () => ({
+	getAuthHeaders: () => ({}),
+	useUploadImages: () => ({
+		mutate: jest.fn(),
+		mutateAsync: jest.fn(),
+		isPending: false,
+	}),
+	useDeleteImage: () => ({ mutate: jest.fn(), isPending: false }),
+	getImageSource: (
+		_resourceType: string,
+		parentId: string,
+		imageId: string,
+	) => ({
+		uri: `mock://${parentId}/${imageId}`,
+	}),
+}));
+
 jest.mock("@/lib/api-client", () => ({
 	client: {
 		api: {
@@ -55,6 +72,7 @@ function mockSettlementResponse(overrides?: Partial<SettlementDetailResponse>) {
 					createdAt: 1742000000000,
 				}),
 			],
+			images: [],
 			...overrides,
 		}),
 	);
@@ -178,7 +196,7 @@ describe("ModifySettlementScreen", () => {
 		await waitFor(() => {
 			expect(mockModifyPost).toHaveBeenCalledWith({
 				param: { originalId: "stl-1" },
-				json: { amount: 3000 },
+				json: { amount: 3000, deleteImageIds: undefined },
 			});
 		});
 	});

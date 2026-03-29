@@ -124,7 +124,7 @@ export default function TimelineScreen() {
 					data={items}
 					keyExtractor={(item) =>
 						item.type === "header"
-							? `header-${item.title}`
+							? item.key
 							: `${item.event.type}-${item.event.id}`
 					}
 					renderItem={({ item }) => {

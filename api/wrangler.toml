@@ -10,5 +10,5 @@ database_id = "placeholder-id"
 migrations_dir = "./drizzle"
 
 [[r2_buckets]]
-binding = "RECEIPTS"
-bucket_name = "kakei-seisan-receipts"
+binding = "R2"
+bucket_name = "kakei-seisan"

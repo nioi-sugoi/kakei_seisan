@@ -15,6 +15,7 @@ import {
 	FormHeader,
 	SubmitButton,
 } from "@/components/entry-form/FormShared";
+import { ImagePicker } from "@/components/entry-form/ImagePicker";
 import { useBalance } from "@/hooks/use-balance";
 import { useCreateSettlementForm } from "@/hooks/use-settlement-form";
 import { formatAmount } from "@/lib/format";
@@ -27,8 +28,14 @@ const balanceCardBg: StyleProp<ViewStyle> = {
 function SettlementFormContent({ balance }: { balance: number }) {
 	const absBalance = Math.abs(balance);
 	const isPositive = balance >= 0;
-	const { form, serverError, loading, goBack } =
-		useCreateSettlementForm(balance);
+	const {
+		form,
+		serverError,
+		loading,
+		selectedImages,
+		setSelectedImages,
+		goBack,
+	} = useCreateSettlementForm(balance);
 
 	return (
 		<KeyboardAvoidingView
@@ -78,6 +85,8 @@ function SettlementFormContent({ balance }: { balance: number }) {
 						</>
 					)}
 				</form.Field>
+
+				<ImagePicker images={selectedImages} onChange={setSelectedImages} />
 
 				{serverError ? <FormError message={serverError} /> : null}
 

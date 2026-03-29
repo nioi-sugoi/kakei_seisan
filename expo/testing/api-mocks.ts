@@ -46,6 +46,7 @@ export function makeTimelineEvent(
 		status: "approved",
 		approvalComment: null,
 		createdAt: 1773676800000,
+		imageCount: 0,
 		...overrides,
 	};
 }
@@ -82,6 +83,7 @@ export function makeEntryDetail(
 		approvedAt: null,
 		approvalComment: null,
 		createdAt: 1742000000000,
+		images: [],
 		versions: [],
 		...overrides,
 	};
@@ -127,6 +129,7 @@ export function makeSettlementDetail(
 		approvedAt: null,
 		approvalComment: null,
 		createdAt: 1742000000000,
+		images: [],
 		versions: [],
 		...overrides,
 	};

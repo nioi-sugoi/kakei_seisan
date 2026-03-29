@@ -15,7 +15,15 @@ export function useCreateSettlement() {
 
 	return useMutation({
 		mutationFn: (input: CreateSettlementInput) =>
-			parseResponse(client.api.settlements.$post({ json: input })),
+			parseResponse(
+				client.api.settlements.$post({
+					json: {
+						category: input.category,
+						amount: input.amount,
+						occurredOn: input.occurredOn,
+					},
+				}),
+			),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["settlements"] });
 			queryClient.invalidateQueries({ queryKey: ["balance"] });

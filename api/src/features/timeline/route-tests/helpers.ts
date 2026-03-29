@@ -1,6 +1,11 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
-import { entries, settlements } from "../../../db/schema";
+import {
+	entries,
+	entryImages,
+	settlementImages,
+	settlements,
+} from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
@@ -54,4 +59,34 @@ export async function insertSettlement(
 		})
 		.returning();
 	return settlement;
+}
+
+export async function insertEntryImage(entryId: string) {
+	const db = drizzle(env.DB);
+	const id = crypto.randomUUID();
+	const [image] = await db
+		.insert(entryImages)
+		.values({
+			id,
+			entryId,
+			storagePath: `receipts/test/${entryId}/${id}.jpg`,
+			createdAt: Date.now(),
+		})
+		.returning();
+	return image;
+}
+
+export async function insertSettlementImage(settlementId: string) {
+	const db = drizzle(env.DB);
+	const id = crypto.randomUUID();
+	const [image] = await db
+		.insert(settlementImages)
+		.values({
+			id,
+			settlementId,
+			storagePath: `receipts/test/${settlementId}/${id}.jpg`,
+			createdAt: Date.now(),
+		})
+		.returning();
+	return image;
 }

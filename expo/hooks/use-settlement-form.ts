@@ -1,9 +1,12 @@
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import * as v from "valibot";
-import { useCreateSettlement } from "./use-create-settlement";
-import { useModifySettlement } from "./use-modify-settlement";
+import type { SelectedImage } from "@/components/entry-form/ImagePicker";
+import { client } from "@/lib/api-client";
+import { uploadImageRaw } from "./use-image-upload";
 
 const settlementFieldSchema = {
 	amount: v.pipe(
@@ -23,9 +26,24 @@ type ModifyTarget = {
 	occurredOn: string;
 };
 
+async function throwResponseError(res: {
+	json: () => Promise<unknown>;
+}): Promise<never> {
+	const body = await res.json();
+	throw new Error(
+		body !== null &&
+			typeof body === "object" &&
+			"error" in body &&
+			typeof body.error === "string"
+			? body.error
+			: "エラーが発生しました",
+	);
+}
+
 export function useCreateSettlementForm(balance: number) {
 	const router = useRouter();
-	const mutation = useCreateSettlement();
+	const queryClient = useQueryClient();
+	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
 	const absBalance = Math.abs(balance);
 
 	const maxAmountSchema = v.object({
@@ -40,6 +58,41 @@ export function useCreateSettlementForm(balance: number) {
 				`精算額は残高（¥${absBalance.toLocaleString()}）以下にしてください`,
 			),
 		),
+	});
+
+	const mutation = useMutation({
+		mutationFn: async (input: {
+			category: "fromHousehold" | "fromUser";
+			amount: number;
+			occurredOn: string;
+		}) => {
+			const res = await client.api.settlements.$post({
+				json: {
+					category: input.category,
+					amount: input.amount,
+					occurredOn: input.occurredOn,
+				},
+			});
+			if (!res.ok) await throwResponseError(res);
+			const settlement = await res.json();
+			if ("error" in settlement) throw new Error(settlement.error);
+
+			if (selectedImages.length > 0) {
+				await Promise.all(
+					selectedImages.map((img) =>
+						uploadImageRaw("settlements", settlement.originalId, img),
+					),
+				);
+			}
+
+			return settlement;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["settlements"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
+			router.replace("/(tabs)");
+		},
 	});
 
 	const defaultValues = {
@@ -65,13 +118,59 @@ export function useCreateSettlementForm(balance: number) {
 		form,
 		serverError: mutation.error ? "エラーが発生しました" : "",
 		loading: mutation.isPending,
+		selectedImages,
+		setSelectedImages,
 		goBack: () => router.back(),
 	};
 }
 
-export function useModifySettlementForm(target: ModifyTarget) {
+export type ModifySettlementImageOps = {
+	newImages: SelectedImage[];
+	pendingDeletes: string[];
+};
+
+export function useModifySettlementForm(
+	target: ModifyTarget,
+	imageOps: ModifySettlementImageOps,
+) {
 	const router = useRouter();
-	const modifyMutation = useModifySettlement(target.id);
+	const queryClient = useQueryClient();
+
+	const mutation = useMutation({
+		mutationFn: async (parsed: { amount: number }) => {
+			const deleteImageIds =
+				imageOps.pendingDeletes.length > 0
+					? imageOps.pendingDeletes
+					: undefined;
+
+			const hasAmountChange = parsed.amount !== target.amount;
+
+			if (hasAmountChange || (deleteImageIds && deleteImageIds.length > 0)) {
+				const res = await client.api.settlements[":originalId"].modify.$post({
+					param: { originalId: target.id },
+					json: {
+						amount: parsed.amount,
+						deleteImageIds,
+					},
+				});
+				if (!res.ok) await throwResponseError(res);
+			}
+
+			if (imageOps.newImages.length > 0) {
+				await Promise.all(
+					imageOps.newImages.map((img) =>
+						uploadImageRaw("settlements", target.id, img),
+					),
+				);
+			}
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["settlements"] });
+			queryClient.invalidateQueries({ queryKey: ["balance"] });
+			queryClient.invalidateQueries({ queryKey: ["timeline"] });
+			router.replace("/(tabs)");
+		},
+	});
 
 	const defaultValues = {
 		amount: String(target.amount),
@@ -84,16 +183,20 @@ export function useModifySettlementForm(target: ModifyTarget) {
 		},
 		onSubmit: ({ value }) => {
 			const parsed = v.parse(createSettlementSchema, value);
-			modifyMutation.mutate({
+			mutation.mutate({
 				amount: parsed.amount,
 			});
 		},
 	});
 
+	const hasImageChanges =
+		imageOps.newImages.length > 0 || imageOps.pendingDeletes.length > 0;
+
 	return {
 		form,
-		serverError: modifyMutation.error ? modifyMutation.error.message : "",
-		loading: modifyMutation.isPending,
+		serverError: mutation.error ? mutation.error.message : "",
+		loading: mutation.isPending,
+		hasImageChanges,
 		goBack: () => router.back(),
 	};
 }

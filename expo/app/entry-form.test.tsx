@@ -14,10 +14,6 @@ jest.mock("expo-router", () => ({
 	useRouter: () => ({ replace: mockReplace, back: mockBack }),
 }));
 
-jest.mock("expo-constants", () => ({
-	default: { appOwnership: null },
-}));
-
 const mockPost = jest.fn();
 
 jest.mock("@/lib/api-client", () => ({
@@ -174,7 +170,7 @@ describe("CreateEntryScreen", () => {
 		});
 	});
 
-	it("金額が文字列からNumberに変換されてAPIに渡される", async () => {
+	it("金額が数値としてAPIに渡される", async () => {
 		render(<CreateEntryScreen />, { wrapper: TestQueryWrapper });
 
 		await user.type(screen.getByLabelText("金額"), "2500");

@@ -5,13 +5,22 @@ import { entries, settlements } from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
+	buildOtherUserAuthCookie,
 	OTHER_USER,
 	seedOtherUser,
 	setupAuth,
 } from "../../../testing/auth-helper";
 import { setupDB } from "../../../testing/db-helper";
 
-export { authCookie, client, OTHER_USER, seedOtherUser, setupAuth, setupDB };
+export {
+	authCookie,
+	buildOtherUserAuthCookie,
+	client,
+	OTHER_USER,
+	seedOtherUser,
+	setupAuth,
+	setupDB,
+};
 
 export async function insertSettlement(
 	userId: string,
