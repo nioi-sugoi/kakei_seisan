@@ -8,6 +8,7 @@ import {
 	Text,
 	View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ImageThumbnail } from "@/components/ImageThumbnail";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { SettlementInfoCard } from "@/components/settlement-detail/SettlementInfoCard";
@@ -18,8 +19,12 @@ import { useSettlementDetail } from "@/hooks/use-settlement-detail";
 import { formatAmount } from "@/lib/format";
 
 function Header({ onBack }: { onBack: () => void }) {
+	const insets = useSafeAreaInsets();
 	return (
-		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
+		<View
+			style={{ paddingTop: insets.top }}
+			className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3"
+		>
 			<Pressable onPress={onBack} className="active:opacity-60">
 				<Text className="text-lg text-primary">戻る</Text>
 			</Pressable>

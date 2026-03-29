@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { InvitationForm } from "@/components/settings/InvitationForm";
 import { ReceivedInvitationCard } from "@/components/settings/ReceivedInvitationCard";
 import { SentInvitationCard } from "@/components/settings/SentInvitationCard";
@@ -70,7 +71,7 @@ function PartnerInvitationScreen({ userEmail }: { userEmail: string }) {
 	return (
 		<ScrollView
 			className="flex-1 bg-background"
-			contentContainerClassName="px-6 pt-12 pb-8"
+			contentContainerClassName="px-6 pb-8"
 		>
 			<Text className="text-foreground text-2xl font-bold">パートナー招待</Text>
 
@@ -121,22 +122,26 @@ export default function PartnerScreen() {
 
 	if (partnership.isPending) {
 		return (
-			<View className="flex-1 items-center justify-center bg-background">
+			<SafeAreaView className="flex-1 items-center justify-center bg-background">
 				<ActivityIndicator />
-			</View>
+			</SafeAreaView>
 		);
 	}
 
 	if (partnership.data) {
 		return (
-			<View className="flex-1 items-center justify-center bg-background">
+			<SafeAreaView className="flex-1 items-center justify-center bg-background">
 				<Text className="text-foreground text-2xl font-bold">パートナー</Text>
 				<Text className="text-muted-foreground text-base mt-2">
 					パートナーとの精算状況がここに表示されます
 				</Text>
-			</View>
+			</SafeAreaView>
 		);
 	}
 
-	return <PartnerInvitationScreen userEmail={session?.user?.email ?? ""} />;
+	return (
+		<SafeAreaView className="flex-1 bg-background">
+			<PartnerInvitationScreen userEmail={session?.user?.email ?? ""} />
+		</SafeAreaView>
+	);
 }
