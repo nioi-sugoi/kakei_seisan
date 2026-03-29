@@ -117,7 +117,7 @@ export default function TimelineScreen() {
 					ListEmptyComponent={
 						<View className="items-center py-12">
 							<Text className="text-base text-muted-foreground">
-								該当する記録がありません
+								該当するイベントはありません
 							</Text>
 						</View>
 					}

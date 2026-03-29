@@ -759,7 +759,9 @@ describe("TimelineScreen", () => {
 			await user.press(screen.getByRole("button", { name: "精算で絞り込み" }));
 
 			await waitFor(() => {
-				expect(screen.getByText("該当する記録がありません")).toBeOnTheScreen();
+				expect(
+					screen.getByText("該当するイベントはありません"),
+				).toBeOnTheScreen();
 			});
 			// フィルターピルは引き続き表示される
 			expect(
