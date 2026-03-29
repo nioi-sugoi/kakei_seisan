@@ -79,9 +79,8 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("立替")).toBeOnTheScreen();
+			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
 		expect(screen.getByText("¥1,500")).toBeOnTheScreen();
 		expect(screen.getByText("3月15日")).toBeOnTheScreen();
 	});
@@ -101,9 +100,8 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("預り")).toBeOnTheScreen();
+			expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
 		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
 
@@ -273,8 +271,8 @@ describe("TimelineScreen", () => {
 		await waitFor(() => {
 			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 		});
-		// バッジ「精算」とラベル「精算」の2つが表示される
-		expect(screen.getAllByText("精算")).toHaveLength(2);
+		// フィルターピル「精算」+ バッジ「精算」+ ラベル「精算」の3つが表示される
+		expect(screen.getAllByText("精算")).toHaveLength(3);
 	});
 
 	it("記録と精算が混在するタイムラインが正しく表示される", async () => {
@@ -313,15 +311,14 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("立替")).toBeOnTheScreen();
+			expect(screen.getByText("スーパー")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("スーパー")).toBeOnTheScreen();
 		expect(screen.getByText("¥1,500")).toBeOnTheScreen();
 
-		expect(screen.getAllByText("精算")).toHaveLength(2);
+		// フィルターピル「精算」+ バッジ「精算」+ ラベル「精算」の3つ
+		expect(screen.getAllByText("精算")).toHaveLength(3);
 		expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 
-		expect(screen.getByText("預り")).toBeOnTheScreen();
 		expect(screen.getByText("お釣り")).toBeOnTheScreen();
 		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
@@ -425,5 +422,406 @@ describe("TimelineScreen", () => {
 		await user.press(screen.getByRole("button", { name: "精算する" }));
 
 		expect(mockPush).toHaveBeenCalledWith("/settlement-form");
+	});
+
+	describe("種別フィルター", () => {
+		function makeAdvanceEvent(overrides: Record<string, unknown> = {}) {
+			return makeTimelineEvent({
+				id: "adv-1",
+				originalId: "adv-1",
+				category: "advance",
+				label: "スーパー買い物",
+				amount: 1500,
+				occurredOn: "2026-03-15",
+				...overrides,
+			});
+		}
+
+		function makeDepositEvent(overrides: Record<string, unknown> = {}) {
+			return makeTimelineEvent({
+				id: "dep-1",
+				originalId: "dep-1",
+				category: "deposit",
+				label: "お釣り預かり",
+				amount: 3000,
+				occurredOn: "2026-03-14",
+				...overrides,
+			});
+		}
+
+		function makeSettlementEvent(overrides: Record<string, unknown> = {}) {
+			return makeTimelineEvent({
+				id: "stl-1",
+				originalId: "stl-1",
+				type: "settlement",
+				category: "fromHousehold",
+				label: null,
+				amount: 5000,
+				occurredOn: "2026-03-13",
+				...overrides,
+			});
+		}
+
+		it("種別フィルターピル（すべて / 立替 / 預り / 精算）が表示される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			expect(
+				screen.getByRole("button", { name: "すべてで絞り込み" }),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: "立替で絞り込み" }),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: "預りで絞り込み" }),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: "精算で絞り込み" }),
+			).toBeOnTheScreen();
+		});
+
+		it("デフォルトで「すべて」が選択状態になっている", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			expect(
+				screen.getByRole("button", {
+					name: "すべてで絞り込み",
+					selected: true,
+				}),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", {
+					name: "立替で絞り込み",
+					selected: false,
+				}),
+			).toBeOnTheScreen();
+		});
+
+		it("「立替」ピルをタップすると category=advance でAPIが呼ばれ、立替記録のみ表示される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent(), makeDepositEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+			expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
+
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+
+			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
+
+			await waitFor(() => {
+				expect(screen.queryByText("お釣り預かり")).toBeNull();
+			});
+			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+
+			expect(mockTimelineGet).toHaveBeenLastCalledWith({
+				query: expect.objectContaining({ category: "advance" }),
+			});
+		});
+
+		it("「預り」ピルをタップすると category=deposit でAPIが呼ばれ、預り記録のみ表示される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent(), makeDepositEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			mockTimelineResponse({
+				data: [makeDepositEvent()],
+				nextCursor: null,
+			});
+
+			await user.press(screen.getByRole("button", { name: "預りで絞り込み" }));
+
+			await waitFor(() => {
+				expect(screen.queryByText("スーパー買い物")).toBeNull();
+			});
+			expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
+
+			expect(mockTimelineGet).toHaveBeenLastCalledWith({
+				query: expect.objectContaining({ category: "deposit" }),
+			});
+		});
+
+		it("「精算」ピルをタップすると category=settlement でAPIが呼ばれ、精算記録のみ表示される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent(), makeSettlementEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			mockTimelineResponse({
+				data: [makeSettlementEvent()],
+				nextCursor: null,
+			});
+
+			await user.press(screen.getByRole("button", { name: "精算で絞り込み" }));
+
+			await waitFor(() => {
+				expect(screen.queryByText("スーパー買い物")).toBeNull();
+			});
+			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
+
+			expect(mockTimelineGet).toHaveBeenLastCalledWith({
+				query: expect.objectContaining({ category: "settlement" }),
+			});
+		});
+
+		it("フィルター適用中に「すべて」をタップすると category なしでAPIが呼ばれ、全種別が再表示される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent(), makeDepositEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			// 立替フィルター適用
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
+
+			await waitFor(() => {
+				expect(screen.queryByText("お釣り預かり")).toBeNull();
+			});
+
+			// 「すべて」に戻す
+			mockTimelineResponse({
+				data: [makeAdvanceEvent(), makeDepositEvent()],
+				nextCursor: null,
+			});
+			await user.press(
+				screen.getByRole("button", { name: "すべてで絞り込み" }),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
+			});
+			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+
+			expect(mockTimelineGet).toHaveBeenLastCalledWith({
+				query: expect.not.objectContaining({ category: expect.anything() }),
+			});
+		});
+
+		it("選択中のピルが切り替わりアクティブ状態が更新される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			expect(
+				screen.getByRole("button", {
+					name: "すべてで絞り込み",
+					selected: true,
+				}),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", {
+					name: "立替で絞り込み",
+					selected: false,
+				}),
+			).toBeOnTheScreen();
+
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", {
+						name: "立替で絞り込み",
+						selected: true,
+					}),
+				).toBeOnTheScreen();
+			});
+			expect(
+				screen.getByRole("button", {
+					name: "すべてで絞り込み",
+					selected: false,
+				}),
+			).toBeOnTheScreen();
+		});
+
+		it("フィルター適用後も月ごとのセクション区切りが正しく表示される", async () => {
+			mockTimelineResponse({
+				data: [
+					makeAdvanceEvent({
+						id: "adv-1",
+						originalId: "adv-1",
+						occurredOn: "2026-03-15",
+						label: "3月の立替",
+					}),
+					makeAdvanceEvent({
+						id: "adv-2",
+						originalId: "adv-2",
+						occurredOn: "2026-02-10",
+						label: "2月の立替",
+					}),
+				],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			// 立替フィルター適用（初回表示で全件=立替のみのデータ）
+			await waitFor(() => {
+				expect(screen.getByText("2026年3月")).toBeOnTheScreen();
+			});
+			expect(screen.getByText("2026年2月")).toBeOnTheScreen();
+			expect(screen.getByText("3月の立替")).toBeOnTheScreen();
+			expect(screen.getByText("2月の立替")).toBeOnTheScreen();
+		});
+
+		it("フィルター適用でAPIが空配列を返した場合、空状態メッセージが表示される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			// 精算フィルター適用 → 0件
+			mockTimelineResponse({ data: [], nextCursor: null });
+			await user.press(screen.getByRole("button", { name: "精算で絞り込み" }));
+
+			await waitFor(() => {
+				expect(screen.getByText("該当する記録がありません")).toBeOnTheScreen();
+			});
+			// フィルターピルは引き続き表示される
+			expect(
+				screen.getByRole("button", { name: "精算で絞り込み" }),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: "すべてで絞り込み" }),
+			).toBeOnTheScreen();
+		});
+
+		it("フィルター適用中に追加読み込みしても同じ category パラメータが送信される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: 1000,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			// 立替フィルターを適用
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: 2000,
+			});
+			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
+
+			await waitFor(() => {
+				expect(mockTimelineGet).toHaveBeenLastCalledWith({
+					query: expect.objectContaining({ category: "advance" }),
+				});
+			});
+
+			// 追加読み込みのレスポンスを設定
+			mockTimelineResponse({
+				data: [
+					makeAdvanceEvent({
+						id: "adv-old",
+						originalId: "adv-old",
+						label: "古い立替",
+						occurredOn: "2026-02-01",
+					}),
+				],
+				nextCursor: null,
+			});
+
+			// FlatListのonEndReachedを手動で発火
+			const { FlatList } = require("react-native");
+			const flatList = screen.UNSAFE_getByType(FlatList);
+			flatList.props.onEndReached();
+
+			await waitFor(() => {
+				expect(screen.getByText("古い立替")).toBeOnTheScreen();
+			});
+
+			// 追加読み込み時も category=advance が送信される
+			expect(mockTimelineGet).toHaveBeenLastCalledWith({
+				query: expect.objectContaining({ category: "advance" }),
+			});
+		});
+
+		it("フィルターを切り替えると最初のページから再取得される", async () => {
+			mockTimelineResponse({
+				data: [makeAdvanceEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			mockTimelineGet.mockClear();
+
+			mockTimelineResponse({
+				data: [makeDepositEvent()],
+				nextCursor: null,
+			});
+			await user.press(screen.getByRole("button", { name: "預りで絞り込み" }));
+
+			await waitFor(() => {
+				expect(screen.getByText("お釣り預かり")).toBeOnTheScreen();
+			});
+
+			// cursor なし（最初のページ）で呼ばれること
+			expect(mockTimelineGet).toHaveBeenCalledWith({
+				query: expect.objectContaining({
+					category: "deposit",
+					cursor: undefined,
+				}),
+			});
+		});
 	});
 });

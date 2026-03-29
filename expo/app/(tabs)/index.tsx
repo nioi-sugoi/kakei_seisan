@@ -2,13 +2,25 @@ import {
 	ActivityIndicator,
 	FlatList,
 	Pressable,
+	ScrollView,
 	Text,
 	View,
 } from "react-native";
 
 import { BalanceSummary } from "@/components/balance/BalanceSummary";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
-import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
+import {
+	type CategoryFilter,
+	type TimelineItem,
+	useTimeline,
+} from "@/hooks/use-timeline";
+
+const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
+	{ value: "all", label: "すべて" },
+	{ value: "advance", label: "立替" },
+	{ value: "deposit", label: "預り" },
+	{ value: "settlement", label: "精算" },
+];
 
 export default function TimelineScreen() {
 	const {
@@ -16,10 +28,43 @@ export default function TimelineScreen() {
 		isLoading,
 		isEmpty,
 		isFetchingNextPage,
+		categoryFilter,
+		setCategoryFilter,
 		handleEventPress,
 		handleEndReached,
 		handleAddPress,
 	} = useTimeline();
+
+	const filterPills = (
+		<ScrollView
+			horizontal
+			showsHorizontalScrollIndicator={false}
+			className="px-4 pb-2 pt-3"
+		>
+			{CATEGORY_FILTERS.map((f) => (
+				<Pressable
+					key={f.value}
+					onPress={() => setCategoryFilter(f.value)}
+					className={`mr-2 rounded-full px-4 py-1.5 ${
+						categoryFilter === f.value ? "bg-primary" : "bg-card"
+					}`}
+					accessibilityRole="button"
+					accessibilityLabel={`${f.label}で絞り込み`}
+					accessibilityState={{ selected: categoryFilter === f.value }}
+				>
+					<Text
+						className={`text-sm font-medium ${
+							categoryFilter === f.value
+								? "text-primary-foreground"
+								: "text-muted-foreground"
+						}`}
+					>
+						{f.label}
+					</Text>
+				</Pressable>
+			))}
+		</ScrollView>
+	);
 
 	return (
 		<View className="flex-1 bg-background">
@@ -27,7 +72,7 @@ export default function TimelineScreen() {
 				<View className="flex-1 items-center justify-center">
 					<ActivityIndicator size="large" />
 				</View>
-			) : isEmpty ? (
+			) : isEmpty && categoryFilter === "all" ? (
 				<View className="flex-1 items-center justify-center">
 					<Text className="text-2xl font-bold text-foreground">
 						タイムライン
@@ -66,6 +111,14 @@ export default function TimelineScreen() {
 					ListHeaderComponent={
 						<View className="pt-14">
 							<BalanceSummary />
+							{filterPills}
+						</View>
+					}
+					ListEmptyComponent={
+						<View className="items-center py-12">
+							<Text className="text-base text-muted-foreground">
+								該当する記録がありません
+							</Text>
 						</View>
 					}
 					ListFooterComponent={

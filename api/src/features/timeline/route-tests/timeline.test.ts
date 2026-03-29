@@ -442,4 +442,231 @@ describe("GET /api/timeline", () => {
 
 		expect(res.status).toBe(401);
 	});
+
+	describe("category フィルター", () => {
+		it("category=advance で立替記録のみ返却される（精算は含まれない）", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+			const t3 = new Date("2024-01-03").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				label: "立替",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				category: "deposit",
+				label: "預り",
+				createdAt: t2,
+			});
+			await insertSettlement(TEST_USER.id, { amount: 5000, createdAt: t3 });
+
+			const res = await client.api.timeline.$get(
+				{ query: { category: "advance" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].category).toBe("advance");
+			expect(body.data[0].label).toBe("立替");
+		});
+
+		it("category=deposit で預り記録のみ返却される", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				label: "立替",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				category: "deposit",
+				label: "預り",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { category: "deposit" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].category).toBe("deposit");
+			expect(body.data[0].label).toBe("預り");
+		});
+
+		it("category=settlement で精算のみ返却される（記録は含まれない）", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				label: "立替",
+				createdAt: t1,
+			});
+			await insertSettlement(TEST_USER.id, { amount: 3000, createdAt: t2 });
+
+			const res = await client.api.timeline.$get(
+				{ query: { category: "settlement" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].type).toBe("settlement");
+			expect(body.data[0].amount).toBe(3000);
+		});
+
+		it("category パラメータなしの場合は全件返却される", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+			const t3 = new Date("2024-01-03").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				label: "立替",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				category: "deposit",
+				label: "預り",
+				createdAt: t2,
+			});
+			await insertSettlement(TEST_USER.id, { amount: 5000, createdAt: t3 });
+
+			const res = await client.api.timeline.$get(
+				{ query: {} },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(3);
+		});
+
+		it("category フィルター適用中に50件超で正しい nextCursor が返却される", async () => {
+			const base = new Date("2024-01-01").getTime();
+			const inserts = [];
+			for (let i = 0; i < 51; i++) {
+				inserts.push(
+					insertEntry(TEST_USER.id, {
+						category: "advance",
+						label: `立替${i}`,
+						createdAt: base + i,
+					}),
+				);
+			}
+			// deposit もあるが advance フィルターでは無視される
+			inserts.push(
+				insertEntry(TEST_USER.id, {
+					category: "deposit",
+					label: "預り",
+					createdAt: base + 100,
+				}),
+			);
+			await Promise.all(inserts);
+
+			const res = await client.api.timeline.$get(
+				{ query: { category: "advance" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(50);
+			expect(body.nextCursor).not.toBeNull();
+			// フィルタされた結果にdepositが含まれていないこと
+			for (const record of body.data) {
+				expect(record.category).toBe("advance");
+			}
+		});
+
+		it("category フィルター + cursor で次ページが正しく返却される", async () => {
+			const base = new Date("2024-01-01").getTime();
+			const inserts = [];
+			for (let i = 0; i < 55; i++) {
+				inserts.push(
+					insertEntry(TEST_USER.id, {
+						category: "advance",
+						label: `立替${i}`,
+						createdAt: base + i,
+					}),
+				);
+			}
+			await Promise.all(inserts);
+
+			const firstRes = await client.api.timeline.$get(
+				{ query: { category: "advance" } },
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(firstRes.ok).toBe(true);
+			if (!firstRes.ok) return;
+			const firstBody = await firstRes.json();
+			expect(firstBody.data).toHaveLength(50);
+			expect(firstBody.nextCursor).not.toBeNull();
+
+			const secondRes = await client.api.timeline.$get(
+				{
+					query: {
+						category: "advance",
+						cursor: String(firstBody.nextCursor),
+					},
+				},
+				{ headers: { Cookie: authCookie } },
+			);
+			expect(secondRes.ok).toBe(true);
+			if (!secondRes.ok) return;
+			const secondBody = await secondRes.json();
+			expect(secondBody.data).toHaveLength(5);
+			expect(secondBody.nextCursor).toBeNull();
+		});
+
+		it("category フィルターで50件以下になった場合は nextCursor が null になる", async () => {
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				label: "立替",
+				createdAt: t1,
+			});
+			await insertEntry(TEST_USER.id, {
+				category: "deposit",
+				label: "預り",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { category: "advance" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.nextCursor).toBeNull();
+		});
+
+		it("不正な category パラメータで400エラーが返却される", async () => {
+			const res = await client.api.timeline.$get(
+				// @ts-expect-error テスト用に不正な値を送信
+				{ query: { category: "invalid" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(400);
+		});
+	});
 });

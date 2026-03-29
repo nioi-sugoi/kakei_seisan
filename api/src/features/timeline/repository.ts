@@ -6,13 +6,42 @@ import { entries, settlements } from "../../db/schema";
 export function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
-	options: { limit: number; cursor?: number },
+	options: {
+		limit: number;
+		cursor?: number;
+		category?: "advance" | "deposit" | "settlement";
+	},
 ) {
-	const cursorFilter = options.cursor
-		? lt(entries.createdAt, options.cursor)
-		: undefined;
+	if (options.category === "settlement") {
+		return buildSettlementsQuery(db, userId, options.cursor)
+			.orderBy(desc(sql`created_at`))
+			.limit(options.limit);
+	}
 
-	const entriesQuery = db
+	if (options.category === "advance" || options.category === "deposit") {
+		return buildEntriesQuery(db, userId, options.cursor, options.category)
+			.orderBy(desc(sql`created_at`))
+			.limit(options.limit);
+	}
+
+	return unionAll(
+		buildEntriesQuery(db, userId, options.cursor),
+		buildSettlementsQuery(db, userId, options.cursor),
+	)
+		.orderBy(desc(sql`created_at`))
+		.limit(options.limit);
+}
+
+function buildEntriesQuery(
+	db: DrizzleD1Database,
+	userId: string,
+	cursor?: number,
+	category?: "advance" | "deposit",
+) {
+	const cursorFilter = cursor ? lt(entries.createdAt, cursor) : undefined;
+	const categoryFilter = category ? eq(entries.category, category) : undefined;
+
+	return db
 		.select({
 			id: entries.id,
 			userId: entries.userId,
@@ -31,14 +60,23 @@ export function listByUser(
 		})
 		.from(entries)
 		.where(
-			and(eq(entries.userId, userId), eq(entries.latest, true), cursorFilter),
+			and(
+				eq(entries.userId, userId),
+				eq(entries.latest, true),
+				cursorFilter,
+				categoryFilter,
+			),
 		);
+}
 
-	const settlementCursorFilter = options.cursor
-		? lt(settlements.createdAt, options.cursor)
-		: undefined;
+function buildSettlementsQuery(
+	db: DrizzleD1Database,
+	userId: string,
+	cursor?: number,
+) {
+	const cursorFilter = cursor ? lt(settlements.createdAt, cursor) : undefined;
 
-	const settlementsQuery = db
+	return db
 		.select({
 			id: settlements.id,
 			userId: settlements.userId,
@@ -60,11 +98,7 @@ export function listByUser(
 			and(
 				eq(settlements.userId, userId),
 				eq(settlements.latest, true),
-				settlementCursorFilter,
+				cursorFilter,
 			),
 		);
-
-	return unionAll(entriesQuery, settlementsQuery)
-		.orderBy(desc(sql`created_at`))
-		.limit(options.limit);
 }
