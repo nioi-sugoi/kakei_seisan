@@ -19,6 +19,8 @@ import {
 
 type TimelineEvent = Extract<TimelineItem, { type: "record" }>["event"];
 
+const noop = () => {};
+
 interface TimelineListProps {
 	items: TimelineItem[];
 	isLoading: boolean;
@@ -28,7 +30,7 @@ interface TimelineListProps {
 	setCategoryFilter: (filter: CategoryFilter) => void;
 	sort: SortOption;
 	setSort: (sort: SortOption) => void;
-	onEventPress: (event: TimelineEvent) => void;
+	onEventPress?: (event: TimelineEvent) => void;
 	onEndReached: () => void;
 	headerTop: ReactNode;
 	emptyAllMessage: ReactNode;
@@ -134,7 +136,7 @@ export function TimelineList({
 						<View className="px-4 pb-2">
 							<TimelineEventCard
 								event={item.event}
-								onPress={onEventPress}
+								onPress={onEventPress ?? noop}
 								updatedAt={
 									sort.sortBy === "createdAt" ? item.event.createdAt : undefined
 								}

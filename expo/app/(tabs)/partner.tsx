@@ -131,7 +131,6 @@ function PartnerTimelineScreen({ partnership }: { partnership: Partnership }) {
 		setCategoryFilter,
 		sort,
 		setSort,
-		handleEventPress,
 		handleEndReached,
 	} = useTimeline({ userId: partnership.partnerId });
 
@@ -148,7 +147,6 @@ function PartnerTimelineScreen({ partnership }: { partnership: Partnership }) {
 				setCategoryFilter={setCategoryFilter}
 				sort={sort}
 				setSort={setSort}
-				onEventPress={handleEventPress}
 				onEndReached={handleEndReached}
 				headerTop={
 					<View style={{ paddingTop: insets.top }}>

@@ -233,7 +233,7 @@ describe("PartnerScreen", () => {
 			expect(within(card).getAllByText("精算")).toHaveLength(2);
 		});
 
-		it("記録カードをタップすると詳細画面に遷移する", async () => {
+		it("記録カードをタップしても詳細画面に遷移しない（閲覧専用）", async () => {
 			mockPartnerResponse(makePartnership());
 			mockBalance(0);
 			mockTimelineResponse({
@@ -254,35 +254,7 @@ describe("PartnerScreen", () => {
 
 			await user.press(screen.getByText("スーパー買い物"));
 
-			expect(mockPush).toHaveBeenCalledWith("/entry-detail/abc-123");
-		});
-
-		it("精算カードをタップすると精算詳細画面に遷移する", async () => {
-			mockPartnerResponse(makePartnership());
-			mockBalance(0);
-			mockTimelineResponse({
-				data: [
-					makeTimelineEvent({
-						id: "stl-1",
-						originalId: "stl-1",
-						type: "settlement",
-						category: "fromHousehold",
-						amount: 5000,
-						label: null,
-						userId: "partner-user-1",
-					}),
-				],
-				nextCursor: null,
-			});
-			render(<PartnerScreen />, { wrapper: TestQueryWrapper });
-
-			await waitFor(() => {
-				expect(screen.getByText("¥5,000")).toBeOnTheScreen();
-			});
-
-			await user.press(screen.getByRole("button", { name: "精算 ¥5,000" }));
-
-			expect(mockPush).toHaveBeenCalledWith("/settlement-detail/stl-1");
+			expect(mockPush).not.toHaveBeenCalled();
 		});
 
 		it("FABボタン（記録を追加）が表示されない", async () => {

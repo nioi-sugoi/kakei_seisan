@@ -38,6 +38,7 @@ describe("GET /api/partner", () => {
 		const body = await res.json();
 		expect(body.data).toMatchObject({
 			role: "inviter",
+			partnerId: OTHER_USER.id,
 			partnerName: OTHER_USER.name,
 			partnerEmail: OTHER_USER.email,
 		});
@@ -56,6 +57,7 @@ describe("GET /api/partner", () => {
 		const body = await res.json();
 		expect(body.data).toMatchObject({
 			role: "invitee",
+			partnerId: OTHER_USER.id,
 			partnerName: OTHER_USER.name,
 			partnerEmail: OTHER_USER.email,
 		});
