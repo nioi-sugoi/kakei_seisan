@@ -17,17 +17,19 @@ const timelineApp = new Hono<{
 		"query",
 		v.object({
 			cursor: v.optional(v.pipe(v.string(), v.transform(Number), v.integer())),
+			category: v.optional(v.picklist(["advance", "deposit", "settlement"])),
 		}),
 	),
 	async (c) => {
 		const user = c.get("user");
-		const { cursor } = c.req.valid("query");
+		const { cursor, category } = c.req.valid("query");
 		const limit = 50;
 		const db = drizzle(c.env.DB);
 
 		const result = await timelineRepository.listByUser(db, user.id, {
 			limit: limit + 1,
 			cursor,
+			category,
 		});
 
 		const rows = result.map((row) => ({

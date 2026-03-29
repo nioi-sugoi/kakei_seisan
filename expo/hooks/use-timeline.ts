@@ -1,10 +1,13 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import type { InferResponseType } from "hono/client";
+import { useState } from "react";
 import { client } from "@/lib/api-client";
 
 type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
 type TimelineEvent = TimelineResponse["data"][number];
+
+export type CategoryFilter = "all" | "advance" | "deposit" | "settlement";
 
 export type TimelineItem =
 	| { type: "header"; title: string; key: string }
@@ -35,11 +38,16 @@ function buildTimelineItems(events: TimelineEvent[]): TimelineItem[] {
 
 export function useTimeline() {
 	const router = useRouter();
+	const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+
 	const query = useInfiniteQuery({
-		queryKey: ["timeline"],
+		queryKey: ["timeline", { category: categoryFilter }],
 		queryFn: async ({ pageParam }: { pageParam: number | undefined }) => {
 			const res = await client.api.timeline.$get({
-				query: { cursor: pageParam ? String(pageParam) : undefined },
+				query: {
+					cursor: pageParam ? String(pageParam) : undefined,
+					category: categoryFilter !== "all" ? categoryFilter : undefined,
+				},
 			});
 			if (!res.ok) throw new Error("タイムラインの取得に失敗しました");
 			return res.json();
@@ -49,8 +57,7 @@ export function useTimeline() {
 	});
 
 	const allEvents = query.data?.pages.flatMap((page) => page.data) ?? [];
-	const latestOnly = allEvents.filter((r) => r.latest);
-	const items = buildTimelineItems(latestOnly);
+	const items = buildTimelineItems(allEvents);
 
 	const handleEventPress = (event: TimelineEvent) => {
 		if (event.type === "entry") {
@@ -73,8 +80,10 @@ export function useTimeline() {
 	return {
 		items,
 		isLoading: query.isLoading,
-		isEmpty: latestOnly.length === 0,
+		isEmpty: allEvents.length === 0,
 		isFetchingNextPage: query.isFetchingNextPage,
+		categoryFilter,
+		setCategoryFilter,
 		handleEventPress,
 		handleEndReached,
 		handleAddPress,
