@@ -8,6 +8,9 @@ type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
 type TimelineEvent = TimelineResponse["data"][number];
 
 export type CategoryFilter = "all" | "advance" | "deposit" | "settlement";
+export type SortBy = "occurredOn" | "createdAt";
+export type SortOrder = "desc" | "asc";
+export type SortOption = { sortBy: SortBy; sortOrder: SortOrder };
 
 export type TimelineItem =
 	| { type: "header"; title: string }
@@ -18,12 +21,23 @@ function toMonthLabel(date: string) {
 	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
-function buildTimelineItems(events: TimelineEvent[]): TimelineItem[] {
+function toMonthLabelFromTimestamp(timestamp: number) {
+	const d = new Date(timestamp);
+	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+}
+
+function buildTimelineItems(
+	events: TimelineEvent[],
+	sortBy: SortBy,
+): TimelineItem[] {
 	const items: TimelineItem[] = [];
 	let currentMonth = "";
 
 	for (const event of events) {
-		const month = toMonthLabel(event.occurredOn);
+		const month =
+			sortBy === "occurredOn"
+				? toMonthLabel(event.occurredOn)
+				: toMonthLabelFromTimestamp(event.createdAt);
 		if (month !== currentMonth) {
 			currentMonth = month;
 			items.push({ type: "header", title: month });
@@ -37,14 +51,20 @@ function buildTimelineItems(events: TimelineEvent[]): TimelineItem[] {
 export function useTimeline() {
 	const router = useRouter();
 	const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+	const [sort, setSort] = useState<SortOption>({
+		sortBy: "occurredOn",
+		sortOrder: "desc",
+	});
 
 	const query = useInfiniteQuery({
-		queryKey: ["timeline", { category: categoryFilter }],
-		queryFn: async ({ pageParam }: { pageParam: number | undefined }) => {
+		queryKey: ["timeline", { category: categoryFilter, ...sort }],
+		queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
 			const res = await client.api.timeline.$get({
 				query: {
-					cursor: pageParam ? String(pageParam) : undefined,
+					cursor: pageParam,
 					category: categoryFilter !== "all" ? categoryFilter : undefined,
+					sortBy: sort.sortBy,
+					sortOrder: sort.sortOrder,
 				},
 			});
 			if (!res.ok) throw new Error("タイムラインの取得に失敗しました");
@@ -55,7 +75,7 @@ export function useTimeline() {
 	});
 
 	const allEvents = query.data?.pages.flatMap((page) => page.data) ?? [];
-	const items = buildTimelineItems(allEvents);
+	const items = buildTimelineItems(allEvents, sort.sortBy);
 
 	const handleEventPress = (event: TimelineEvent) => {
 		if (event.type === "entry") {
@@ -82,6 +102,8 @@ export function useTimeline() {
 		isFetchingNextPage: query.isFetchingNextPage,
 		categoryFilter,
 		setCategoryFilter,
+		sort,
+		setSort,
 		handleEventPress,
 		handleEndReached,
 		handleAddPress,

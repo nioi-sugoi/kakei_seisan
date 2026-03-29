@@ -775,7 +775,7 @@ describe("TimelineScreen", () => {
 		it("フィルター適用中に追加読み込みしても同じ category パラメータが送信される", async () => {
 			mockTimelineResponse({
 				data: [makeAdvanceEvent()],
-				nextCursor: 1000,
+				nextCursor: "2026-03-15,1000",
 			});
 			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
@@ -786,7 +786,7 @@ describe("TimelineScreen", () => {
 			// 立替フィルターを適用
 			mockTimelineResponse({
 				data: [makeAdvanceEvent()],
-				nextCursor: 2000,
+				nextCursor: "2026-03-15,2000",
 			});
 			await user.press(screen.getByRole("button", { name: "立替で絞り込み" }));
 
@@ -854,6 +854,244 @@ describe("TimelineScreen", () => {
 					cursor: undefined,
 				}),
 			});
+		});
+	});
+
+	describe("並び替え", () => {
+		it("並び替えボタンが表示されデフォルトで「発生日（新しい順）」が選択されている", async () => {
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			const sortButton = screen.getByRole("button", {
+				name: "並び替え: 発生日（新しい順）",
+			});
+			expect(sortButton).toBeOnTheScreen();
+		});
+
+		it("並び替えボタンをタップするとドロップダウンメニューが表示される", async () => {
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			await user.press(
+				screen.getByRole("button", {
+					name: "並び替え: 発生日（新しい順）",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "発生日（新しい順）で並び替え" }),
+				).toBeOnTheScreen();
+			});
+			expect(
+				screen.getByRole("button", { name: "発生日（古い順）で並び替え" }),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", { name: "登録日（古い順）で並び替え" }),
+			).toBeOnTheScreen();
+		});
+
+		it("「登録日（新しい順）」を選択すると sortBy=createdAt, sortOrder=desc でAPIが呼ばれる", async () => {
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			// ドロップダウンを開く
+			await user.press(
+				screen.getByRole("button", {
+					name: "並び替え: 発生日（新しい順）",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+				).toBeOnTheScreen();
+			});
+
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+
+			// 「登録日（新しい順）」を選択
+			await user.press(
+				screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+			);
+
+			await waitFor(() => {
+				expect(mockTimelineGet).toHaveBeenLastCalledWith({
+					query: expect.objectContaining({
+						sortBy: "createdAt",
+						sortOrder: "desc",
+					}),
+				});
+			});
+
+			// ドロップダウンが閉じ、ラベルが更新される
+			expect(
+				screen.getByRole("button", {
+					name: "並び替え: 登録日（新しい順）",
+				}),
+			).toBeOnTheScreen();
+		});
+
+		it("「発生日（古い順）」を選択すると sortBy=occurredOn, sortOrder=asc でAPIが呼ばれる", async () => {
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			await user.press(
+				screen.getByRole("button", {
+					name: "並び替え: 発生日（新しい順）",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "発生日（古い順）で並び替え" }),
+				).toBeOnTheScreen();
+			});
+
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+
+			await user.press(
+				screen.getByRole("button", { name: "発生日（古い順）で並び替え" }),
+			);
+
+			await waitFor(() => {
+				expect(mockTimelineGet).toHaveBeenLastCalledWith({
+					query: expect.objectContaining({
+						sortBy: "occurredOn",
+						sortOrder: "asc",
+					}),
+				});
+			});
+		});
+
+		it("登録日ソート時に createdAt を基準に月グルーピングされる", async () => {
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			// 登録日ソートに切り替え
+			await user.press(
+				screen.getByRole("button", {
+					name: "並び替え: 発生日（新しい順）",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", {
+						name: "登録日（新しい順）で並び替え",
+					}),
+				).toBeOnTheScreen();
+			});
+
+			// createdAt が 2026年2月 のイベント（occurredOn は 2026年3月）
+			const feb2026Timestamp = new Date("2026-02-15T00:00:00").getTime();
+			mockTimelineResponse({
+				data: [
+					makeTimelineEvent({
+						id: "e1",
+						originalId: "e1",
+						occurredOn: "2026-03-15",
+						createdAt: feb2026Timestamp,
+						label: "2月に登録した記録",
+					}),
+				],
+				nextCursor: null,
+			});
+
+			await user.press(
+				screen.getByRole("button", { name: "登録日（新しい順）で並び替え" }),
+			);
+
+			// createdAt 基準の月ヘッダーが表示される（2026年2月）
+			await waitFor(() => {
+				expect(screen.getByText("2026年2月")).toBeOnTheScreen();
+			});
+			expect(screen.getByText("2月に登録した記録")).toBeOnTheScreen();
+			// occurredOn 基準の月ヘッダーは表示されない
+			expect(screen.queryByText("2026年3月")).toBeNull();
+		});
+
+		it("ソート選択でドロップダウンのアクティブ状態が正しく更新される", async () => {
+			mockTimelineResponse({
+				data: [makeTimelineEvent()],
+				nextCursor: null,
+			});
+			render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+			await waitFor(() => {
+				expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+			});
+
+			// ドロップダウンを開く
+			await user.press(
+				screen.getByRole("button", {
+					name: "並び替え: 発生日（新しい順）",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "発生日（新しい順）で並び替え" }),
+				).toBeOnTheScreen();
+			});
+
+			// デフォルトで「発生日（新しい順）」が selected
+			expect(
+				screen.getByRole("button", {
+					name: "発生日（新しい順）で並び替え",
+					selected: true,
+				}),
+			).toBeOnTheScreen();
+			expect(
+				screen.getByRole("button", {
+					name: "登録日（新しい順）で並び替え",
+					selected: false,
+				}),
+			).toBeOnTheScreen();
 		});
 	});
 });

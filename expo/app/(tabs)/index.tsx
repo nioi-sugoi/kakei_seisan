@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	ActivityIndicator,
 	FlatList,
@@ -11,6 +12,7 @@ import { BalanceSummary } from "@/components/balance/BalanceSummary";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
 import {
 	type CategoryFilter,
+	type SortOption,
 	type TimelineItem,
 	useTimeline,
 } from "@/hooks/use-timeline";
@@ -22,6 +24,17 @@ const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
 	{ value: "settlement", label: "精算" },
 ];
 
+const SORT_OPTIONS: {
+	sortBy: SortOption["sortBy"];
+	sortOrder: SortOption["sortOrder"];
+	label: string;
+}[] = [
+	{ sortBy: "occurredOn", sortOrder: "desc", label: "発生日（新しい順）" },
+	{ sortBy: "occurredOn", sortOrder: "asc", label: "発生日（古い順）" },
+	{ sortBy: "createdAt", sortOrder: "desc", label: "登録日（新しい順）" },
+	{ sortBy: "createdAt", sortOrder: "asc", label: "登録日（古い順）" },
+];
+
 export default function TimelineScreen() {
 	const {
 		items,
@@ -30,10 +43,19 @@ export default function TimelineScreen() {
 		isFetchingNextPage,
 		categoryFilter,
 		setCategoryFilter,
+		sort,
+		setSort,
 		handleEventPress,
 		handleEndReached,
 		handleAddPress,
 	} = useTimeline();
+
+	const [sortMenuOpen, setSortMenuOpen] = useState(false);
+
+	const currentSortLabel =
+		SORT_OPTIONS.find(
+			(o) => o.sortBy === sort.sortBy && o.sortOrder === sort.sortOrder,
+		)?.label ?? SORT_OPTIONS[0].label;
 
 	const filterPills = (
 		<ScrollView
@@ -64,6 +86,23 @@ export default function TimelineScreen() {
 				</Pressable>
 			))}
 		</ScrollView>
+	);
+
+	const sortButton = (
+		<Pressable
+			onPress={() => setSortMenuOpen((prev) => !prev)}
+			className="flex-row items-center gap-1 px-4 pb-2"
+			accessibilityRole="button"
+			accessibilityLabel={`並び替え: ${currentSortLabel}`}
+		>
+			<Text className="text-sm text-muted-foreground">並び替え:</Text>
+			<Text className="text-sm font-medium text-foreground">
+				{currentSortLabel}
+			</Text>
+			<Text className="text-xs text-muted-foreground">
+				{sortMenuOpen ? "▲" : "▼"}
+			</Text>
+		</Pressable>
 	);
 
 	return (
@@ -112,6 +151,7 @@ export default function TimelineScreen() {
 						<View className="pt-14">
 							<BalanceSummary />
 							{filterPills}
+							{sortButton}
 						</View>
 					}
 					ListEmptyComponent={
@@ -126,6 +166,39 @@ export default function TimelineScreen() {
 					}
 					contentContainerClassName="pb-24"
 				/>
+			)}
+
+			{/* ソートドロップダウンメニュー（FlatListの外で描画） */}
+			{sortMenuOpen && (
+				<View className="absolute left-4 right-4 top-52 z-10 rounded-lg bg-card p-1">
+					{SORT_OPTIONS.map((option) => {
+						const isSelected =
+							sort.sortBy === option.sortBy &&
+							sort.sortOrder === option.sortOrder;
+						return (
+							<Pressable
+								key={option.label}
+								onPress={() => {
+									setSort({
+										sortBy: option.sortBy,
+										sortOrder: option.sortOrder,
+									});
+									setSortMenuOpen(false);
+								}}
+								className={`rounded-md px-3 py-2 ${isSelected ? "bg-muted" : ""}`}
+								accessibilityRole="button"
+								accessibilityLabel={`${option.label}で並び替え`}
+								accessibilityState={{ selected: isSelected }}
+							>
+								<Text
+									className={`text-sm ${isSelected ? "font-bold text-primary" : "text-foreground"}`}
+								>
+									{option.label}
+								</Text>
+							</Pressable>
+						);
+					})}
+				</View>
 			)}
 
 			{/* FAB */}
