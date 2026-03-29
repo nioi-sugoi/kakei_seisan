@@ -14,7 +14,7 @@ export function useModifySettlement(settlementId: string) {
 		mutationFn: async (input: ModifyInput) => {
 			const res = await client.api.settlements[":originalId"].modify.$post({
 				param: { originalId: settlementId },
-				json: input,
+				json: { amount: input.amount },
 			});
 			if (!res.ok) {
 				const body = await res.json();

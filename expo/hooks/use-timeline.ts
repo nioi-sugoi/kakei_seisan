@@ -13,7 +13,7 @@ export type SortOrder = "desc" | "asc";
 export type SortOption = { sortBy: SortBy; sortOrder: SortOrder };
 
 export type TimelineItem =
-	| { type: "header"; title: string }
+	| { type: "header"; title: string; key: string }
 	| { type: "record"; event: TimelineEvent };
 
 function toMonthLabel(value: string | number) {
@@ -32,6 +32,7 @@ function buildTimelineItems(
 ): TimelineItem[] {
 	const items: TimelineItem[] = [];
 	let currentMonth = "";
+	let headerSeq = 0;
 
 	for (const event of events) {
 		const month = toMonthLabel(
@@ -39,7 +40,8 @@ function buildTimelineItems(
 		);
 		if (month !== currentMonth) {
 			currentMonth = month;
-			items.push({ type: "header", title: month });
+			headerSeq++;
+			items.push({ type: "header", title: month, key: `header-${headerSeq}` });
 		}
 		items.push({ type: "record", event });
 	}

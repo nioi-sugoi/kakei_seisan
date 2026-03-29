@@ -1,4 +1,9 @@
+import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { entryImages } from "../../../db/schema";
+import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
@@ -11,6 +16,25 @@ import {
 	setupAuth,
 	setupDB,
 } from "./helpers";
+
+function createTestFile(name: string, type: string, sizeBytes = 1024): File {
+	const buffer = new ArrayBuffer(sizeBytes);
+	return new File([buffer], name, { type });
+}
+
+/** 専用エンドポイント経由で画像をアップロードし、画像IDを返す */
+async function uploadImage(entryId: string, file?: File): Promise<string> {
+	const formData = new FormData();
+	formData.append("image", file ?? createTestFile("receipt.jpg", "image/jpeg"));
+	const res = await app.request(
+		`/api/entries/${entryId}/images`,
+		{ method: "POST", headers: { Cookie: authCookie }, body: formData },
+		env,
+	);
+	if (res.status !== 201) throw new Error(`image upload failed: ${res.status}`);
+	const body = (await res.json()) as { id: string };
+	return body.id;
+}
 
 beforeAll(async () => {
 	await setupDB();
@@ -168,11 +192,9 @@ describe("POST /api/entries/:id/modify", () => {
 			category: "deposit",
 		});
 
-		// Honoクライアントの型では category を送信できないため raw fetch で検証
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				// category は modifyEntrySchema に含まれないため無視される
 				json: { amount: 3000, label: "お釣り修正", category: "advance" } as {
 					amount: number;
 					label: string;
@@ -184,6 +206,37 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(res.status).toBe(201);
 		const body = await res.json();
 		expect(body).toMatchObject({ category: "deposit" });
+	});
+
+	it("画像削除で新バージョンが作成される", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		// 専用エンドポイント経由で画像を追加
+		const imageId = await uploadImage(entry.id);
+
+		// 画像削除のみで修正
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: {
+					amount: 1500,
+					label: "食費",
+					deleteImageIds: [imageId],
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(0);
+
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(2);
 	});
 
 	it("変更がない場合は 400 を返す", async () => {
@@ -265,5 +318,49 @@ describe("POST /api/entries/:id/modify", () => {
 		});
 
 		expect(res.status).toBe(401);
+	});
+
+	it("修正で削除した画像はR2から削除されるがDBレコードは旧バージョンに残る", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		// 専用エンドポイント経由で画像を追加
+		const imageId = await uploadImage(entry.id);
+
+		// storagePath を DB から取得
+		const db = drizzle(env.DB);
+		const [imageMeta] = await db
+			.select()
+			.from(entryImages)
+			.where(eq(entryImages.id, imageId))
+			.all();
+		const storagePath = imageMeta.storagePath;
+
+		// 画像削除で修正
+		await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				json: {
+					amount: 1500,
+					label: "食費",
+					deleteImageIds: [imageId],
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		// R2 からは削除される（コスト最適化）
+		const r2Object = await env.R2.get(storagePath);
+		expect(r2Object).toBeNull();
+
+		// 旧バージョンの画像レコードは DB に残っている（履歴用）
+		const oldImage = await db
+			.select()
+			.from(entryImages)
+			.where(eq(entryImages.id, imageId))
+			.get();
+		expect(oldImage).toBeTruthy();
 	});
 });

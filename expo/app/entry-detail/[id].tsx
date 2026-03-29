@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
@@ -8,8 +9,11 @@ import {
 	View,
 } from "react-native";
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
+import { ImageThumbnail } from "@/components/ImageThumbnail";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
+import { getImageSource } from "@/hooks/use-image-upload";
 import { useRestoreEntry } from "@/hooks/use-restore-entry";
 import { formatAmount, formatDateFull } from "@/lib/format";
 
@@ -32,6 +36,7 @@ export default function EntryDetailScreen() {
 	const { data: entry, isPending, error } = useEntryDetail(id);
 	const cancelMutation = useCancelEntry(id);
 	const restoreMutation = useRestoreEntry(id);
+	const [viewerIndex, setViewerIndex] = useState(-1);
 
 	if (isPending) {
 		return (
@@ -102,6 +107,32 @@ export default function EntryDetailScreen() {
 					label={latestVersion.label ?? entry.label}
 					memo={latestVersion.memo ?? entry.memo}
 					isCancelled={latestVersion.cancelled}
+				/>
+
+				{/* 画像 */}
+				{entry.images.length > 0 ? (
+					<View className="rounded-xl bg-card px-4 py-4">
+						<Text className="mb-3 text-sm font-bold text-foreground">画像</Text>
+						<View className="flex-row flex-wrap gap-3">
+							{entry.images.map((img, index) => (
+								<ImageThumbnail
+									key={img.id}
+									source={getImageSource("entries", entry.originalId, img.id)}
+									onPress={() => setViewerIndex(index)}
+									accessibilityLabel={`画像 ${index + 1}`}
+								/>
+							))}
+						</View>
+					</View>
+				) : null}
+
+				<ImageViewerModal
+					visible={viewerIndex >= 0}
+					images={entry.images.map((img) =>
+						getImageSource("entries", entry.originalId, img.id),
+					)}
+					initialIndex={viewerIndex >= 0 ? viewerIndex : 0}
+					onClose={() => setViewerIndex(-1)}
 				/>
 
 				{/* 操作履歴 */}

@@ -1,6 +1,6 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { entries } from "../../db/schema";
+import { entries, entryImages } from "../../db/schema";
 import type { CreateEntryInput, ModifyEntryInput } from "./types";
 
 export function createEntry(
@@ -202,4 +202,122 @@ export function createCancellation(
 			})
 			.returning(),
 	]);
+}
+
+// ============================================================
+// 画像関連
+// ============================================================
+
+/**
+ * 画像メタデータを作成する（枚数制限超過時は null を返す）。
+ * INSERT...SELECT で枚数チェックと displayOrder 算出をアトミックに行い、
+ * 並行リクエストによる制限超過を防止する。
+ */
+export async function createImage(
+	db: DrizzleD1Database,
+	input: {
+		entryId: string;
+		storagePath: string;
+	},
+): Promise<typeof entryImages.$inferSelect | null> {
+	const id = crypto.randomUUID();
+	const now = Date.now();
+	const result = await db.run(sql`
+		INSERT INTO entry_images (id, entry_id, storage_path, display_order, created_at)
+		SELECT ${id}, ${input.entryId}, ${input.storagePath},
+			COALESCE(MAX(display_order) + 1, 0), ${now}
+		FROM entry_images
+		WHERE entry_id = ${input.entryId}
+		HAVING COUNT(*) < 2
+	`);
+	if (!result.meta.rows_written || result.meta.rows_written === 0) {
+		return null;
+	}
+	const row = await db
+		.select()
+		.from(entryImages)
+		.where(eq(entryImages.id, id))
+		.get();
+	return row ?? null;
+}
+
+export function findImagesByEntry(db: DrizzleD1Database, entryId: string) {
+	return db
+		.select()
+		.from(entryImages)
+		.where(eq(entryImages.entryId, entryId))
+		.orderBy(entryImages.displayOrder)
+		.all();
+}
+
+export function findImageById(db: DrizzleD1Database, imageId: string) {
+	return db.select().from(entryImages).where(eq(entryImages.id, imageId)).get();
+}
+
+export function deleteImage(db: DrizzleD1Database, imageId: string) {
+	return db.delete(entryImages).where(eq(entryImages.id, imageId)).run();
+}
+
+/** 指定バージョンの画像を新バージョンにコピーする（deleteIds に含まれる画像は除外） */
+export async function copyImagesToVersion(
+	db: DrizzleD1Database,
+	fromVersionId: string,
+	toVersionId: string,
+	deleteIds: string[],
+) {
+	const images = await findImagesByEntry(db, fromVersionId);
+	const deleteSet = new Set(deleteIds);
+	const copied: (typeof entryImages.$inferSelect)[] = [];
+	for (const img of images) {
+		if (deleteSet.has(img.id)) continue;
+		const id = crypto.randomUUID();
+		const now = Date.now();
+		await db.insert(entryImages).values({
+			id,
+			entryId: toVersionId,
+			storagePath: img.storagePath,
+			displayOrder: img.displayOrder,
+			createdAt: now,
+		});
+		const row = await db
+			.select()
+			.from(entryImages)
+			.where(eq(entryImages.id, id))
+			.get();
+		if (row) copied.push(row);
+	}
+	return copied;
+}
+
+/** 指定 storagePath を参照している画像レコード数を返す（R2削除判定用） */
+export async function countImageRefsByStoragePath(
+	db: DrizzleD1Database,
+	storagePath: string,
+) {
+	const result = await db
+		.select({ count: sql<number>`COUNT(*)` })
+		.from(entryImages)
+		.where(eq(entryImages.storagePath, storagePath))
+		.get();
+	return result?.count ?? 0;
+}
+
+/** 指定エントリーの全バージョンに紐づく画像を検索（GET/DELETE での所有権チェック��） */
+export async function findImageWithOwnershipCheck(
+	db: DrizzleD1Database,
+	imageId: string,
+	originalId: string,
+) {
+	const image = await findImageById(db, imageId);
+	if (!image) return null;
+	// image.entryId はバージョンID → そのバージョンの originalId を確認
+	const version = await db
+		.select()
+		.from(entries)
+		.where(
+			and(eq(entries.id, image.entryId), eq(entries.originalId, originalId)),
+		)
+		.get();
+	if (!version) return null;
+	return image;
 }

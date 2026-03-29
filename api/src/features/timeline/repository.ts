@@ -1,7 +1,12 @@
 import { and, asc, desc, eq, gt, lt, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { unionAll } from "drizzle-orm/sqlite-core";
-import { entries, settlements } from "../../db/schema";
+import {
+	entries,
+	entryImages,
+	settlementImages,
+	settlements,
+} from "../../db/schema";
 
 type SortBy = "occurredOn" | "createdAt";
 type SortOrder = "desc" | "asc";
@@ -98,6 +103,8 @@ function buildEntriesQuery(
 	const cursorFilter = buildCursorFilter(entries, cursor, sortBy, sortOrder);
 	const categoryFilter = category ? eq(entries.category, category) : undefined;
 
+	const entryImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${entryImages} WHERE ${entryImages.entryId} = "entries"."id")`;
+
 	return db
 		.select({
 			id: entries.id,
@@ -114,6 +121,7 @@ function buildEntriesQuery(
 			status: entries.status,
 			approvalComment: entries.approvalComment,
 			createdAt: entries.createdAt,
+			imageCount: entryImageCountSql.as("image_count"),
 		})
 		.from(entries)
 		.where(
@@ -140,6 +148,8 @@ function buildSettlementsQuery(
 		sortOrder,
 	);
 
+	const settlementImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${settlementImages} WHERE ${settlementImages.settlementId} = "settlements"."id")`;
+
 	return db
 		.select({
 			id: settlements.id,
@@ -156,6 +166,7 @@ function buildSettlementsQuery(
 			status: settlements.status,
 			approvalComment: settlements.approvalComment,
 			createdAt: settlements.createdAt,
+			imageCount: settlementImageCountSql.as("image_count"),
 		})
 		.from(settlements)
 		.where(

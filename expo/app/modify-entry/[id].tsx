@@ -1,8 +1,11 @@
 import { useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import {
 	ActivityIndicator,
+	Image,
 	KeyboardAvoidingView,
 	Platform,
+	Pressable,
 	ScrollView,
 	Text,
 	View,
@@ -15,10 +18,16 @@ import {
 	FormHeader,
 	SubmitButton,
 } from "@/components/entry-form/FormShared";
+import {
+	ImagePicker,
+	type SelectedImage,
+} from "@/components/entry-form/ImagePicker";
 import { LabelInput } from "@/components/entry-form/LabelInput";
 import { MemoInput } from "@/components/entry-form/MemoInput";
+import { ImageThumbnail } from "@/components/ImageThumbnail";
 import { useEntryDetail } from "@/hooks/use-entry-detail";
 import { useModifyEntryForm } from "@/hooks/use-entry-form";
+import { getImageSource } from "@/hooks/use-image-upload";
 
 type ModifyTarget = {
 	id: string;
@@ -29,8 +38,25 @@ type ModifyTarget = {
 	memo: string | null;
 };
 
-function ModifyEntryForm({ target }: { target: ModifyTarget }) {
-	const { form, serverError, loading, goBack } = useModifyEntryForm(target);
+type ExistingImage = { id: string; displayOrder: number; createdAt: number };
+
+function ModifyEntryForm({
+	target,
+	existingImages,
+}: {
+	target: ModifyTarget;
+	existingImages: ExistingImage[];
+}) {
+	const [newImages, setNewImages] = useState<SelectedImage[]>([]);
+	const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
+
+	const { form, serverError, loading, hasImageChanges, goBack } =
+		useModifyEntryForm(target, { newImages, pendingDeletes });
+
+	const visibleExisting = existingImages.filter(
+		(img) => !pendingDeletes.includes(img.id),
+	);
+	const totalAfterChanges = visibleExisting.length + newImages.length;
 
 	return (
 		<KeyboardAvoidingView
@@ -86,13 +112,73 @@ function ModifyEntryForm({ target }: { target: ModifyTarget }) {
 						/>
 					)}
 				</form.Field>
+
+				{/* 画像 */}
+				<View className="gap-2">
+					<Text className="text-sm font-medium text-foreground">
+						画像
+						<Text className="text-xs text-muted-foreground">
+							{" "}
+							任意・最大2枚
+						</Text>
+					</Text>
+					{visibleExisting.length > 0 || newImages.length > 0 ? (
+						<View className="flex-row flex-wrap gap-3">
+							{visibleExisting.map((img, index) => (
+								<View key={img.id} className="relative">
+									<ImageThumbnail
+										source={getImageSource("entries", target.id, img.id)}
+										accessibilityLabel={`画像 ${index + 1}`}
+									/>
+									<Pressable
+										onPress={() =>
+											setPendingDeletes((prev) => [...prev, img.id])
+										}
+										accessibilityLabel={`画像${index + 1}を削除`}
+										className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
+									>
+										<Text className="text-xs font-bold text-white">✕</Text>
+									</Pressable>
+								</View>
+							))}
+							{newImages.map((img, index) => (
+								<View key={img.uri} className="relative">
+									<Image
+										source={{ uri: img.uri }}
+										style={{ width: 96, height: 96 }}
+										accessibilityLabel={`画像 ${visibleExisting.length + index + 1}`}
+									/>
+									<Pressable
+										onPress={() =>
+											setNewImages((prev) => prev.filter((_, i) => i !== index))
+										}
+										accessibilityLabel={`画像${visibleExisting.length + index + 1}を削除`}
+										className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full bg-destructive"
+									>
+										<Text className="text-xs font-bold text-white">✕</Text>
+									</Pressable>
+								</View>
+							))}
+						</View>
+					) : null}
+					{totalAfterChanges < 2 ? (
+						<ImagePicker
+							images={newImages}
+							onChange={setNewImages}
+							maxImages={2 - visibleExisting.length}
+							hideLabel
+							hidePreview
+						/>
+					) : null}
+				</View>
+
 				{serverError ? <FormError message={serverError} /> : null}
 				<form.Subscribe selector={(state) => state.isDirty}>
 					{(isDirty) => (
 						<SubmitButton
 							label="修正する"
 							loading={loading}
-							disabled={!isDirty}
+							disabled={!isDirty && !hasImageChanges}
 							onPress={() => form.handleSubmit()}
 						/>
 					)}
@@ -136,6 +222,7 @@ export default function ModifyEntryScreen() {
 				label: latestVersion.label,
 				memo: latestVersion.memo,
 			}}
+			existingImages={entry.images}
 		/>
 	);
 }

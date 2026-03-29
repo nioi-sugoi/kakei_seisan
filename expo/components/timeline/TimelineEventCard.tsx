@@ -34,6 +34,7 @@ export function TimelineEventCard({
 	const isCancelled = event.cancelled;
 	const isExpense = event.type === "entry";
 	const isModified = !isV1 && !isCancelled;
+	const hasImages = event.imageCount > 0;
 	const label = isExpense ? event.label : (event.label ?? "精算");
 
 	const { category } = event;
@@ -67,6 +68,7 @@ export function TimelineEventCard({
 				isExpense
 					? `${typeLabel} ${event.label} ${formatAmount(event.amount)}`
 					: `精算 ${formatAmount(event.amount)}`,
+				hasImages ? "画像あり" : null,
 				isModified ? "修正済み" : null,
 				isCancelled ? "取消済み" : null,
 				showApprovalStatus && status ? status.label : null,
@@ -76,7 +78,7 @@ export function TimelineEventCard({
 		>
 			<View className="flex-row items-center justify-between">
 				<View className="flex-1 gap-0.5">
-					{/* Row 1: 種別 + 日付 + ✎ */}
+					{/* Row 1: 種別 + 日付 + 📎 + ✎ */}
 					<View className="flex-row items-center gap-1.5">
 						<Text className={`text-base font-bold ${typeColor}`}>
 							{typeLabel}
@@ -86,6 +88,14 @@ export function TimelineEventCard({
 								? `${formatDateShort(updatedAt)}に${isCancelled ? "削除" : isModified ? "修正" : "登録"}`
 								: formatDateShort(event.occurredOn)}
 						</Text>
+						{hasImages && (
+							<Text
+								className="text-sm text-muted-foreground"
+								accessibilityLabel="画像あり"
+							>
+								📎
+							</Text>
+						)}
 						{isModified && (
 							<Text
 								className="text-base text-muted-foreground"

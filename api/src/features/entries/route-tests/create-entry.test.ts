@@ -47,6 +47,7 @@ describe("POST /api/entries", () => {
 		});
 		// originalId は自身の id と一致
 		expect(body.originalId).toBe(body.id);
+		expect(body.images).toEqual([]);
 	});
 
 	it("deposit カテゴリで記録を登録できる", async () => {

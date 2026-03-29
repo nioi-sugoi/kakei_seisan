@@ -16,7 +16,11 @@ export function useModifyEntry(entryId: string) {
 		mutationFn: async (input: ModifyInput) => {
 			const res = await client.api.entries[":originalId"].modify.$post({
 				param: { originalId: entryId },
-				json: input,
+				json: {
+					amount: input.amount,
+					label: input.label,
+					memo: input.memo,
+				},
 			});
 			if (!res.ok) {
 				const body = await res.json();

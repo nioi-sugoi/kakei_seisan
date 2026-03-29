@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
@@ -7,8 +8,11 @@ import {
 	Text,
 	View,
 } from "react-native";
+import { ImageThumbnail } from "@/components/ImageThumbnail";
+import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { SettlementInfoCard } from "@/components/settlement-detail/SettlementInfoCard";
 import { useCancelSettlement } from "@/hooks/use-cancel-settlement";
+import { getImageSource } from "@/hooks/use-image-upload";
 import { useRestoreSettlement } from "@/hooks/use-restore-settlement";
 import { useSettlementDetail } from "@/hooks/use-settlement-detail";
 import { formatAmount } from "@/lib/format";
@@ -32,6 +36,7 @@ export default function SettlementDetailScreen() {
 	const { data: settlement, isPending, error } = useSettlementDetail(id);
 	const cancelMutation = useCancelSettlement(id);
 	const restoreMutation = useRestoreSettlement(id);
+	const [viewerIndex, setViewerIndex] = useState(-1);
 
 	if (isPending) {
 		return (
@@ -96,6 +101,36 @@ export default function SettlementDetailScreen() {
 					cancelled={latestVersion.cancelled}
 					amount={latestVersion.amount ?? settlement.amount}
 					occurredOn={settlement.occurredOn}
+				/>
+
+				{/* 画像 */}
+				{settlement.images.length > 0 ? (
+					<View className="rounded-xl bg-card px-4 py-4">
+						<Text className="mb-3 text-sm font-bold text-foreground">画像</Text>
+						<View className="flex-row flex-wrap gap-3">
+							{settlement.images.map((img, index) => (
+								<ImageThumbnail
+									key={img.id}
+									source={getImageSource(
+										"settlements",
+										settlement.originalId,
+										img.id,
+									)}
+									onPress={() => setViewerIndex(index)}
+									accessibilityLabel={`画像 ${index + 1}`}
+								/>
+							))}
+						</View>
+					</View>
+				) : null}
+
+				<ImageViewerModal
+					visible={viewerIndex >= 0}
+					images={settlement.images.map((img) =>
+						getImageSource("settlements", settlement.originalId, img.id),
+					)}
+					initialIndex={viewerIndex >= 0 ? viewerIndex : 0}
+					onClose={() => setViewerIndex(-1)}
 				/>
 
 				{/* 操作履歴 */}

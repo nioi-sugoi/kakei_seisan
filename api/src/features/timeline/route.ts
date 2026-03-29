@@ -89,6 +89,7 @@ const timelineApp = new Hono<{
 			status: row.status,
 			approvalComment: row.approvalComment,
 			createdAt: row.createdAt,
+			imageCount: row.imageCount,
 		}));
 
 		const hasMore = rows.length > limit;

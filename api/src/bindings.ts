@@ -1,6 +1,6 @@
 export type Env = {
 	DB: D1Database;
-	RECEIPTS: R2Bucket;
+	R2: R2Bucket;
 	RESEND_API_KEY: string;
 	EMAIL_FROM: string;
 	BETTER_AUTH_SECRET: string;
