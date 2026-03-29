@@ -18,7 +18,7 @@ echo "" >&2
 # 1. Install dependencies
 # --------------------------------------------------
 echo "[1/3] Installing dependencies..." >&2
-pnpm install >&2
+pnpm install --ignore-scripts >&2
 
 # --------------------------------------------------
 # 2. Determine ports
