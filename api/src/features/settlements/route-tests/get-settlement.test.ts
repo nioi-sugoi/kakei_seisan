@@ -53,7 +53,7 @@ describe("GET /api/settlements/:id", () => {
 		await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 4000 },
+				form: { amount: "4000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);

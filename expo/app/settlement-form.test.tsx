@@ -180,9 +180,9 @@ describe("SettlementFormScreen", () => {
 
 		await waitFor(() => {
 			expect(mockSettlementsPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
+				form: expect.objectContaining({
 					category: "fromHousehold",
-					amount: 5000,
+					amount: "5000",
 				}),
 			});
 		});
@@ -200,9 +200,9 @@ describe("SettlementFormScreen", () => {
 
 		await waitFor(() => {
 			expect(mockSettlementsPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
+				form: expect.objectContaining({
 					category: "fromUser",
-					amount: 2000,
+					amount: "2000",
 				}),
 			});
 		});
@@ -237,8 +237,8 @@ describe("SettlementFormScreen", () => {
 
 		await waitFor(() => {
 			expect(mockSettlementsPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
-					amount: 2000,
+				form: expect.objectContaining({
+					amount: "2000",
 				}),
 			});
 		});

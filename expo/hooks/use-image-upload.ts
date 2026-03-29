@@ -6,7 +6,7 @@ import { config } from "@/lib/config";
 
 export type ImageResourceType = "entries" | "settlements";
 
-function getAuthHeaders(): Record<string, string> {
+export function getAuthHeaders(): Record<string, string> {
 	if (Platform.OS === "web") return {};
 	const cookie = authClient.getCookie();
 	return cookie ? { Cookie: cookie } : {};

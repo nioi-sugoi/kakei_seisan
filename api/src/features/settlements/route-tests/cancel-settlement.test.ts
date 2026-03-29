@@ -57,7 +57,7 @@ describe("POST /api/settlements/:originalId/cancel", () => {
 		await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 9000 },
+				form: { amount: "9000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);

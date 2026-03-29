@@ -2,16 +2,12 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
-import { parseResponse } from "hono/client";
 import { useState } from "react";
 import * as v from "valibot";
 import type { SelectedImage } from "@/components/entry-form/ImagePicker";
 import { client } from "@/lib/api-client";
-import {
-	deleteImageRaw,
-	uploadImageRaw,
-	useUploadImages,
-} from "./use-image-upload";
+import { config } from "@/lib/config";
+import { getAuthHeaders } from "./use-image-upload";
 
 const entryFieldSchema = {
 	category: v.picklist(["advance", "deposit"]),
@@ -47,27 +43,75 @@ type ModifyTarget = {
 	memo: string | null;
 };
 
+// React Native の FormData は Web API と異なり { uri, name, type } オブジェクトを受け付ける
+function appendImageToFormData(
+	formData: FormData,
+	fieldName: string,
+	image: SelectedImage,
+) {
+	formData.append(fieldName, {
+		uri: image.uri,
+		name: image.fileName,
+		type: image.mimeType,
+	} as unknown as Blob);
+}
+
+async function throwResponseError(res: {
+	json: () => Promise<unknown>;
+}): Promise<never> {
+	const body = await res.json();
+	throw new Error(
+		body !== null &&
+			typeof body === "object" &&
+			"error" in body &&
+			typeof body.error === "string"
+			? body.error
+			: "エラーが発生しました",
+	);
+}
+
 export function useCreateEntryForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
-	const uploadImages = useUploadImages("entries");
 
 	const mutation = useMutation({
-		mutationFn: (input: v.InferOutput<typeof createEntrySchema>) =>
-			parseResponse(client.api.entries.$post({ json: input })),
-		onSuccess: async (entry) => {
-			// 画像アップロードは best-effort（失敗してもエントリーは残す）
+		mutationFn: async (input: v.InferOutput<typeof createEntrySchema>) => {
 			if (selectedImages.length > 0) {
-				try {
-					await uploadImages.mutateAsync({
-						parentId: entry.id,
-						images: selectedImages,
-					});
-				} catch {
-					// 画像アップロード失敗は無視（詳細画面から再添付可能）
-				}
+				// File uploads require raw fetch on React Native
+				const formData = new FormData();
+				formData.append("category", input.category);
+				formData.append("amount", String(input.amount));
+				formData.append("occurredOn", input.occurredOn);
+				formData.append("label", input.label);
+				if (input.memo) formData.append("memo", input.memo);
+				selectedImages.forEach((img, i) => {
+					appendImageToFormData(formData, `image${i + 1}`, img);
+				});
+
+				const res = await fetch(`${config.apiBaseUrl}/api/entries`, {
+					method: "POST",
+					body: formData,
+					headers: getAuthHeaders(),
+					credentials: "include",
+				});
+				if (!res.ok) await throwResponseError(res);
+				return res.json();
 			}
+			// Text-only: use Hono RPC client
+			const res = await client.api.entries.$post({
+				form: {
+					category: input.category,
+					amount: String(input.amount),
+					occurredOn: input.occurredOn,
+					label: input.label,
+					memo: input.memo,
+				},
+			});
+			if (!res.ok) await throwResponseError(res);
+			return res.json();
+		},
+		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });
 			queryClient.invalidateQueries({ queryKey: ["balance"] });
 			queryClient.invalidateQueries({ queryKey: ["timeline"] });
@@ -123,30 +167,46 @@ export function useModifyEntryForm(
 			label: string;
 			memo?: string;
 		}) => {
-			const hasImageChanges =
-				imageOps.newImages.length > 0 || imageOps.pendingDeletes.length > 0;
+			const hasNewImages = imageOps.newImages.length > 0;
+			const deleteImageIds =
+				imageOps.pendingDeletes.length > 0
+					? imageOps.pendingDeletes.join(",")
+					: undefined;
 
-			// フィールド変更・画像変更のいずれかがあれば新バージョンを作成
-			const res = await client.api.entries[":originalId"].modify.$post({
-				param: { originalId: target.id },
-				json: { ...parsed, hasImageChanges },
-			});
-			if (!res.ok) {
-				const body = await res.json();
-				throw new Error("error" in body ? body.error : "修正に失敗しました");
+			if (hasNewImages) {
+				// File uploads require raw fetch on React Native
+				const formData = new FormData();
+				formData.append("amount", String(parsed.amount));
+				formData.append("label", parsed.label);
+				if (parsed.memo) formData.append("memo", parsed.memo);
+				imageOps.newImages.forEach((img, i) => {
+					appendImageToFormData(formData, `image${i + 1}`, img);
+				});
+				if (deleteImageIds) formData.append("deleteImageIds", deleteImageIds);
+
+				const res = await fetch(
+					`${config.apiBaseUrl}/api/entries/${target.id}/modify`,
+					{
+						method: "POST",
+						body: formData,
+						headers: getAuthHeaders(),
+						credentials: "include",
+					},
+				);
+				if (!res.ok) await throwResponseError(res);
+			} else {
+				// Text-only: use Hono RPC client
+				const res = await client.api.entries[":originalId"].modify.$post({
+					param: { originalId: target.id },
+					form: {
+						amount: String(parsed.amount),
+						label: parsed.label,
+						memo: parsed.memo,
+						deleteImageIds,
+					},
+				});
+				if (!res.ok) await throwResponseError(res);
 			}
-
-			// バージョン作成後に画像操作を実行
-			await Promise.all(
-				imageOps.newImages.map((img) =>
-					uploadImageRaw("entries", target.id, img),
-				),
-			);
-			await Promise.all(
-				imageOps.pendingDeletes.map((id) =>
-					deleteImageRaw("entries", target.id, id),
-				),
-			);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["entries"] });

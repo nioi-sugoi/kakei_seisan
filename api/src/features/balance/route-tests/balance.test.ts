@@ -256,9 +256,9 @@ describe("GET /api/balance", () => {
 
 		const settlementRes = await client.api.settlements.$post(
 			{
-				json: {
+				form: {
 					category: "fromHousehold",
-					amount: 3000,
+					amount: "3000",
 					occurredOn: "2024-03-15",
 				},
 			},
@@ -288,9 +288,9 @@ describe("GET /api/balance", () => {
 
 		const settlementRes = await client.api.settlements.$post(
 			{
-				json: {
+				form: {
 					category: "fromHousehold",
-					amount: 3000,
+					amount: "3000",
 					occurredOn: "2024-03-15",
 				},
 			},
@@ -302,7 +302,7 @@ describe("GET /api/balance", () => {
 		await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 5000 },
+				form: { amount: "5000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);

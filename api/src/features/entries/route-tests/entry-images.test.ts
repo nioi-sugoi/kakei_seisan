@@ -1,14 +1,12 @@
 import { env } from "cloudflare:test";
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { entryImages } from "../../../db/schema";
 import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
 	authCookie,
 	buildOtherUserAuthCookie,
+	client,
 	insertEntry,
 	seedOtherUser,
 	setupAuth,
@@ -20,23 +18,44 @@ function createTestFile(name: string, type: string, sizeBytes = 1024): File {
 	return new File([buffer], name, { type });
 }
 
-/** multipart で画像アップロードリクエストを送る */
-async function postImage(
-	entryId: string,
-	file: File,
-	cookie?: string,
-): Promise<Response> {
-	const formData = new FormData();
-	formData.append("image", file);
-	return app.request(
-		`/api/entries/${entryId}/images`,
+/** create-entry API 経由で画像付きエントリーを作成し、画像IDを返す */
+async function createEntryWithImage(
+	entryId?: string,
+	file?: File,
+): Promise<{ entryId: string; imageId: string }> {
+	if (entryId) {
+		// 既存エントリーに画像を追加（modify経由）
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entryId },
+				form: {
+					amount: "1500",
+					label: "食費",
+					image1: file ?? createTestFile("receipt.jpg", "image/jpeg"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		return { entryId: body.originalId, imageId: body.images[0].id };
+	}
+	// 新規エントリー + 画像
+	const res = await client.api.entries.$post(
 		{
-			method: "POST",
-			body: formData,
-			headers: cookie ? { Cookie: cookie } : {},
+			form: {
+				category: "advance",
+				amount: "1500",
+				occurredOn: "2024-03-15",
+				label: "食費",
+				image1: file ?? createTestFile("receipt.jpg", "image/jpeg"),
+			},
 		},
-		env,
+		{ headers: { Cookie: authCookie } },
 	);
+	const body = await res.json();
+	if ("error" in body) throw new Error("unexpected error");
+	return { entryId: body.id, imageId: body.images[0].id };
 }
 
 beforeAll(async () => {
@@ -51,209 +70,21 @@ async function cleanR2() {
 	}
 }
 
-describe("POST /api/entries/:entryId/images", () => {
-	let entry: Awaited<ReturnType<typeof insertEntry>>;
-
-	beforeEach(async () => {
-		await cleanAllTables();
-		await seedTestUser();
-		entry = await insertEntry(TEST_USER.id);
-		await cleanR2();
-	});
-
-	it("画像をアップロードできる", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body).toMatchObject({
-			entryId: entry.originalId,
-			displayOrder: 0,
-		});
-		expect(body).toHaveProperty("id");
-		expect(body).not.toHaveProperty("storagePath");
-	});
-
-	it("2枚目の画像をアップロードできる", async () => {
-		await postImage(
-			entry.id,
-			createTestFile("receipt1.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt2.png", "image/png"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body).toMatchObject({ displayOrder: 1 });
-	});
-
-	it("3枚目のアップロードは 400 を返す", async () => {
-		for (let i = 0; i < 2; i++) {
-			await postImage(
-				entry.id,
-				createTestFile(`receipt${i}.jpg`, "image/jpeg"),
-				authCookie,
-			);
-		}
-
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt3.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body).toHaveProperty("error", "画像は最大2枚までです");
-	});
-
-	it("jpeg形式の画像をアップロードできる", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body).toHaveProperty("id");
-	});
-
-	it("png形式の画像をアップロードできる", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt.png", "image/png"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body).toHaveProperty("id");
-	});
-
-	it("webp形式の画像をアップロードできる", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt.webp", "image/webp"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body).toHaveProperty("id");
-	});
-
-	it("heic形式の画像をアップロードできる", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt.heic", "image/heic"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body).toHaveProperty("id");
-	});
-
-	it("サポートされていないファイル形式は 400 を返す", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("doc.pdf", "application/pdf"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body).toHaveProperty(
-			"error",
-			"サポートされていないファイル形式です",
-		);
-	});
-
-	it("10MBを超えるファイルは 400 を返す", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("big.jpg", "image/jpeg", 11 * 1024 * 1024),
-			authCookie,
-		);
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body).toHaveProperty(
-			"error",
-			"ファイルサイズは10MB以下にしてください",
-		);
-	});
-
-	it("存在しない記録へのアップロードは 404 を返す", async () => {
-		const res = await postImage(
-			"nonexistent",
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		expect(res.status).toBe(404);
-	});
-
-	it("認証なしでリクエストすると 401 を返す", async () => {
-		const res = await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-		);
-
-		expect(res.status).toBe(401);
-	});
-
-	it("R2 に画像が保存される", async () => {
-		await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-
-		const db = drizzle(env.DB);
-		const images = await db
-			.select()
-			.from(entryImages)
-			.where(eq(entryImages.entryId, entry.originalId))
-			.all();
-
-		expect(images).toHaveLength(1);
-
-		const r2Object = await env.R2.get(images[0].storagePath);
-		expect(r2Object).not.toBeNull();
-	});
-});
-
 describe("GET /api/entries/:entryId/images/:imageId", () => {
-	let entry: Awaited<ReturnType<typeof insertEntry>>;
-
 	beforeEach(async () => {
 		await cleanAllTables();
 		await seedTestUser();
-		entry = await insertEntry(TEST_USER.id);
 		await cleanR2();
 	});
 
 	it("アップロード済み画像をダウンロードできる", async () => {
-		const uploadRes = await postImage(
-			entry.id,
+		const { entryId, imageId } = await createEntryWithImage(
+			undefined,
 			createTestFile("receipt.jpg", "image/jpeg", 2048),
-			authCookie,
 		);
-		const uploaded = (await uploadRes.json()) as { id: string };
 
 		const res = await app.request(
-			`/api/entries/${entry.id}/images/${uploaded.id}`,
+			`/api/entries/${entryId}/images/${imageId}`,
 			{ headers: { Cookie: authCookie } },
 			env,
 		);
@@ -265,6 +96,8 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 	});
 
 	it("存在しない画像 ID は 404 を返す", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+
 		const res = await app.request(
 			`/api/entries/${entry.id}/images/nonexistent`,
 			{ headers: { Cookie: authCookie } },
@@ -275,18 +108,13 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 	});
 
 	it("他のユーザーの記録の画像は取得できない", async () => {
-		const uploadRes = await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-		const uploaded = (await uploadRes.json()) as { id: string };
+		const { entryId, imageId } = await createEntryWithImage();
 
 		await seedOtherUser();
 		const otherCookie = await buildOtherUserAuthCookie();
 
 		const res = await app.request(
-			`/api/entries/${entry.id}/images/${uploaded.id}`,
+			`/api/entries/${entryId}/images/${imageId}`,
 			{ headers: { Cookie: otherCookie } },
 			env,
 		);
@@ -295,6 +123,8 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 	});
 
 	it("認証なしでリクエストすると 401 を返す", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+
 		const res = await app.request(
 			`/api/entries/${entry.id}/images/any`,
 			{},
@@ -305,98 +135,90 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 	});
 });
 
-describe("DELETE /api/entries/:entryId/images/:imageId", () => {
-	let entry: Awaited<ReturnType<typeof insertEntry>>;
-
+describe("画像フォーマットのテスト", () => {
 	beforeEach(async () => {
 		await cleanAllTables();
 		await seedTestUser();
-		entry = await insertEntry(TEST_USER.id);
 		await cleanR2();
 	});
 
-	it("画像を削除できる", async () => {
-		const uploadRes = await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-		const uploaded = (await uploadRes.json()) as { id: string };
-
-		// DB から storagePath を取得（APIレスポンスにはリークしない）
-		const db = drizzle(env.DB);
-		const imagesBefore = await db
-			.select()
-			.from(entryImages)
-			.where(eq(entryImages.entryId, entry.originalId))
-			.all();
-		expect(imagesBefore).toHaveLength(1);
-		const storagePath = imagesBefore[0].storagePath;
-
-		const res = await app.request(
-			`/api/entries/${entry.id}/images/${uploaded.id}`,
-			{ method: "DELETE", headers: { Cookie: authCookie } },
-			env,
-		);
-
-		expect(res.status).toBe(200);
-
-		const imagesAfter = await db
-			.select()
-			.from(entryImages)
-			.where(eq(entryImages.entryId, entry.originalId))
-			.all();
-		expect(imagesAfter).toHaveLength(0);
-
-		const r2Object = await env.R2.get(storagePath);
-		expect(r2Object).toBeNull();
-	});
-
-	it("他のユーザーの記録の画像は削除できない", async () => {
-		const uploadRes = await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
-		);
-		const uploaded = (await uploadRes.json()) as { id: string };
-
-		await seedOtherUser();
-		const otherCookie = await buildOtherUserAuthCookie();
-
-		const res = await app.request(
-			`/api/entries/${entry.id}/images/${uploaded.id}`,
-			{ method: "DELETE", headers: { Cookie: otherCookie } },
-			env,
-		);
-
-		expect(res.status).toBe(404);
-
-		// 元のユーザーからはまだアクセスできることを確認
-		const checkRes = await app.request(
-			`/api/entries/${entry.id}/images/${uploaded.id}`,
+	it("jpeg形式の画像をアップロードできる", async () => {
+		const res = await client.api.entries.$post(
+			{
+				form: {
+					category: "advance",
+					amount: "1500",
+					occurredOn: "2024-03-15",
+					label: "食費",
+					image1: createTestFile("receipt.jpg", "image/jpeg"),
+				},
+			},
 			{ headers: { Cookie: authCookie } },
-			env,
 		);
-		expect(checkRes.status).toBe(200);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
 	});
 
-	it("存在しない画像 ID の削除は 404 を返す", async () => {
-		const res = await app.request(
-			`/api/entries/${entry.id}/images/nonexistent`,
-			{ method: "DELETE", headers: { Cookie: authCookie } },
-			env,
+	it("png形式の画像をアップロードできる", async () => {
+		const res = await client.api.entries.$post(
+			{
+				form: {
+					category: "advance",
+					amount: "1500",
+					occurredOn: "2024-03-15",
+					label: "食費",
+					image1: createTestFile("receipt.png", "image/png"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
 		);
 
-		expect(res.status).toBe(404);
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
 	});
 
-	it("認証なしでリクエストすると 401 を返す", async () => {
-		const res = await app.request(
-			`/api/entries/${entry.id}/images/any`,
-			{ method: "DELETE" },
-			env,
+	it("webp形式の画像をアップロードできる", async () => {
+		const res = await client.api.entries.$post(
+			{
+				form: {
+					category: "advance",
+					amount: "1500",
+					occurredOn: "2024-03-15",
+					label: "食費",
+					image1: createTestFile("receipt.webp", "image/webp"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
 		);
 
-		expect(res.status).toBe(401);
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
+	});
+
+	it("heic形式の画像をアップロードできる", async () => {
+		const res = await client.api.entries.$post(
+			{
+				form: {
+					category: "advance",
+					amount: "1500",
+					occurredOn: "2024-03-15",
+					label: "食費",
+					image1: createTestFile("receipt.heic", "image/heic"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
 	});
 });

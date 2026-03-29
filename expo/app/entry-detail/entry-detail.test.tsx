@@ -22,6 +22,7 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/hooks/use-image-upload", () => ({
+	getAuthHeaders: () => ({}),
 	useUploadImages: () => ({
 		mutate: jest.fn(),
 		mutateAsync: jest.fn(),

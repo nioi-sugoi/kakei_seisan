@@ -12,6 +12,11 @@ import {
 	setupDB,
 } from "./helpers";
 
+function createTestFile(name: string, type: string, sizeBytes = 1024): File {
+	const buffer = new ArrayBuffer(sizeBytes);
+	return new File([buffer], name, { type });
+}
+
 beforeAll(async () => {
 	await setupDB();
 	await setupAuth();
@@ -31,7 +36,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 9000 },
+				form: { amount: "9000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -60,7 +65,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 9000 },
+				form: { amount: "9000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -68,7 +73,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 8000 },
+				form: { amount: "8000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -82,7 +87,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(dbVersions[0].amount).toBe(8000);
 	});
 
-	it("hasImageChanges が true で金額変更なしでも新バージョンが作成される", async () => {
+	it("画像追加で金額変更なしでも新バージョンが作成される", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -90,18 +95,23 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 5000, hasImageChanges: true },
+				form: {
+					amount: "5000",
+					image1: createTestFile("receipt.jpg", "image/jpeg"),
+				},
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
 		expect(body).toMatchObject({
 			amount: 5000,
 			originalId: settlement.id,
 			latest: true,
 		});
+		expect(body.images).toHaveLength(1);
 
 		const dbVersions = await queryVersionsByOriginalId(settlement.id);
 		expect(dbVersions).toHaveLength(2);
@@ -109,7 +119,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(dbVersions[1].latest).toBe(false);
 	});
 
-	it("hasImageChanges が false で金額変更なしの場合は 400 を返す", async () => {
+	it("画像も金額変更もない場合は 400 を返す", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -117,7 +127,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 5000, hasImageChanges: false },
+				form: { amount: "5000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -135,7 +145,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 5000 },
+				form: { amount: "5000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -158,7 +168,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 3000 },
+				form: { amount: "3000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -175,7 +185,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 3000 },
+				form: { amount: "3000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -187,7 +197,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: "nonexistent" },
-				json: { amount: 3000 },
+				form: { amount: "3000" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -203,7 +213,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 0 },
+				form: { amount: "0" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -219,7 +229,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: -1 },
+				form: { amount: "-1" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -235,7 +245,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
-				json: { amount: 100.5 },
+				form: { amount: "100.5" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -248,9 +258,49 @@ describe("POST /api/settlements/:originalId/modify", () => {
 
 		const res = await client.api.settlements[":originalId"].modify.$post({
 			param: { originalId: settlement.id },
-			json: { amount: 3000 },
+			form: { amount: "3000" },
 		});
 
 		expect(res.status).toBe(401);
+	});
+
+	it("修正時に画像の追加と削除を同時に行える", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		// 画像を追加
+		const addRes = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				form: {
+					amount: "5000",
+					image1: createTestFile("old.jpg", "image/jpeg"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const addBody = await addRes.json();
+		if ("error" in addBody) throw new Error("unexpected error");
+		const oldImageId = addBody.images[0].id;
+
+		// 古い画像を削除しつつ新しい画像を追加
+		const res = await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				form: {
+					amount: "5000",
+					deleteImageIds: oldImageId,
+					image1: createTestFile("new.png", "image/png"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
+		expect(body.images[0].id).not.toBe(oldImageId);
 	});
 });

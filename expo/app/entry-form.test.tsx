@@ -163,14 +163,14 @@ describe("CreateEntryScreen", () => {
 
 		await waitFor(() => {
 			expect(mockPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
+				form: expect.objectContaining({
 					label: "食料品",
 				}),
 			});
 		});
 	});
 
-	it("金額が文字列からNumberに変換されてAPIに渡される", async () => {
+	it("金額が文字列としてAPIに渡される", async () => {
 		render(<CreateEntryScreen />, { wrapper: TestQueryWrapper });
 
 		await user.type(screen.getByLabelText("金額"), "2500");
@@ -181,14 +181,14 @@ describe("CreateEntryScreen", () => {
 			const call = mockPost.mock.calls[0];
 			expect(call[0]).toEqual(
 				expect.objectContaining({
-					json: expect.objectContaining({
-						amount: 2500,
+					form: expect.objectContaining({
+						amount: "2500",
 					}),
 				}),
 			);
 			expect(
-				typeof (call[0] as { json: Record<string, unknown> }).json.amount,
-			).toBe("number");
+				typeof (call[0] as { form: Record<string, unknown> }).form.amount,
+			).toBe("string");
 		});
 	});
 
@@ -201,8 +201,8 @@ describe("CreateEntryScreen", () => {
 
 		await waitFor(() => {
 			expect(mockPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
-					amount: 0,
+				form: expect.objectContaining({
+					amount: "0",
 				}),
 			});
 		});
@@ -219,9 +219,9 @@ describe("CreateEntryScreen", () => {
 
 		await waitFor(() => {
 			expect(mockPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
+				form: expect.objectContaining({
 					category: "advance",
-					amount: 1500,
+					amount: "1500",
 					label: "食料品",
 				}),
 			});
@@ -238,9 +238,9 @@ describe("CreateEntryScreen", () => {
 
 		await waitFor(() => {
 			expect(mockPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
+				form: expect.objectContaining({
 					category: "deposit",
-					amount: 3000,
+					amount: "3000",
 					label: "生活費",
 				}),
 			});
@@ -269,7 +269,7 @@ describe("CreateEntryScreen", () => {
 
 		await waitFor(() => {
 			expect(mockPost).toHaveBeenCalledWith({
-				json: expect.objectContaining({
+				form: expect.objectContaining({
 					memo: "チョコ",
 				}),
 			});

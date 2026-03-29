@@ -1,6 +1,4 @@
-import { env } from "cloudflare:test";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
@@ -16,27 +14,6 @@ import {
 function createTestFile(name: string, type: string, sizeBytes = 1024): File {
 	const buffer = new ArrayBuffer(sizeBytes);
 	return new File([buffer], name, { type });
-}
-
-async function postImage(
-	entryId: string,
-	file: File,
-	cookie: string,
-): Promise<Response> {
-	const formData = new FormData();
-	formData.append("image", file);
-	return app.request(
-		`/api/entries/${entryId}/images`,
-		{ method: "POST", body: formData, headers: { Cookie: cookie } },
-		env,
-	);
-}
-
-async function cleanR2() {
-	const listed = await env.R2.list();
-	for (const obj of listed.objects) {
-		await env.R2.delete(obj.key);
-	}
 }
 
 beforeAll(async () => {
@@ -128,7 +105,7 @@ describe("GET /api/entries/:id", () => {
 		await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 4000, label: "食費" },
+				form: { amount: "4000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -160,16 +137,24 @@ describe("GET /api/entries/:id", () => {
 	});
 
 	it("記録詳細に画像メタデータが含まれる", async () => {
-		const entry = await insertEntry(TEST_USER.id);
-		await cleanR2();
-		await postImage(
-			entry.id,
-			createTestFile("receipt.jpg", "image/jpeg"),
-			authCookie,
+		// create API 経由で画像付きエントリーを作成
+		const createRes = await client.api.entries.$post(
+			{
+				form: {
+					category: "advance",
+					amount: "1500",
+					occurredOn: "2024-03-15",
+					label: "食費",
+					image1: createTestFile("receipt.jpg", "image/jpeg"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
 		);
+		const created = await createRes.json();
+		if ("error" in created) throw new Error("unexpected error");
 
 		const res = await client.api.entries[":id"].$get(
-			{ param: { id: entry.id } },
+			{ param: { id: created.id } },
 			{ headers: { Cookie: authCookie } },
 		);
 
@@ -208,9 +193,9 @@ describe("POST → GET の結合テスト", () => {
 	it("POST で作成した記録を GET で取得できる", async () => {
 		const createRes = await client.api.entries.$post(
 			{
-				json: {
+				form: {
 					category: "advance",
-					amount: 3000,
+					amount: "3000",
 					occurredOn: "2024-04-01",
 					label: "会議費",
 					memo: "チームミーティング",

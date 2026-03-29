@@ -1,4 +1,8 @@
+import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { entryImages } from "../../../db/schema";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
 import {
@@ -11,6 +15,11 @@ import {
 	setupAuth,
 	setupDB,
 } from "./helpers";
+
+function createTestFile(name: string, type: string, sizeBytes = 1024): File {
+	const buffer = new ArrayBuffer(sizeBytes);
+	return new File([buffer], name, { type });
+}
 
 beforeAll(async () => {
 	await setupDB();
@@ -32,7 +41,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 9000, label: "食費" },
+				form: { amount: "9000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -67,7 +76,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1500, label: "日用品" },
+				form: { amount: "1500", label: "日用品" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -90,7 +99,7 @@ describe("POST /api/entries/:id/modify", () => {
 		await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1000, label: "食費" },
+				form: { amount: "1000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -111,7 +120,7 @@ describe("POST /api/entries/:id/modify", () => {
 		await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 9000, label: "食費" },
+				form: { amount: "9000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -119,7 +128,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 8000, label: "食費" },
+				form: { amount: "8000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -148,7 +157,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 3000, label: "お釣り修正" },
+				form: { amount: "3000", label: "お釣り修正" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -168,13 +177,11 @@ describe("POST /api/entries/:id/modify", () => {
 			category: "deposit",
 		});
 
-		// Honoクライアントの型では category を送信できないため raw fetch で検証
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				// category は modifyEntrySchema に含まれないため無視される
-				json: { amount: 3000, label: "お釣り修正", category: "advance" } as {
-					amount: number;
+				form: { amount: "3000", label: "お釣り修正", category: "advance" } as {
+					amount: string;
 					label: string;
 				},
 			},
@@ -186,7 +193,7 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(body).toMatchObject({ category: "deposit" });
 	});
 
-	it("hasImageChanges が true でフィールド変更なしでも新バージョンが作成される", async () => {
+	it("画像追加でフィールド変更なしでも新バージョンが作成される", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
@@ -195,19 +202,25 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1500, label: "食費", hasImageChanges: true },
+				form: {
+					amount: "1500",
+					label: "食費",
+					image1: createTestFile("receipt.jpg", "image/jpeg"),
+				},
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.status).toBe(201);
 		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
 		expect(body).toMatchObject({
 			amount: 1500,
 			label: "食費",
 			originalId: entry.id,
 			latest: true,
 		});
+		expect(body.images).toHaveLength(1);
 
 		const dbVersions = await queryVersionsByOriginalId(entry.id);
 		expect(dbVersions).toHaveLength(2);
@@ -215,23 +228,91 @@ describe("POST /api/entries/:id/modify", () => {
 		expect(dbVersions[1].latest).toBe(false);
 	});
 
-	it("hasImageChanges が false でフィールド変更なしの場合は 400 を返す", async () => {
+	it("画像削除でフィールド変更なしでも新バージョンが作成される", async () => {
 		const entry = await insertEntry(TEST_USER.id, {
 			amount: 1500,
 			label: "食費",
 		});
 
+		// まず画像付きで修正
+		const addRes = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				form: {
+					amount: "1500",
+					label: "食費",
+					image1: createTestFile("receipt.jpg", "image/jpeg"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const addBody = await addRes.json();
+		if ("error" in addBody) throw new Error("unexpected error");
+		const imageId = addBody.images[0].id;
+
+		// 画像削除のみで修正
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1500, label: "食費", hasImageChanges: false },
+				form: {
+					amount: "1500",
+					label: "食費",
+					deleteImageIds: imageId,
+				},
 			},
 			{ headers: { Cookie: authCookie } },
 		);
 
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(201);
 		const body = await res.json();
-		expect(body).toHaveProperty("error", "変更がありません");
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(0);
+
+		const dbVersions = await queryVersionsByOriginalId(entry.id);
+		expect(dbVersions).toHaveLength(3);
+	});
+
+	it("修正時に画像の追加と削除を同時に行える", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		// 画像付きで修正
+		const addRes = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				form: {
+					amount: "1500",
+					label: "食費",
+					image1: createTestFile("old.jpg", "image/jpeg"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const addBody = await addRes.json();
+		if ("error" in addBody) throw new Error("unexpected error");
+		const oldImageId = addBody.images[0].id;
+
+		// 古い画像を削除しつつ新しい画像を追加
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				form: {
+					amount: "1500",
+					label: "食費",
+					deleteImageIds: oldImageId,
+					image1: createTestFile("new.png", "image/png"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(201);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
+		expect(body.images[0].id).not.toBe(oldImageId);
 	});
 
 	it("変更がない場合は 400 を返す", async () => {
@@ -243,7 +324,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1500, label: "食費" },
+				form: { amount: "1500", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -267,7 +348,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1000, label: "食費" },
+				form: { amount: "1000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -284,7 +365,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: entry.id },
-				json: { amount: 1000, label: "食費" },
+				form: { amount: "1000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -296,7 +377,7 @@ describe("POST /api/entries/:id/modify", () => {
 		const res = await client.api.entries[":originalId"].modify.$post(
 			{
 				param: { originalId: "nonexistent" },
-				json: { amount: 1000, label: "食費" },
+				form: { amount: "1000", label: "食費" },
 			},
 			{ headers: { Cookie: authCookie } },
 		);
@@ -309,9 +390,84 @@ describe("POST /api/entries/:id/modify", () => {
 
 		const res = await client.api.entries[":originalId"].modify.$post({
 			param: { originalId: entry.id },
-			json: { amount: 1000, label: "食費" },
+			form: { amount: "1000", label: "食費" },
 		});
 
 		expect(res.status).toBe(401);
+	});
+
+	it("修正時にサポートされていないファイル形式は 400 を返す", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		const res = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				form: {
+					amount: "1500",
+					label: "食費",
+					image1: createTestFile("doc.pdf", "application/pdf"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body).toHaveProperty(
+			"error",
+			"サポートされていないファイル形式です",
+		);
+	});
+
+	it("修正で削除した画像は R2 からも削除される", async () => {
+		const entry = await insertEntry(TEST_USER.id, {
+			amount: 1500,
+			label: "食費",
+		});
+
+		// 画像追加
+		const addRes = await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				form: {
+					amount: "1500",
+					label: "食費",
+					image1: createTestFile("receipt.jpg", "image/jpeg"),
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+		const addBody = await addRes.json();
+		if ("error" in addBody) throw new Error("unexpected error");
+		const imageId = addBody.images[0].id;
+
+		// storagePath を DB から取得
+		const db = drizzle(env.DB);
+		const [imageMeta] = await db
+			.select()
+			.from(entryImages)
+			.where(eq(entryImages.id, imageId))
+			.all();
+		const storagePath = imageMeta.storagePath;
+
+		// 画像削除
+		await client.api.entries[":originalId"].modify.$post(
+			{
+				param: { originalId: entry.id },
+				form: {
+					amount: "1500",
+					label: "食費",
+					deleteImageIds: imageId,
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		// R2 から削除されていることを確認
+		const r2Object = await env.R2.get(storagePath);
+		expect(r2Object).toBeNull();
 	});
 });

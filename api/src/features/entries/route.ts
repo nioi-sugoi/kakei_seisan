@@ -6,27 +6,50 @@ import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import { handleValidationError } from "../../middleware/validation-error-handler";
 import {
+	extensionForType,
 	isAllowedImageType,
 	MAX_IMAGE_SIZE,
-	MIME_TO_EXT,
 } from "../../shared/image-constants";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
 const createEntrySchema = v.object({
 	category: v.picklist(["advance", "deposit"]),
-	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
+	amount: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(0)),
 	occurredOn: v.pipe(v.string(), v.isoDate()),
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
+	image1: v.optional(v.instance(File)),
+	image2: v.optional(v.instance(File)),
 });
 
 const modifyEntrySchema = v.object({
-	amount: v.pipe(v.number(), v.integer(), v.minValue(0)),
+	amount: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(0)),
 	label: v.pipe(v.string(), v.minLength(1)),
 	memo: v.optional(v.string()),
-	hasImageChanges: v.optional(v.boolean()),
+	image1: v.optional(v.instance(File)),
+	image2: v.optional(v.instance(File)),
+	deleteImageIds: v.optional(v.string()),
 });
+
+function collectImageFiles(
+	image1: File | undefined,
+	image2: File | undefined,
+): File[] {
+	return [image1, image2].filter((f): f is File => f !== undefined);
+}
+
+function validateImageFiles(files: File[]): string | null {
+	for (const file of files) {
+		if (!isAllowedImageType(file.type)) {
+			return "サポートされていないファイル形式です";
+		}
+		if (file.size > MAX_IMAGE_SIZE) {
+			return "ファイルサイズは10MB以下にしてください";
+		}
+	}
+	return null;
+}
 
 const entriesApp = new Hono<{
 	Bindings: Env;
@@ -63,24 +86,76 @@ const entriesApp = new Hono<{
 	.post(
 		"/",
 		requireAuth,
-		vValidator("json", createEntrySchema, handleValidationError),
+		vValidator("form", createEntrySchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
-			const input = c.req.valid("json");
+			const { category, amount, occurredOn, label, memo, image1, image2 } =
+				c.req.valid("form");
 			const db = drizzle(c.env.DB);
-			const entry = await entriesRepository.createEntry(db, user.id, input);
 
-			return c.json(entry, 201);
+			const imageFiles = collectImageFiles(image1, image2);
+			const imageError = validateImageFiles(imageFiles);
+			if (imageError) {
+				return c.json(
+					{
+						error: imageError as
+							| "サポートされていないファイル形式です"
+							| "ファイルサイズは10MB以下にしてください",
+					},
+					400,
+				);
+			}
+
+			const entry = await entriesRepository.createEntry(db, user.id, {
+				category,
+				amount,
+				occurredOn,
+				label,
+				memo,
+			});
+
+			const images = [];
+			for (const file of imageFiles) {
+				const ext = extensionForType(file.type);
+				const storagePath = `receipts/${user.id}/${entry.originalId}/${crypto.randomUUID()}.${ext}`;
+
+				const image = await entriesRepository.createImage(db, {
+					entryId: entry.originalId,
+					storagePath,
+				});
+				if (!image) {
+					return c.json({ error: "画像は最大2枚までです" as const }, 400);
+				}
+
+				await c.env.R2.put(storagePath, file.stream(), {
+					httpMetadata: { contentType: file.type },
+				});
+
+				images.push({
+					id: image.id,
+					displayOrder: image.displayOrder,
+					createdAt: image.createdAt,
+				});
+			}
+
+			return c.json({ ...entry, images }, 201);
 		},
 	)
 	.post(
 		"/:originalId/modify",
 		requireAuth,
-		vValidator("json", modifyEntrySchema, handleValidationError),
+		vValidator("form", modifyEntrySchema, handleValidationError),
 		async (c) => {
 			const user = c.get("user");
 			const originalId = c.req.param("originalId");
-			const input = c.req.valid("json");
+			const {
+				amount,
+				label,
+				memo,
+				image1,
+				image2,
+				deleteImageIds: deleteIdsStr,
+			} = c.req.valid("form");
 			const db = drizzle(c.env.DB);
 
 			const latestEntry = await entriesRepository.findMyLatestVersion(
@@ -98,11 +173,29 @@ const entriesApp = new Hono<{
 				);
 			}
 
+			const imageFiles = collectImageFiles(image1, image2);
+			const imageError = validateImageFiles(imageFiles);
+			if (imageError) {
+				return c.json(
+					{
+						error: imageError as
+							| "サポートされていないファイル形式です"
+							| "ファイルサイズは10MB以下にしてください",
+					},
+					400,
+				);
+			}
+
+			const deleteIds = deleteIdsStr
+				? deleteIdsStr.split(",").filter(Boolean)
+				: [];
+			const hasImageChanges = imageFiles.length > 0 || deleteIds.length > 0;
+
 			if (
-				input.amount === latestEntry.amount &&
-				input.label === latestEntry.label &&
-				(input.memo ?? null) === latestEntry.memo &&
-				!input.hasImageChanges
+				amount === latestEntry.amount &&
+				label === latestEntry.label &&
+				(memo || null) === latestEntry.memo &&
+				!hasImageChanges
 			) {
 				return c.json({ error: "変更がありません" as const }, 400);
 			}
@@ -115,10 +208,48 @@ const entriesApp = new Hono<{
 					category: latestEntry.category,
 					occurredOn: latestEntry.occurredOn,
 				},
-				input,
+				{ amount, label, memo },
 			);
 
-			return c.json(insertedRows[0], 201);
+			// 削除を先に実行（枚数制限のため）
+			for (const imageId of deleteIds) {
+				const image = await entriesRepository.findImageById(db, imageId);
+				if (image && image.entryId === originalId) {
+					await entriesRepository.deleteImage(db, imageId);
+					await c.env.R2.delete(image.storagePath);
+				}
+			}
+
+			for (const file of imageFiles) {
+				const ext = extensionForType(file.type);
+				const storagePath = `receipts/${user.id}/${originalId}/${crypto.randomUUID()}.${ext}`;
+
+				const image = await entriesRepository.createImage(db, {
+					entryId: originalId,
+					storagePath,
+				});
+				if (!image) {
+					return c.json({ error: "画像は最大2枚までです" as const }, 400);
+				}
+
+				await c.env.R2.put(storagePath, file.stream(), {
+					httpMetadata: { contentType: file.type },
+				});
+			}
+
+			const images = await entriesRepository.findImagesByEntry(db, originalId);
+
+			return c.json(
+				{
+					...insertedRows[0],
+					images: images.map((img) => ({
+						id: img.id,
+						displayOrder: img.displayOrder,
+						createdAt: img.createdAt,
+					})),
+				},
+				201,
+			);
 		},
 	)
 	.post("/:originalId/cancel", requireAuth, async (c) => {
@@ -174,61 +305,7 @@ const entriesApp = new Hono<{
 
 		return c.json(insertedRows[0], 201);
 	})
-	// ── 画像エンドポイント ────────────────────────────────────────
-	.post("/:entryId/images", requireAuth, async (c) => {
-		const user = c.get("user");
-		const entryId = c.req.param("entryId");
-		const db = drizzle(c.env.DB);
-
-		const entry = await entriesRepository.findByOwner(db, entryId, user.id);
-		if (!entry) {
-			return c.json({ error: "記録が見つかりません" as const }, 404);
-		}
-
-		const body = await c.req.parseBody();
-		const file = body.image;
-		if (!(file instanceof File)) {
-			return c.json({ error: "画像ファイルが必要です" as const }, 400);
-		}
-		if (!isAllowedImageType(file.type)) {
-			return c.json(
-				{ error: "サポートされていないファイル形式です" as const },
-				400,
-			);
-		}
-		if (file.size > MAX_IMAGE_SIZE) {
-			return c.json(
-				{ error: "ファイルサイズは10MB以下にしてください" as const },
-				400,
-			);
-		}
-
-		const targetId = entry.originalId;
-		const ext = MIME_TO_EXT[file.type] ?? "jpg";
-		const storagePath = `receipts/${user.id}/${targetId}/${crypto.randomUUID()}.${ext}`;
-
-		const image = await entriesRepository.createImage(db, {
-			entryId: targetId,
-			storagePath,
-		});
-		if (!image) {
-			return c.json({ error: "画像は最大2枚までです" as const }, 400);
-		}
-
-		await c.env.R2.put(storagePath, file.stream(), {
-			httpMetadata: { contentType: file.type },
-		});
-
-		return c.json(
-			{
-				id: image.id,
-				entryId: image.entryId,
-				displayOrder: image.displayOrder,
-				createdAt: image.createdAt,
-			},
-			201,
-		);
-	})
+	// ── 画像取得エンドポイント（GET のみ維持）──────────────────────────
 	.get("/:entryId/images/:imageId", requireAuth, async (c) => {
 		const user = c.get("user");
 		const db = drizzle(c.env.DB);
@@ -255,27 +332,6 @@ const entriesApp = new Hono<{
 		headers.set("cache-control", "private, max-age=3600");
 
 		return new Response(object.body, { headers });
-	})
-	.delete("/:entryId/images/:imageId", requireAuth, async (c) => {
-		const user = c.get("user");
-		const db = drizzle(c.env.DB);
-
-		const [entry, image] = await Promise.all([
-			entriesRepository.findByOwner(db, c.req.param("entryId"), user.id),
-			entriesRepository.findImageById(db, c.req.param("imageId")),
-		]);
-		if (!entry) {
-			return c.json({ error: "記録が見つかりません" as const }, 404);
-		}
-		if (!image || image.entryId !== entry.originalId) {
-			return c.json({ error: "画像が見つかりません" as const }, 404);
-		}
-
-		// DB を先に削除（R2 失敗時にメタデータが孤立しないよう）
-		await entriesRepository.deleteImage(db, image.id);
-		await c.env.R2.delete(image.storagePath);
-
-		return c.json({ success: true as const }, 200);
 	});
 
 export { entriesApp };

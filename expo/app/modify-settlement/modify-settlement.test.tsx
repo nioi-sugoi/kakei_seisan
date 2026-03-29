@@ -25,6 +25,7 @@ const mockGet = jest.fn();
 const mockModifyPost = jest.fn();
 
 jest.mock("@/hooks/use-image-upload", () => ({
+	getAuthHeaders: () => ({}),
 	useUploadImages: () => ({
 		mutate: jest.fn(),
 		mutateAsync: jest.fn(),
@@ -195,7 +196,7 @@ describe("ModifySettlementScreen", () => {
 		await waitFor(() => {
 			expect(mockModifyPost).toHaveBeenCalledWith({
 				param: { originalId: "stl-1" },
-				json: { amount: 3000, hasImageChanges: false },
+				form: { amount: "3000", deleteImageIds: undefined },
 			});
 		});
 	});
