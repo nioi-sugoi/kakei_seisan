@@ -5,6 +5,7 @@ import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
+import { findPartnerByUser } from "../partner/repository";
 import type { CursorValue } from "./repository";
 import * as timelineRepository from "./repository";
 
@@ -41,6 +42,7 @@ const timelineApp = new Hono<{
 			category: v.optional(v.picklist(["advance", "deposit", "settlement"])),
 			sortBy: v.optional(v.picklist(["occurredOn", "createdAt"])),
 			sortOrder: v.optional(v.picklist(["desc", "asc"])),
+			userId: v.optional(v.string()),
 		}),
 	),
 	async (c) => {
@@ -50,9 +52,27 @@ const timelineApp = new Hono<{
 			category,
 			sortBy: sortByParam,
 			sortOrder: sortOrderParam,
+			userId: targetUserId,
 		} = c.req.valid("query");
 		const limit = 50;
 		const db = drizzle(c.env.DB);
+
+		// パートナーのタイムラインを取得する場合は認可チェック
+		let effectiveUserId = user.id;
+		if (targetUserId && targetUserId !== user.id) {
+			const partnership = await findPartnerByUser(db, user.id);
+			if (!partnership) {
+				return c.json({ error: "パートナーが見つかりません" }, 403);
+			}
+			const partnerId =
+				partnership.inviterId === user.id
+					? partnership.inviteeId
+					: partnership.inviterId;
+			if (partnerId !== targetUserId) {
+				return c.json({ error: "パートナーが見つかりません" }, 403);
+			}
+			effectiveUserId = targetUserId;
+		}
 
 		const sortBy = sortByParam ?? "occurredOn";
 		const sortOrder = sortOrderParam ?? "desc";
@@ -66,7 +86,7 @@ const timelineApp = new Hono<{
 			cursor = parsed;
 		}
 
-		const result = await timelineRepository.listByUser(db, user.id, {
+		const result = await timelineRepository.listByUser(db, effectiveUserId, {
 			limit: limit + 1,
 			cursor,
 			category,

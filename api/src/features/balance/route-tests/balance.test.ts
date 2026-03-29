@@ -1,15 +1,21 @@
 import { env } from "cloudflare:test";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { entryVersions, settlementVersions } from "../../../db/schema";
+import {
+	entryVersions,
+	partnerships,
+	settlementVersions,
+} from "../../../db/schema";
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
 	OTHER_USER,
 	seedOtherUser,
 	seedTestUser,
+	seedThirdUser,
 	setupAuth,
 	TEST_USER,
+	THIRD_USER,
 } from "../../../testing/auth-helper";
 import { cleanAllTables, setupDB } from "../../../testing/db-helper";
 
@@ -62,11 +68,12 @@ describe("GET /api/balance", () => {
 
 	it("記録も精算もない場合は全て 0 を返す", async () => {
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body).toEqual({
 			advanceTotal: 0,
@@ -82,11 +89,12 @@ describe("GET /api/balance", () => {
 		await insertEntry(TEST_USER.id, { category: "advance", amount: 2000 });
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body).toEqual({
 			advanceTotal: 5000,
@@ -110,11 +118,12 @@ describe("GET /api/balance", () => {
 		});
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body).toEqual({
 			advanceTotal: 10000,
@@ -130,11 +139,12 @@ describe("GET /api/balance", () => {
 		await insertEntry(TEST_USER.id, { category: "deposit", amount: 5000 });
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.balance).toBe(-4000);
 	});
@@ -148,11 +158,12 @@ describe("GET /api/balance", () => {
 		});
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.balance).toBe(-2000);
 		expect(body.fromUserTotal).toBe(2000);
@@ -167,11 +178,12 @@ describe("GET /api/balance", () => {
 		});
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.advanceTotal).toBe(5000);
 	});
@@ -185,11 +197,12 @@ describe("GET /api/balance", () => {
 		});
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.advanceTotal).toBe(5000);
 	});
@@ -206,11 +219,12 @@ describe("GET /api/balance", () => {
 		});
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.fromHouseholdTotal).toBe(5000);
 	});
@@ -227,11 +241,12 @@ describe("GET /api/balance", () => {
 		});
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.fromHouseholdTotal).toBe(5000);
 	});
@@ -242,11 +257,12 @@ describe("GET /api/balance", () => {
 		await insertEntry(OTHER_USER.id, { category: "advance", amount: 9999 });
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.advanceTotal).toBe(5000);
 	});
@@ -273,11 +289,12 @@ describe("GET /api/balance", () => {
 		);
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.fromHouseholdTotal).toBe(0);
 		expect(body.balance).toBe(10000);
@@ -308,19 +325,162 @@ describe("GET /api/balance", () => {
 		);
 
 		const res = await client.api.balance.$get(
-			{},
+			{ query: {} },
 			{ headers: { Cookie: authCookie } },
 		);
 
 		expect(res.ok).toBe(true);
+		if (!res.ok) return;
 		const body = await res.json();
 		expect(body.fromHouseholdTotal).toBe(5000);
 		expect(body.balance).toBe(5000);
 	});
 
 	it("ログインしていないとエラーになる", async () => {
-		const res = await client.api.balance.$get({});
+		const res = await client.api.balance.$get({ query: {} });
 
 		expect(res.status).toBe(401);
+	});
+
+	describe("パートナーの残高 (userId パラメータ)", () => {
+		async function insertPartnership(inviterId: string, inviteeId: string) {
+			const db = drizzle(env.DB);
+			await db.insert(partnerships).values({
+				id: crypto.randomUUID(),
+				inviterId,
+				inviteeId,
+				createdAt: Date.now(),
+			});
+		}
+
+		it("パートナーの残高を取得できる", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(OTHER_USER.id, {
+				category: "advance",
+				amount: 3000,
+			});
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.advanceTotal).toBe(3000);
+			expect(body.balance).toBe(3000);
+		});
+
+		it("パートナーの残高には自分のデータが含まれない", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				amount: 9999,
+			});
+			await insertEntry(OTHER_USER.id, {
+				category: "advance",
+				amount: 3000,
+			});
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.advanceTotal).toBe(3000);
+		});
+
+		it("invitee 側からもパートナーの残高を取得できる", async () => {
+			await seedOtherUser();
+			await insertPartnership(OTHER_USER.id, TEST_USER.id);
+			await insertEntry(OTHER_USER.id, {
+				category: "advance",
+				amount: 5000,
+			});
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.advanceTotal).toBe(5000);
+		});
+
+		it("パートナーシップがない場合は403エラーになる", async () => {
+			await seedOtherUser();
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(403);
+		});
+
+		it("パートナーではないユーザーの残高は取得できない", async () => {
+			await seedOtherUser();
+			await seedThirdUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: THIRD_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(403);
+		});
+
+		it("自分のuserIdを指定した場合は自分の残高が返る", async () => {
+			await insertEntry(TEST_USER.id, {
+				category: "advance",
+				amount: 7000,
+			});
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: TEST_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.advanceTotal).toBe(7000);
+		});
+
+		it("パートナーの残高計算が正しい（立替−預り−精算）", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(OTHER_USER.id, {
+				category: "advance",
+				amount: 10000,
+			});
+			await insertEntry(OTHER_USER.id, {
+				category: "deposit",
+				amount: 2000,
+			});
+			await insertSettlement(OTHER_USER.id, {
+				category: "fromHousehold",
+				amount: 3000,
+			});
+
+			const res = await client.api.balance.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.balance).toBe(5000);
+		});
 	});
 });

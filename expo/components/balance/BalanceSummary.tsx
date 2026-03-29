@@ -15,9 +15,19 @@ const subtitleStyle: StyleProp<TextStyle> = {
 	opacity: 0.8,
 };
 
-export function BalanceSummary() {
+interface BalanceSummaryProps {
+	userId?: string;
+	title?: string;
+	readOnly?: boolean;
+}
+
+export function BalanceSummary({
+	userId,
+	title,
+	readOnly,
+}: BalanceSummaryProps) {
 	const router = useRouter();
-	const { data, isPending } = useBalance();
+	const { data, isPending } = useBalance({ userId });
 
 	if (isPending) {
 		return (
@@ -33,6 +43,7 @@ export function BalanceSummary() {
 	const absBalance = Math.abs(balance);
 	const isPositive = balance >= 0;
 	const hasBalance = balance !== 0;
+	const showSettleButton = hasBalance && !readOnly;
 
 	return (
 		<View className="mx-4 mt-4 rounded-xl bg-primary px-5 py-5">
@@ -41,7 +52,7 @@ export function BalanceSummary() {
 					style={subtitleStyle}
 					className="text-base font-medium text-primary-foreground"
 				>
-					現在の精算残高
+					{title ?? "現在の精算残高"}
 				</Text>
 				<Text className="text-4xl font-bold text-primary-foreground">
 					{formatAmount(absBalance)}
@@ -50,7 +61,7 @@ export function BalanceSummary() {
 					{isPositive ? "家計から受け取り" : "家計へ入金"}
 				</Text>
 			</View>
-			{hasBalance ? (
+			{showSettleButton ? (
 				<Pressable
 					onPress={() => router.push("/settlement-form")}
 					className="mt-3 items-center rounded-xl bg-primary-foreground py-2.5 active:opacity-80"

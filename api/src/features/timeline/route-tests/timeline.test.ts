@@ -6,12 +6,15 @@ import {
 	client,
 	insertEntry,
 	insertEntryImage,
+	insertPartnership,
 	insertSettlement,
 	insertSettlementImage,
 	OTHER_USER,
 	seedOtherUser,
+	seedThirdUser,
 	setupAuth,
 	setupDB,
+	THIRD_USER,
 } from "./helpers";
 
 beforeAll(async () => {
@@ -1221,6 +1224,159 @@ describe("GET /api/timeline", () => {
 			);
 
 			expect(res.status).toBe(400);
+		});
+	});
+
+	describe("パートナーのタイムライン (userId パラメータ)", () => {
+		it("パートナーのタイムラインを取得できる", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(OTHER_USER.id, { label: "パートナーの食費" });
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].label).toBe("パートナーの食費");
+			expect(body.data[0].userId).toBe(OTHER_USER.id);
+		});
+
+		it("パートナーのタイムラインには自分のデータが含まれない", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(TEST_USER.id, { label: "自分の食費" });
+			await insertEntry(OTHER_USER.id, { label: "パートナーの食費" });
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].label).toBe("パートナーの食費");
+		});
+
+		it("invitee 側からもパートナーのタイムラインを取得できる", async () => {
+			await seedOtherUser();
+			await insertPartnership(OTHER_USER.id, TEST_USER.id);
+			await insertEntry(OTHER_USER.id, { label: "パートナーの記録" });
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].label).toBe("パートナーの記録");
+		});
+
+		it("パートナーシップがない場合は403エラーになる", async () => {
+			await seedOtherUser();
+			await insertEntry(OTHER_USER.id, { label: "他人の記録" });
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: OTHER_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(403);
+		});
+
+		it("パートナーではないユーザーのタイムラインは取得できない", async () => {
+			await seedOtherUser();
+			await seedThirdUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(THIRD_USER.id, { label: "第三者の記録" });
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: THIRD_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.status).toBe(403);
+		});
+
+		it("自分のuserIdを指定した場合は自分のタイムラインが返る", async () => {
+			await insertEntry(TEST_USER.id, { label: "自分の記録" });
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: TEST_USER.id } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].label).toBe("自分の記録");
+		});
+
+		it("パートナーのタイムラインでカテゴリフィルターが動作する", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			await insertEntry(OTHER_USER.id, {
+				label: "立替",
+				category: "advance",
+			});
+			await insertEntry(OTHER_USER.id, {
+				label: "預り",
+				category: "deposit",
+			});
+
+			const res = await client.api.timeline.$get(
+				{ query: { userId: OTHER_USER.id, category: "advance" } },
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(1);
+			expect(body.data[0].label).toBe("立替");
+		});
+
+		it("パートナーのタイムラインでソートが動作する", async () => {
+			await seedOtherUser();
+			await insertPartnership(TEST_USER.id, OTHER_USER.id);
+			const t1 = new Date("2024-01-01").getTime();
+			const t2 = new Date("2024-01-02").getTime();
+			await insertEntry(OTHER_USER.id, {
+				label: "古い記録",
+				createdAt: t1,
+			});
+			await insertEntry(OTHER_USER.id, {
+				label: "新しい記録",
+				createdAt: t2,
+			});
+
+			const res = await client.api.timeline.$get(
+				{
+					query: {
+						userId: OTHER_USER.id,
+						sortBy: "createdAt",
+						sortOrder: "asc",
+					},
+				},
+				{ headers: { Cookie: authCookie } },
+			);
+
+			expect(res.ok).toBe(true);
+			if (!res.ok) return;
+			const body = await res.json();
+			expect(body.data).toHaveLength(2);
+			expect(body.data[0].label).toBe("古い記録");
+			expect(body.data[1].label).toBe("新しい記録");
 		});
 	});
 });

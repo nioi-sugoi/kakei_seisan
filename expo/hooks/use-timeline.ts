@@ -49,8 +49,13 @@ function buildTimelineItems(
 	return items;
 }
 
-export function useTimeline() {
+interface UseTimelineOptions {
+	userId?: string;
+}
+
+export function useTimeline(options?: UseTimelineOptions) {
 	const router = useRouter();
+	const userId = options?.userId;
 	const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 	const [sort, setSort] = useState<SortOption>({
 		sortBy: "occurredOn",
@@ -58,7 +63,7 @@ export function useTimeline() {
 	});
 
 	const query = useInfiniteQuery({
-		queryKey: ["timeline", { category: categoryFilter, ...sort }],
+		queryKey: ["timeline", { category: categoryFilter, ...sort, userId }],
 		queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
 			const res = await client.api.timeline.$get({
 				query: {
@@ -66,6 +71,7 @@ export function useTimeline() {
 					category: categoryFilter !== "all" ? categoryFilter : undefined,
 					sortBy: sort.sortBy,
 					sortOrder: sort.sortOrder,
+					userId,
 				},
 			});
 			if (!res.ok) throw new Error("タイムラインの取得に失敗しました");

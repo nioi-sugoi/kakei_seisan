@@ -12,6 +12,7 @@ export async function findPartner(db: DrizzleD1Database, userId: string) {
 		.select({
 			id: partnerships.id,
 			role: sql<"inviter">`'inviter'`.as("role"),
+			partnerId: user.id,
 			partnerName: user.name,
 			partnerEmail: user.email,
 			createdAt: partnerships.createdAt,
@@ -28,6 +29,7 @@ export async function findPartner(db: DrizzleD1Database, userId: string) {
 		.select({
 			id: partnerships.id,
 			role: sql<"invitee">`'invitee'`.as("role"),
+			partnerId: user.id,
 			partnerName: user.name,
 			partnerEmail: user.email,
 			createdAt: partnerships.createdAt,

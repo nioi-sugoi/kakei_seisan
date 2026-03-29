@@ -26,6 +26,11 @@ export type SettlementDetailResponse = InferResponseType<
 >;
 export type SettlementVersion = SettlementDetailResponse["versions"][number];
 
+type PartnerEndpoint = (typeof client.api)["partner"]["$get"];
+type PartnerSuccessResponse = InferResponseType<PartnerEndpoint, 200>;
+export type PartnerResponse = PartnerSuccessResponse;
+export type Partnership = NonNullable<PartnerSuccessResponse["data"]>;
+
 // ── ファクトリ関数 ──────────────────────────────────────────
 
 export function makeTimelineEvent(
@@ -151,6 +156,18 @@ export function makeSettlementVersion(
 		approvedBy: null,
 		approvedAt: null,
 		approvalComment: null,
+		createdAt: 1742000000000,
+		...overrides,
+	};
+}
+
+export function makePartnership(overrides?: Partial<Partnership>): Partnership {
+	return {
+		id: "partnership-1",
+		role: "inviter",
+		partnerId: "partner-user-1",
+		partnerName: "パートナー太郎",
+		partnerEmail: "partner@example.com",
 		createdAt: 1742000000000,
 		...overrides,
 	};
