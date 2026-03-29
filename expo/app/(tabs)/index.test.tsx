@@ -13,6 +13,8 @@ import {
 } from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
 
+jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
+
 const mockPush = jest.fn();
 
 jest.mock("expo-router", () => ({

@@ -1,3 +1,4 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
 import {
 	ActivityIndicator,
@@ -95,11 +96,15 @@ export default function TimelineScreen() {
 			accessibilityRole="button"
 			accessibilityLabel={`並び替え: ${currentSortLabel}`}
 		>
-			<Text className="text-xs text-muted-foreground">↕</Text>
+			<MaterialIcons
+				name="swap-vert"
+				size={14}
+				className="text-muted-foreground"
+			/>
 			<Text className="text-xs font-medium text-primary">
 				{currentSortLabel}
 			</Text>
-			<Text className="text-xs text-primary">▼</Text>
+			<MaterialIcons name="expand-more" size={12} className="text-primary" />
 		</Pressable>
 	);
 
