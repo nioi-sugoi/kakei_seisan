@@ -8,6 +8,7 @@ import {
 	Text,
 	View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BalanceSummary } from "@/components/balance/BalanceSummary";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
@@ -37,6 +38,7 @@ const SORT_OPTIONS: {
 ];
 
 export default function TimelineScreen() {
+	const insets = useSafeAreaInsets();
 	const {
 		items,
 		isLoading,
@@ -152,7 +154,7 @@ export default function TimelineScreen() {
 					onEndReached={handleEndReached}
 					onEndReachedThreshold={0.5}
 					ListHeaderComponent={
-						<View className="pt-14">
+						<View style={{ paddingTop: insets.top }}>
 							<BalanceSummary />
 							{filterPills}
 							{sortButton}

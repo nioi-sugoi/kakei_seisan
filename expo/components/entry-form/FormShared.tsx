@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function FormHeader({
 	title,
@@ -7,8 +8,12 @@ export function FormHeader({
 	title: string;
 	goBack: () => void;
 }) {
+	const insets = useSafeAreaInsets();
 	return (
-		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
+		<View
+			style={{ paddingTop: insets.top }}
+			className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3"
+		>
 			<Pressable onPress={goBack} className="active:opacity-60">
 				<Text className="text-lg text-primary">戻る</Text>
 			</Pressable>

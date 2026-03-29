@@ -9,6 +9,7 @@ import {
 	View,
 } from "react-native";
 import { EntryInfoCard } from "@/components/entry-detail/EntryInfoCard";
+import { FormHeader } from "@/components/entry-form/FormShared";
 import { ImageThumbnail } from "@/components/ImageThumbnail";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { useCancelEntry } from "@/hooks/use-cancel-entry";
@@ -16,19 +17,6 @@ import { useEntryDetail } from "@/hooks/use-entry-detail";
 import { getImageSource } from "@/hooks/use-image-upload";
 import { useRestoreEntry } from "@/hooks/use-restore-entry";
 import { formatAmount, formatDateFull } from "@/lib/format";
-
-function Header({ onBack }: { onBack: () => void }) {
-	return (
-		<View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3 pt-14">
-			<Pressable onPress={onBack} className="active:opacity-60">
-				<Text className="text-lg text-primary">戻る</Text>
-			</Pressable>
-			<Text className="flex-1 text-2xl font-bold text-foreground">
-				記録詳細
-			</Text>
-		</View>
-	);
-}
 
 export default function EntryDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,7 +37,7 @@ export default function EntryDetailScreen() {
 	if (error || !entry) {
 		return (
 			<View className="flex-1 bg-background">
-				<Header onBack={() => router.back()} />
+				<FormHeader title="記録詳細" goBack={() => router.back()} />
 				<View className="flex-1 items-center justify-center px-4">
 					<Text className="text-lg text-destructive">
 						{error?.message ?? "記録が見つかりません"}
@@ -93,7 +81,7 @@ export default function EntryDetailScreen() {
 
 	return (
 		<View className="flex-1 bg-background">
-			<Header onBack={() => router.back()} />
+			<FormHeader title="記録詳細" goBack={() => router.back()} />
 			<ScrollView
 				className="flex-1"
 				contentContainerClassName="px-4 py-5 gap-4"
