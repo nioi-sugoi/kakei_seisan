@@ -69,10 +69,7 @@ function PartnerInvitationScreen({ userEmail }: { userEmail: string }) {
 	}
 
 	return (
-		<ScrollView
-			className="flex-1 bg-background"
-			contentContainerClassName="px-6 pb-8"
-		>
+		<ScrollView className="flex-1" contentContainerClassName="px-6 pb-8">
 			<Text className="text-foreground text-2xl font-bold">パートナー招待</Text>
 
 			<View className="mt-8 gap-3">

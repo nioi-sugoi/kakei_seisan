@@ -8,7 +8,7 @@ import {
 	Text,
 	View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FormHeader } from "@/components/entry-form/FormShared";
 import { ImageThumbnail } from "@/components/ImageThumbnail";
 import { ImageViewerModal } from "@/components/ImageViewerModal";
 import { SettlementInfoCard } from "@/components/settlement-detail/SettlementInfoCard";
@@ -17,23 +17,6 @@ import { getImageSource } from "@/hooks/use-image-upload";
 import { useRestoreSettlement } from "@/hooks/use-restore-settlement";
 import { useSettlementDetail } from "@/hooks/use-settlement-detail";
 import { formatAmount } from "@/lib/format";
-
-function Header({ onBack }: { onBack: () => void }) {
-	const insets = useSafeAreaInsets();
-	return (
-		<View
-			style={{ paddingTop: insets.top }}
-			className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3"
-		>
-			<Pressable onPress={onBack} className="active:opacity-60">
-				<Text className="text-lg text-primary">戻る</Text>
-			</Pressable>
-			<Text className="flex-1 text-2xl font-bold text-foreground">
-				精算詳細
-			</Text>
-		</View>
-	);
-}
 
 export default function SettlementDetailScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,7 +37,7 @@ export default function SettlementDetailScreen() {
 	if (error || !settlement) {
 		return (
 			<View className="flex-1 bg-background">
-				<Header onBack={() => router.back()} />
+				<FormHeader title="精算詳細" goBack={() => router.back()} />
 				<View className="flex-1 items-center justify-center px-4">
 					<Text className="text-lg text-destructive">
 						{error?.message ?? "精算が見つかりません"}
@@ -96,7 +79,7 @@ export default function SettlementDetailScreen() {
 
 	return (
 		<View className="flex-1 bg-background">
-			<Header onBack={() => router.back()} />
+			<FormHeader title="精算詳細" goBack={() => router.back()} />
 			<ScrollView
 				className="flex-1"
 				contentContainerClassName="px-4 py-5 gap-4"
