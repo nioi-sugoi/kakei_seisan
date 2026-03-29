@@ -1056,7 +1056,7 @@ describe("TimelineScreen", () => {
 			// occurredOn 基準の月ヘッダーは表示されない
 			expect(screen.queryByText("2026年3月")).toBeNull();
 			// 初回登録のレコード（id === originalId）は「登録」表示
-			expect(screen.getByText("3月15日（登録：2月15日）")).toBeOnTheScreen();
+			expect(screen.getByText("2月15日に登録")).toBeOnTheScreen();
 		});
 
 		it("ソート選択でドロップダウンのアクティブ状態が正しく更新される", async () => {
