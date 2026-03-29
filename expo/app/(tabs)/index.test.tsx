@@ -3,6 +3,7 @@ import {
 	screen,
 	userEvent,
 	waitFor,
+	within,
 } from "@testing-library/react-native";
 import {
 	makeBalanceResponse,
@@ -271,8 +272,11 @@ describe("TimelineScreen", () => {
 		await waitFor(() => {
 			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 		});
-		// フィルターピル「精算」+ バッジ「精算」+ ラベル「精算」の3つが表示される
-		expect(screen.getAllByText("精算")).toHaveLength(3);
+		// 精算カード内にバッジ「精算」とラベル「精算」が表示される
+		const settlementCard = screen.getByRole("button", {
+			name: "精算 ¥5,000",
+		});
+		expect(within(settlementCard).getAllByText("精算")).toHaveLength(2);
 	});
 
 	it("記録と精算が混在するタイムラインが正しく表示される", async () => {
@@ -313,14 +317,22 @@ describe("TimelineScreen", () => {
 		await waitFor(() => {
 			expect(screen.getByText("スーパー")).toBeOnTheScreen();
 		});
-		expect(screen.getByText("¥1,500")).toBeOnTheScreen();
 
-		// フィルターピル「精算」+ バッジ「精算」+ ラベル「精算」の3つ
-		expect(screen.getAllByText("精算")).toHaveLength(3);
-		expect(screen.getByText("¥5,000")).toBeOnTheScreen();
+		// 各カード内の内容をスコープを絞って検証
+		const advanceCard = screen.getByRole("button", {
+			name: /立替 スーパー/,
+		});
+		expect(within(advanceCard).getByText("¥1,500")).toBeOnTheScreen();
 
-		expect(screen.getByText("お釣り")).toBeOnTheScreen();
-		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
+		const settlementCard = screen.getByRole("button", {
+			name: /精算 ¥5,000/,
+		});
+		expect(within(settlementCard).getAllByText("精算")).toHaveLength(2);
+
+		const depositCard = screen.getByRole("button", {
+			name: /預り お釣り/,
+		});
+		expect(within(depositCard).getByText("¥3,000")).toBeOnTheScreen();
 	});
 
 	it("精算カードをタップすると精算詳細画面に遷移する", async () => {
