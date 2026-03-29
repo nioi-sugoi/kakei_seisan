@@ -1,5 +1,8 @@
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { settlementImages } from "../../../db/schema";
 import app from "../../../index";
 import { seedTestUser, TEST_USER } from "../../../testing/auth-helper";
 import { cleanAllTables } from "../../../testing/db-helper";
@@ -32,6 +35,13 @@ async function uploadImage(settlementId: string, file?: File): Promise<string> {
 	return body.id;
 }
 
+async function cleanR2() {
+	const listed = await env.R2.list();
+	for (const obj of listed.objects) {
+		await env.R2.delete(obj.key);
+	}
+}
+
 beforeAll(async () => {
 	await setupDB();
 	await setupAuth();
@@ -41,6 +51,7 @@ describe("POST /api/settlements/:originalId/modify", () => {
 	beforeEach(async () => {
 		await cleanAllTables();
 		await seedTestUser();
+		await cleanR2();
 	});
 
 	it("金額を修正すると新バージョンが作成される", async () => {
@@ -103,24 +114,6 @@ describe("POST /api/settlements/:originalId/modify", () => {
 	});
 
 	it("画像も金額変更もない場合は 400 を返す", async () => {
-		const settlement = await insertSettlement(TEST_USER.id, {
-			amount: 5000,
-		});
-
-		const res = await client.api.settlements[":originalId"].modify.$post(
-			{
-				param: { originalId: settlement.id },
-				json: { amount: 5000 },
-			},
-			{ headers: { Cookie: authCookie } },
-		);
-
-		expect(res.status).toBe(400);
-		const body = await res.json();
-		expect(body).toHaveProperty("error", "変更がありません");
-	});
-
-	it("変更がない場合はエラーになる", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
@@ -247,21 +240,21 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("修正時に画像の削除ができる", async () => {
+	it("画像削除で新バージョンが作成される", async () => {
 		const settlement = await insertSettlement(TEST_USER.id, {
 			amount: 5000,
 		});
 
-		// 画像を追加
-		const oldImageId = await uploadImage(settlement.id);
+		// 専用エンドポイント経由で画像を追加
+		const imageId = await uploadImage(settlement.id);
 
-		// 古い画像を削除
+		// 画像削除のみで修正
 		const res = await client.api.settlements[":originalId"].modify.$post(
 			{
 				param: { originalId: settlement.id },
 				json: {
 					amount: 5000,
-					deleteImageIds: [oldImageId],
+					deleteImageIds: [imageId],
 				},
 			},
 			{ headers: { Cookie: authCookie } },
@@ -271,5 +264,42 @@ describe("POST /api/settlements/:originalId/modify", () => {
 		const body = await res.json();
 		if ("error" in body) throw new Error("unexpected error");
 		expect(body.images).toHaveLength(0);
+
+		const dbVersions = await queryVersionsByOriginalId(settlement.id);
+		expect(dbVersions).toHaveLength(2);
+	});
+
+	it("修正で削除した画像は R2 からも削除される", async () => {
+		const settlement = await insertSettlement(TEST_USER.id, {
+			amount: 5000,
+		});
+
+		// 専用エンドポイント経由で画像を追加
+		const imageId = await uploadImage(settlement.id);
+
+		// storagePath を DB から取得
+		const db = drizzle(env.DB);
+		const [imageMeta] = await db
+			.select()
+			.from(settlementImages)
+			.where(eq(settlementImages.id, imageId))
+			.all();
+		const storagePath = imageMeta.storagePath;
+
+		// 画像削除
+		await client.api.settlements[":originalId"].modify.$post(
+			{
+				param: { originalId: settlement.id },
+				json: {
+					amount: 5000,
+					deleteImageIds: [imageId],
+				},
+			},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		// R2 から削除されていることを確認
+		const r2Object = await env.R2.get(storagePath);
+		expect(r2Object).toBeNull();
 	});
 });

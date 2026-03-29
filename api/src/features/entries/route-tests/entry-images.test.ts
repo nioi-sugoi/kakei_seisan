@@ -137,6 +137,47 @@ describe("GET /api/entries/:entryId/images/:imageId", () => {
 	});
 });
 
+describe("GET /api/entries/:id（画像メタデータ含む）", () => {
+	beforeEach(async () => {
+		await cleanAllTables();
+		await seedTestUser();
+		await cleanR2();
+	});
+
+	it("記録詳細に画像メタデータが含まれる", async () => {
+		const { entryId } = await createEntryWithImage();
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entryId } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toHaveLength(1);
+		expect(body.images[0]).toHaveProperty("id");
+		expect(body.images[0]).toHaveProperty("displayOrder", 0);
+		expect(body.images[0]).toHaveProperty("createdAt");
+		// storagePath はクライアントに返さない
+		expect(body.images[0]).not.toHaveProperty("storagePath");
+	});
+
+	it("画像がない場合は空配列が返る", async () => {
+		const entry = await insertEntry(TEST_USER.id);
+
+		const res = await client.api.entries[":id"].$get(
+			{ param: { id: entry.id } },
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		if ("error" in body) throw new Error("unexpected error");
+		expect(body.images).toEqual([]);
+	});
+});
+
 describe("POST /api/entries/:entryId/images（画像フォーマット）", () => {
 	beforeEach(async () => {
 		await cleanAllTables();
