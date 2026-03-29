@@ -6,7 +6,7 @@ pre-commit:
       run: pnpm biome check --staged --no-errors-on-unmatched {staged_files}
 
     - name: expo typecheck
-      run: cd expo && npx tsc --noEmit
+      run: pnpm --filter expo-app typecheck
 
     - name: api typecheck
       run: cd api && npx tsc --noEmit
