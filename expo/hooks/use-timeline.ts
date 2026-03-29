@@ -17,6 +17,11 @@ export type TimelineItem =
 	| { type: "record"; event: TimelineEvent };
 
 function toMonthLabel(value: string | number) {
+	if (typeof value === "string") {
+		// "YYYY-MM-DD" をカレンダー日付として解釈（new Date() だとUTCになりTZ次第で月がずれる）
+		const [year, month] = value.split("-");
+		return `${Number(year)}年${Number(month)}月`;
+	}
 	const d = new Date(value);
 	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
