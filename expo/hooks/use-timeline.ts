@@ -16,13 +16,8 @@ export type TimelineItem =
 	| { type: "header"; title: string }
 	| { type: "record"; event: TimelineEvent };
 
-function toMonthLabel(date: string) {
-	const d = new Date(date);
-	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-}
-
-function toMonthLabelFromTimestamp(timestamp: number) {
-	const d = new Date(timestamp);
+function toMonthLabel(value: string | number) {
+	const d = new Date(value);
 	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
@@ -34,10 +29,9 @@ function buildTimelineItems(
 	let currentMonth = "";
 
 	for (const event of events) {
-		const month =
-			sortBy === "occurredOn"
-				? toMonthLabel(event.occurredOn)
-				: toMonthLabelFromTimestamp(event.createdAt);
+		const month = toMonthLabel(
+			sortBy === "occurredOn" ? event.occurredOn : event.createdAt,
+		);
 		if (month !== currentMonth) {
 			currentMonth = month;
 			items.push({ type: "header", title: month });

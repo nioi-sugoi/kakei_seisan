@@ -168,7 +168,7 @@ export default function TimelineScreen() {
 				/>
 			)}
 
-			{/* ソートドロップダウンメニュー（FlatListの外で描画） */}
+			{/* FlatList内だとRNTLのアクセシビリティクエリで検出できないため外に配置 */}
 			{sortMenuOpen && (
 				<View className="absolute left-4 right-4 top-52 z-10 rounded-lg bg-card p-1">
 					{SORT_OPTIONS.map((option) => {

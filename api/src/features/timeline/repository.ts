@@ -6,10 +6,9 @@ import { entries, settlements } from "../../db/schema";
 type SortBy = "occurredOn" | "createdAt";
 type SortOrder = "desc" | "asc";
 
-export interface CursorValue {
-	occurredOn?: string;
-	createdAt?: number;
-}
+export type CursorValue =
+	| { occurredOn: string; createdAt: number }
+	| { createdAt: number };
 
 export function listByUser(
 	db: DrizzleD1Database,
@@ -68,13 +67,13 @@ function buildCursorFilter(
 ) {
 	if (!cursor) return undefined;
 
-	if (sortBy === "createdAt" && cursor.createdAt !== undefined) {
+	if (sortBy === "createdAt") {
 		return sortOrder === "desc"
 			? lt(table.createdAt, cursor.createdAt)
 			: gt(table.createdAt, cursor.createdAt);
 	}
 
-	if (cursor.occurredOn !== undefined && cursor.createdAt !== undefined) {
+	if ("occurredOn" in cursor) {
 		const cmp = sortOrder === "desc" ? lt : gt;
 		return or(
 			cmp(table.occurredOn, cursor.occurredOn),
