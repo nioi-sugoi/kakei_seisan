@@ -243,3 +243,69 @@ export function deleteImage(db: DrizzleD1Database, imageId: string) {
 		.where(eq(settlementImages.id, imageId))
 		.run();
 }
+
+/** 指定バージョンの画像を新バージョンにコピーする（deleteIds に含まれる画像は除外） */
+export async function copyImagesToVersion(
+	db: DrizzleD1Database,
+	fromVersionId: string,
+	toVersionId: string,
+	deleteIds: string[],
+) {
+	const images = await findImagesBySettlement(db, fromVersionId);
+	const deleteSet = new Set(deleteIds);
+	const copied: (typeof settlementImages.$inferSelect)[] = [];
+	for (const img of images) {
+		if (deleteSet.has(img.id)) continue;
+		const id = crypto.randomUUID();
+		const now = Date.now();
+		await db.insert(settlementImages).values({
+			id,
+			settlementId: toVersionId,
+			storagePath: img.storagePath,
+			displayOrder: img.displayOrder,
+			createdAt: now,
+		});
+		const row = await db
+			.select()
+			.from(settlementImages)
+			.where(eq(settlementImages.id, id))
+			.get();
+		if (row) copied.push(row);
+	}
+	return copied;
+}
+
+/** 指定 storagePath を参照している画像レコード数を返す（R2削除判定用） */
+export async function countImageRefsByStoragePath(
+	db: DrizzleD1Database,
+	storagePath: string,
+) {
+	const result = await db
+		.select({ count: sql<number>`COUNT(*)` })
+		.from(settlementImages)
+		.where(eq(settlementImages.storagePath, storagePath))
+		.get();
+	return result?.count ?? 0;
+}
+
+/** 指定精算の全バージョンに紐づく画像を検索（GET/DELETE での所有権チェック用） */
+export async function findImageWithOwnershipCheck(
+	db: DrizzleD1Database,
+	imageId: string,
+	originalId: string,
+) {
+	const image = await findImageById(db, imageId);
+	if (!image) return null;
+	const version = await db
+		.select()
+		.from(settlements)
+		.where(
+			and(
+				eq(settlements.id, image.settlementId),
+				eq(settlements.originalId, originalId),
+			),
+		)
+		.get();
+	if (!version) return null;
+	return image;
+}

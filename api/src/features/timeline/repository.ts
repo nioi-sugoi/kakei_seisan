@@ -46,7 +46,7 @@ function buildEntriesQuery(
 	const cursorFilter = cursor ? lt(entries.createdAt, cursor) : undefined;
 	const categoryFilter = category ? eq(entries.category, category) : undefined;
 
-	const entryImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${entryImages} WHERE ${entryImages.entryId} = ${entries.originalId})`;
+	const entryImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${entryImages} WHERE ${entryImages.entryId} = "entries"."id")`;
 
 	return db
 		.select({
@@ -84,7 +84,7 @@ function buildSettlementsQuery(
 ) {
 	const cursorFilter = cursor ? lt(settlements.createdAt, cursor) : undefined;
 
-	const settlementImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${settlementImages} WHERE ${settlementImages.settlementId} = ${settlements.originalId})`;
+	const settlementImageCountSql = sql<number>`(SELECT COUNT(*) FROM ${settlementImages} WHERE ${settlementImages.settlementId} = "settlements"."id")`;
 
 	return db
 		.select({

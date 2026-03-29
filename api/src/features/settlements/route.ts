@@ -38,9 +38,17 @@ const settlementsApp = new Hono<{
 			return c.json({ error: "精算が見つかりません" as const }, 404);
 		}
 
+		const latestVersion = await settlementsRepository.findMyLatestVersion(
+			db,
+			settlement.originalId,
+			user.id,
+		);
 		const [versions, images] = await Promise.all([
 			settlementsRepository.findVersions(db, settlement.originalId),
-			settlementsRepository.findImagesBySettlement(db, settlement.originalId),
+			settlementsRepository.findImagesBySettlement(
+				db,
+				latestVersion ? latestVersion.id : settlement.id,
+			),
 		]);
 
 		return c.json(
@@ -117,18 +125,30 @@ const settlementsApp = new Hono<{
 				{ amount },
 			);
 
+			const newVersionId = insertedRows[0].id;
+
+			// 前バージョンの画像を新バージョンにコピー（削除対象は除外）
+			const images = await settlementsRepository.copyImagesToVersion(
+				db,
+				latestSettlement.id,
+				newVersionId,
+				deleteIds,
+			);
+
+			// 削除対象の画像: 他バージョンからの参照がなければ R2 からも削除
 			for (const imageId of deleteIds) {
 				const image = await settlementsRepository.findImageById(db, imageId);
-				if (image && image.settlementId === originalId) {
-					await settlementsRepository.deleteImage(db, imageId);
-					await c.env.R2.delete(image.storagePath);
+				if (image) {
+					const refCount =
+						await settlementsRepository.countImageRefsByStoragePath(
+							db,
+							image.storagePath,
+						);
+					if (refCount === 0) {
+						await c.env.R2.delete(image.storagePath);
+					}
 				}
 			}
-
-			const images = await settlementsRepository.findImagesBySettlement(
-				db,
-				originalId,
-			);
 
 			return c.json(
 				{
@@ -207,7 +227,7 @@ const settlementsApp = new Hono<{
 			const { image } = c.req.valid("form");
 			const db = drizzle(c.env.DB);
 
-			const settlement = await settlementsRepository.findByOwner(
+			const settlement = await settlementsRepository.findMyLatestVersion(
 				db,
 				settlementId,
 				user.id,
@@ -225,7 +245,7 @@ const settlementsApp = new Hono<{
 			const storagePath = `receipts/${user.id}/${settlement.originalId}/${crypto.randomUUID()}.${ext}`;
 
 			const imageRecord = await settlementsRepository.createImage(db, {
-				settlementId: settlement.originalId,
+				settlementId: settlement.id,
 				storagePath,
 			});
 			if (!imageRecord) {
@@ -261,13 +281,23 @@ const settlementsApp = new Hono<{
 			return c.json({ error: "精算が見つかりません" as const }, 404);
 		}
 
-		const image = await settlementsRepository.findImageById(db, imageId);
-		if (!image || image.settlementId !== settlement.originalId) {
+		const image = await settlementsRepository.findImageWithOwnershipCheck(
+			db,
+			imageId,
+			settlement.originalId,
+		);
+		if (!image) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 
 		await settlementsRepository.deleteImage(db, imageId);
-		await c.env.R2.delete(image.storagePath);
+		const refCount = await settlementsRepository.countImageRefsByStoragePath(
+			db,
+			image.storagePath,
+		);
+		if (refCount === 0) {
+			await c.env.R2.delete(image.storagePath);
+		}
 
 		return c.json({ ok: true as const }, 200);
 	})
@@ -275,18 +305,20 @@ const settlementsApp = new Hono<{
 		const user = c.get("user");
 		const db = drizzle(c.env.DB);
 
-		const [settlement, image] = await Promise.all([
-			settlementsRepository.findByOwner(
-				db,
-				c.req.param("settlementId"),
-				user.id,
-			),
-			settlementsRepository.findImageById(db, c.req.param("imageId")),
-		]);
+		const settlement = await settlementsRepository.findByOwner(
+			db,
+			c.req.param("settlementId"),
+			user.id,
+		);
 		if (!settlement) {
 			return c.json({ error: "精算が見つかりません" as const }, 404);
 		}
-		if (!image || image.settlementId !== settlement.originalId) {
+		const image = await settlementsRepository.findImageWithOwnershipCheck(
+			db,
+			c.req.param("imageId"),
+			settlement.originalId,
+		);
+		if (!image) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 

@@ -334,8 +334,8 @@ describe("GET /api/timeline", () => {
 
 	it("記録の imageCount が正しく返される", async () => {
 		const entry = await insertEntry(TEST_USER.id);
-		await insertEntryImage(entry.originalId);
-		await insertEntryImage(entry.originalId);
+		await insertEntryImage(entry.id);
+		await insertEntryImage(entry.id);
 
 		const res = await client.api.timeline.$get(
 			{ query: {} },
@@ -350,7 +350,7 @@ describe("GET /api/timeline", () => {
 
 	it("精算の imageCount が正しく返される", async () => {
 		const settlement = await insertSettlement(TEST_USER.id);
-		await insertSettlementImage(settlement.originalId);
+		await insertSettlementImage(settlement.id);
 
 		const res = await client.api.timeline.$get(
 			{ query: {} },
