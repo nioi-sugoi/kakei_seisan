@@ -95,6 +95,7 @@ describe("PartnerScreen - パートナー連携済み", () => {
 			expect(screen.getByText("パートナーの精算残高")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("¥0")).toBeOnTheScreen();
+		expect(screen.getByText("精算済み")).toBeOnTheScreen();
 	});
 
 	it("パートナーの残高が正の場合「家計から受け取り」と表示される", async () => {

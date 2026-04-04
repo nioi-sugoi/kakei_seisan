@@ -27,7 +27,9 @@ export function PartnerBalanceSummary() {
 
 	const { balance } = data;
 	const absBalance = Math.abs(balance);
-	const isPositive = balance >= 0;
+
+	const balanceLabel =
+		balance > 0 ? "家計から受け取り" : balance < 0 ? "家計へ入金" : "精算済み";
 
 	return (
 		<View className="mx-4 mt-4 rounded-xl bg-primary px-5 py-5">
@@ -42,7 +44,7 @@ export function PartnerBalanceSummary() {
 					{formatAmount(absBalance)}
 				</Text>
 				<Text className="text-lg font-semibold text-primary-foreground">
-					{isPositive ? "家計から受け取り" : "家計へ入金"}
+					{balanceLabel}
 				</Text>
 			</View>
 		</View>
