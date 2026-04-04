@@ -134,7 +134,9 @@ function PartnerTimelineScreen({ partnership }: { partnership: Partnership }) {
 		handleEndReached,
 	} = useTimeline({ userId: partnership.partnerId });
 
-	const balanceTitle = `${partnership.partnerName}さんの精算残高`;
+	const balanceTitle = partnership.partnerName
+		? `${partnership.partnerName}さんの精算残高`
+		: "パートナーの精算残高";
 
 	return (
 		<View className="flex-1 bg-background">
@@ -168,7 +170,9 @@ function PartnerTimelineScreen({ partnership }: { partnership: Partnership }) {
 						</View>
 						<View className="flex-1 items-center justify-center">
 							<Text className="text-base text-muted-foreground">
-								{partnership.partnerName}さんの記録はまだありません
+								{partnership.partnerName
+									? `${partnership.partnerName}さんの記録はまだありません`
+									: "パートナーの記録はまだありません"}
 							</Text>
 						</View>
 					</View>
