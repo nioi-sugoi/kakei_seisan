@@ -25,34 +25,12 @@ import {
 	useSentInvitations,
 } from "@/hooks/use-partner-status";
 import {
-	type CategoryFilter,
 	type PartnerTimelineItem,
-	type SortOption,
 	usePartnerTimeline,
 } from "@/hooks/use-partner-timeline";
 import { useSendInvitation } from "@/hooks/use-send-invitation";
 import { authClient } from "@/lib/auth-client";
-
-const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
-	{ value: "all", label: "すべて" },
-	{ value: "advance", label: "立替" },
-	{ value: "deposit", label: "預り" },
-	{ value: "settlement", label: "精算" },
-];
-
-const SORT_OPTIONS: {
-	sortBy: SortOption["sortBy"];
-	sortOrder: SortOption["sortOrder"];
-	label: string;
-}[] = [
-	{ sortBy: "occurredOn", sortOrder: "desc", label: "日付順（新しい順）" },
-	{ sortBy: "occurredOn", sortOrder: "asc", label: "日付順（古い順）" },
-	{ sortBy: "createdAt", sortOrder: "desc", label: "更新順（新しい順）" },
-	{ sortBy: "createdAt", sortOrder: "asc", label: "更新順（古い順）" },
-];
-
-// パートナータイムラインは閲覧専用のため操作不要
-const noop = () => {};
+import { CATEGORY_FILTERS, SORT_OPTIONS } from "@/lib/timeline-utils";
 
 function PartnerHomeScreen() {
 	const insets = useSafeAreaInsets();
@@ -158,7 +136,6 @@ function PartnerHomeScreen() {
 							<View className="px-4 pb-2">
 								<TimelineEventCard
 									event={item.event}
-									onPress={noop}
 									updatedAt={
 										sort.sortBy === "createdAt"
 											? item.event.createdAt

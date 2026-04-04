@@ -1,10 +1,9 @@
-import { and, eq, sql, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type { Env } from "../../bindings";
-import { entryVersions, settlementVersions } from "../../db/schema";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
+import { computeBalance } from "./compute-balance";
 
 const balanceApp = new Hono<{
 	Bindings: Env;
@@ -13,59 +12,9 @@ const balanceApp = new Hono<{
 	const user = c.get("user");
 	const db = drizzle(c.env.DB);
 
-	const [entryResult, settlementResult] = await Promise.all([
-		db
-			.select({
-				advanceTotal: sum(
-					sql`CASE WHEN ${entryVersions.category} = 'advance' THEN ${entryVersions.amount} ELSE 0 END`,
-				),
-				depositTotal: sum(
-					sql`CASE WHEN ${entryVersions.category} = 'deposit' THEN ${entryVersions.amount} ELSE 0 END`,
-				),
-			})
-			.from(entryVersions)
-			.where(
-				and(
-					eq(entryVersions.userId, user.id),
-					eq(entryVersions.latest, true),
-					eq(entryVersions.cancelled, false),
-				),
-			)
-			.get(),
-		db
-			.select({
-				fromHouseholdTotal: sum(
-					sql`CASE WHEN ${settlementVersions.category} = 'fromHousehold' THEN ${settlementVersions.amount} ELSE 0 END`,
-				),
-				fromUserTotal: sum(
-					sql`CASE WHEN ${settlementVersions.category} = 'fromUser' THEN ${settlementVersions.amount} ELSE 0 END`,
-				),
-			})
-			.from(settlementVersions)
-			.where(
-				and(
-					eq(settlementVersions.userId, user.id),
-					eq(settlementVersions.latest, true),
-					eq(settlementVersions.cancelled, false),
-				),
-			)
-			.get(),
-	]);
+	const result = await computeBalance(db, user.id);
 
-	const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
-	const depositTotal = Number(entryResult?.depositTotal ?? 0);
-	const fromHouseholdTotal = Number(settlementResult?.fromHouseholdTotal ?? 0);
-	const fromUserTotal = Number(settlementResult?.fromUserTotal ?? 0);
-	const balance =
-		advanceTotal - depositTotal - fromHouseholdTotal + fromUserTotal;
-
-	return c.json({
-		advanceTotal,
-		depositTotal,
-		fromHouseholdTotal,
-		fromUserTotal,
-		balance,
-	});
+	return c.json(result);
 });
 
 export { balanceApp };

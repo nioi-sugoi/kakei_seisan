@@ -3,51 +3,20 @@ import { useRouter } from "expo-router";
 import type { InferResponseType } from "hono/client";
 import { useState } from "react";
 import { client } from "@/lib/api-client";
+import {
+	buildTimelineItems,
+	type CategoryFilter,
+	type SortOption,
+	type TimelineItemOf,
+} from "@/lib/timeline-utils";
 
 type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
 type TimelineEvent = TimelineResponse["data"][number];
 
-export type CategoryFilter = "all" | "advance" | "deposit" | "settlement";
-export type SortBy = "occurredOn" | "createdAt";
-export type SortOrder = "desc" | "asc";
-export type SortOption = { sortBy: SortBy; sortOrder: SortOrder };
-
-export type TimelineItem =
-	| { type: "header"; title: string; key: string }
-	| { type: "record"; event: TimelineEvent };
-
-function toMonthLabel(value: string | number) {
-	if (typeof value === "string") {
-		// "YYYY-MM-DD" をカレンダー日付として解釈（new Date() だとUTCになりTZ次第で月がずれる）
-		const [year, month] = value.split("-");
-		return `${Number(year)}年${Number(month)}月`;
-	}
-	const d = new Date(value);
-	return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-}
-
-function buildTimelineItems(
-	events: TimelineEvent[],
-	sortBy: SortBy,
-): TimelineItem[] {
-	const items: TimelineItem[] = [];
-	let currentMonth = "";
-	let headerSeq = 0;
-
-	for (const event of events) {
-		const month = toMonthLabel(
-			sortBy === "occurredOn" ? event.occurredOn : event.createdAt,
-		);
-		if (month !== currentMonth) {
-			currentMonth = month;
-			headerSeq++;
-			items.push({ type: "header", title: month, key: `header-${headerSeq}` });
-		}
-		items.push({ type: "record", event });
-	}
-
-	return items;
-}
+export type { CategoryFilter, SortOption };
+export type SortBy = SortOption["sortBy"];
+export type SortOrder = SortOption["sortOrder"];
+export type TimelineItem = TimelineItemOf<TimelineEvent>;
 
 export function useTimeline() {
 	const router = useRouter();

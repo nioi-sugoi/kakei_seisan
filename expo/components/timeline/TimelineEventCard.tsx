@@ -19,7 +19,7 @@ const statusConfig = {
 
 interface TimelineEventCardProps {
 	event: TimelineEvent;
-	onPress: (event: TimelineEvent) => void;
+	onPress?: (event: TimelineEvent) => void;
 	showApprovalStatus?: boolean;
 	updatedAt?: number;
 }
@@ -61,7 +61,7 @@ export function TimelineEventCard({
 
 	return (
 		<Pressable
-			onPress={() => onPress(event)}
+			onPress={onPress ? () => onPress(event) : undefined}
 			className={`rounded-xl bg-card px-4 py-3 active:opacity-80 ${isCancelled ? "opacity-50" : ""}`}
 			accessibilityRole="button"
 			accessibilityLabel={[

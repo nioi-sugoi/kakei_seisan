@@ -231,17 +231,11 @@ describe("PartnerScreen - パートナー未連携", () => {
 });
 
 describe("PartnerScreen - ローディング", () => {
-	it("パートナー情報取得中にローディングインジケーターが表示される", () => {
+	it("パートナー情報取得中はコンテンツが表示されない", () => {
 		mockPartnerGet.mockImplementation(() => new Promise(() => {}));
-		const { toJSON } = render(<PartnerScreen />, {
-			wrapper: TestQueryWrapper,
-		});
+		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
 
-		const tree = toJSON();
-		// SafeAreaView > View > ActivityIndicator 構造を確認
-		expect(tree).toBeTruthy();
-		expect(
-			screen.UNSAFE_getByType(require("react-native").ActivityIndicator),
-		).toBeTruthy();
+		expect(screen.queryByText("パートナーの精算残高")).toBeNull();
+		expect(screen.queryByText("パートナー招待")).toBeNull();
 	});
 });
