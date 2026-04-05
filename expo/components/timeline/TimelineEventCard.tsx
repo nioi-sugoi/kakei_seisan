@@ -35,9 +35,11 @@ export function TimelineEventCard({
 	const isExpense = event.type === "entry";
 	const isModified = !isV1 && !isCancelled;
 	const hasImages = event.imageCount > 0;
-	const label = isExpense ? event.label : (event.label ?? "精算");
 
 	const { category } = event;
+	const settlementLabel =
+		category === "fromUser" ? "家計に入金" : "家計から出金";
+	const label = isExpense ? event.label : (event.label ?? settlementLabel);
 	const entryConfig =
 		category === "advance" || category === "deposit"
 			? typeConfig[category]
@@ -67,7 +69,7 @@ export function TimelineEventCard({
 			accessibilityLabel={[
 				isExpense
 					? `${typeLabel} ${event.label} ${formatAmount(event.amount)}`
-					: `精算 ${formatAmount(event.amount)}`,
+					: `${settlementLabel} ${formatAmount(event.amount)}`,
 				hasImages ? "画像あり" : null,
 				isModified ? "修正済み" : null,
 				isCancelled ? "取消済み" : null,

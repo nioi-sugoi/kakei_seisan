@@ -274,11 +274,12 @@ describe("TimelineScreen", () => {
 		await waitFor(() => {
 			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 		});
-		// 精算カード内にバッジ「精算」とラベル「精算」が表示される
+		// 精算カード内にバッジ「精算」とラベル「家計から出金」が表示される
 		const settlementCard = screen.getByRole("button", {
-			name: "精算 ¥5,000",
+			name: "家計から出金 ¥5,000",
 		});
-		expect(within(settlementCard).getAllByText("精算")).toHaveLength(2);
+		expect(within(settlementCard).getByText("精算")).toBeOnTheScreen();
+		expect(within(settlementCard).getByText("家計から出金")).toBeOnTheScreen();
 	});
 
 	it("記録と精算が混在するタイムラインが正しく表示される", async () => {
@@ -327,9 +328,10 @@ describe("TimelineScreen", () => {
 		expect(within(advanceCard).getByText("¥1,500")).toBeOnTheScreen();
 
 		const settlementCard = screen.getByRole("button", {
-			name: /精算 ¥5,000/,
+			name: /家計から出金 ¥5,000/,
 		});
-		expect(within(settlementCard).getAllByText("精算")).toHaveLength(2);
+		expect(within(settlementCard).getByText("精算")).toBeOnTheScreen();
+		expect(within(settlementCard).getByText("家計から出金")).toBeOnTheScreen();
 
 		const depositCard = screen.getByRole("button", {
 			name: /預り お釣り/,
@@ -357,12 +359,14 @@ describe("TimelineScreen", () => {
 			expect(screen.getByText("¥5,000")).toBeOnTheScreen();
 		});
 
-		await user.press(screen.getByRole("button", { name: "精算 ¥5,000" }));
+		await user.press(
+			screen.getByRole("button", { name: "家計から出金 ¥5,000" }),
+		);
 
 		expect(mockPush).toHaveBeenCalledWith("/settlement-detail/stl-1");
 	});
 
-	it("残高が正の場合「家計から受け取り」と表示される", async () => {
+	it("残高が正の場合「家計から出金」と表示される", async () => {
 		mockBalance(3000);
 		mockTimelineResponse({
 			data: [makeTimelineEvent()],
@@ -371,7 +375,7 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("家計から受け取り")).toBeOnTheScreen();
+			expect(screen.getByText("家計から出金")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("¥3,000")).toBeOnTheScreen();
 	});
@@ -390,7 +394,7 @@ describe("TimelineScreen", () => {
 		expect(screen.queryByRole("button", { name: "精算する" })).toBeNull();
 	});
 
-	it("残高が負の場合「家計へ入金」と表示される", async () => {
+	it("残高が負の場合「家計に入金」と表示される", async () => {
 		mockBalance(-2000);
 		mockTimelineResponse({
 			data: [makeTimelineEvent()],
@@ -399,7 +403,7 @@ describe("TimelineScreen", () => {
 		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByText("家計へ入金")).toBeOnTheScreen();
+			expect(screen.getByText("家計に入金")).toBeOnTheScreen();
 		});
 		expect(screen.getByText("¥2,000")).toBeOnTheScreen();
 	});
