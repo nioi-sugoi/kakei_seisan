@@ -47,7 +47,7 @@ export function BalanceSummary() {
 					{formatAmount(absBalance)}
 				</Text>
 				<Text className="text-lg font-semibold text-primary-foreground">
-					{isPositive ? "家計から受け取り" : "家計へ入金"}
+					{isPositive ? "家計から出金" : "家計に入金"}
 				</Text>
 			</View>
 			{hasBalance ? (
