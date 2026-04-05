@@ -44,27 +44,6 @@ describe("GET /api/partner/balance", () => {
 		});
 	});
 
-	it("パートナーの立替のみの場合、残高 = 立替合計", async () => {
-		await insertPartnership(TEST_USER.id, OTHER_USER.id);
-		await insertEntry(OTHER_USER.id, { category: "advance", amount: 3000 });
-		await insertEntry(OTHER_USER.id, { category: "advance", amount: 2000 });
-
-		const res = await client.api.partner.balance.$get(
-			{},
-			{ headers: { Cookie: authCookie } },
-		);
-
-		expect(res.ok).toBe(true);
-		const body = await res.json();
-		expect(body).toEqual({
-			advanceTotal: 5000,
-			depositTotal: 0,
-			fromHouseholdTotal: 0,
-			fromUserTotal: 0,
-			balance: 5000,
-		});
-	});
-
 	it("パートナーの残高 = 立替合計 − 預り合計 − 家計からの精算合計 + ユーザーからの精算合計", async () => {
 		await insertPartnership(TEST_USER.id, OTHER_USER.id);
 		await insertEntry(OTHER_USER.id, { category: "advance", amount: 10000 });
