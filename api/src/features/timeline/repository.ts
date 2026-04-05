@@ -7,7 +7,6 @@ import {
 	settlementImageVersions,
 	settlementVersions,
 } from "../../db/schema";
-import { parseCursor } from "./parse-cursor";
 
 type SortBy = "occurredOn" | "createdAt";
 type SortOrder = "desc" | "asc";
@@ -37,18 +36,13 @@ export async function listByUserPaginated(
 ) {
 	const { sortBy, sortOrder } = options;
 
-	let cursorValue: CursorValue | undefined;
-	if (options.cursor) {
-		const parsed = parseCursor(options.cursor, sortBy);
-		if (!parsed) {
-			throw new InvalidCursorError();
-		}
-		cursorValue = parsed;
-	}
+	const cursor = options.cursor
+		? parseCursorOrThrow(options.cursor, sortBy)
+		: undefined;
 
 	const rows = await listByUser(db, userId, {
 		limit: PAGE_LIMIT + 1,
-		cursor: cursorValue,
+		cursor,
 		category: options.category,
 		sortBy,
 		sortOrder,
@@ -57,7 +51,7 @@ export async function listByUserPaginated(
 	const hasMore = rows.length > PAGE_LIMIT;
 	const data = hasMore ? rows.slice(0, PAGE_LIMIT) : rows;
 
-	let nextCursor: string | null = null;
+	let nextCursor = null;
 	if (hasMore) {
 		const lastItem = data[data.length - 1];
 		nextCursor =
@@ -250,4 +244,27 @@ function buildSettlementsQuery(
 				cursorFilter,
 			),
 		);
+}
+
+function parseCursorOrThrow(cursor: string, sortBy: SortBy) {
+	const parsed = parseCursor(cursor, sortBy);
+	if (!parsed) throw new InvalidCursorError();
+	return parsed;
+}
+
+function parseCursor(cursor: string, sortBy: SortBy): CursorValue | null {
+	if (sortBy === "createdAt") {
+		const createdAt = Number(cursor);
+		if (!Number.isInteger(createdAt)) return null;
+		return { createdAt };
+	}
+
+	const commaIdx = cursor.indexOf(",");
+	if (commaIdx === -1) return null;
+
+	const occurredOn = cursor.slice(0, commaIdx);
+	const createdAt = Number(cursor.slice(commaIdx + 1));
+	if (!occurredOn || !Number.isInteger(createdAt)) return null;
+
+	return { occurredOn, createdAt };
 }
