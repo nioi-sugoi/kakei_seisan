@@ -7,7 +7,10 @@ import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import { calculateBalance } from "../balance/domain";
 import { getEntryTotals, getSettlementTotals } from "../balance/repository";
-import * as timelineRepository from "../timeline/repository";
+import {
+	InvalidCursorError,
+	listByUserPaginated,
+} from "../timeline/repository";
 import { findPartner, getPartnerUserId } from "./repository";
 
 const partnerApp = new Hono<{
@@ -76,17 +79,20 @@ const partnerApp = new Hono<{
 
 			const { cursor, category, sortBy, sortOrder } = c.req.valid("query");
 
-			const result = await timelineRepository.listByUserPaginated(
-				db,
-				partnerUserId,
-				{ cursorParam: cursor, category, sortBy, sortOrder },
-			);
-
-			if ("error" in result) {
-				return c.json({ error: result.error }, result.status);
+			try {
+				const result = await listByUserPaginated(db, partnerUserId, {
+					cursor,
+					category,
+					sortBy,
+					sortOrder,
+				});
+				return c.json(result);
+			} catch (e) {
+				if (e instanceof InvalidCursorError) {
+					return c.json({ error: e.message }, 400);
+				}
+				throw e;
 			}
-
-			return c.json(result);
 		},
 	);
 

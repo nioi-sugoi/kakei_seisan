@@ -6,6 +6,7 @@ import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import * as timelineRepository from "./repository";
+import { InvalidCursorError } from "./repository";
 
 const timelineApp = new Hono<{
 	Bindings: Env;
@@ -27,18 +28,20 @@ const timelineApp = new Hono<{
 		const { cursor, category, sortBy, sortOrder } = c.req.valid("query");
 		const db = drizzle(c.env.DB);
 
-		const result = await timelineRepository.listByUserPaginated(db, user.id, {
-			cursorParam: cursor,
-			category,
-			sortBy,
-			sortOrder,
-		});
-
-		if ("error" in result) {
-			return c.json({ error: result.error }, result.status);
+		try {
+			const result = await timelineRepository.listByUserPaginated(db, user.id, {
+				cursor,
+				category,
+				sortBy,
+				sortOrder,
+			});
+			return c.json(result);
+		} catch (e) {
+			if (e instanceof InvalidCursorError) {
+				return c.json({ error: e.message }, 400);
+			}
+			throw e;
 		}
-
-		return c.json(result);
 	},
 );
 

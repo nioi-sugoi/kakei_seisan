@@ -1,20 +1,20 @@
 import type { CursorValue } from "./repository";
 
 export function parseCursor(
-	cursorParam: string,
+	cursor: string,
 	sortBy: "occurredOn" | "createdAt",
 ): CursorValue | null {
 	if (sortBy === "createdAt") {
-		const createdAt = Number(cursorParam);
+		const createdAt = Number(cursor);
 		if (!Number.isInteger(createdAt)) return null;
 		return { createdAt };
 	}
 
-	const commaIdx = cursorParam.indexOf(",");
+	const commaIdx = cursor.indexOf(",");
 	if (commaIdx === -1) return null;
 
-	const occurredOn = cursorParam.slice(0, commaIdx);
-	const createdAt = Number(cursorParam.slice(commaIdx + 1));
+	const occurredOn = cursor.slice(0, commaIdx);
+	const createdAt = Number(cursor.slice(commaIdx + 1));
 	if (!occurredOn || !Number.isInteger(createdAt)) return null;
 
 	return { occurredOn, createdAt };

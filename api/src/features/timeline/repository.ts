@@ -18,33 +18,37 @@ export type CursorValue =
 
 const PAGE_LIMIT = 50;
 
+export class InvalidCursorError extends Error {
+	constructor() {
+		super("Invalid cursor");
+		this.name = "InvalidCursorError";
+	}
+}
+
 export async function listByUserPaginated(
 	db: DrizzleD1Database,
 	userId: string,
 	options: {
-		cursorParam?: string;
+		cursor?: string;
 		category?: "advance" | "deposit" | "settlement";
 		sortBy: SortBy;
 		sortOrder: SortOrder;
 	},
-): Promise<
-	| { data: TimelineRow[]; nextCursor: string | null }
-	| { error: string; status: 400 }
-> {
-	const { sortBy, sortOrder, cursorParam } = options;
+) {
+	const { sortBy, sortOrder } = options;
 
-	let cursor: CursorValue | undefined;
-	if (cursorParam) {
-		const parsed = parseCursor(cursorParam, sortBy);
+	let cursorValue: CursorValue | undefined;
+	if (options.cursor) {
+		const parsed = parseCursor(options.cursor, sortBy);
 		if (!parsed) {
-			return { error: "Invalid cursor", status: 400 };
+			throw new InvalidCursorError();
 		}
-		cursor = parsed;
+		cursorValue = parsed;
 	}
 
 	const rows = await listByUser(db, userId, {
 		limit: PAGE_LIMIT + 1,
-		cursor,
+		cursor: cursorValue,
 		category: options.category,
 		sortBy,
 		sortOrder,
@@ -64,8 +68,6 @@ export async function listByUserPaginated(
 
 	return { data, nextCursor };
 }
-
-type TimelineRow = Awaited<ReturnType<typeof listByUser>>[number];
 
 async function listByUser(
 	db: DrizzleD1Database,
