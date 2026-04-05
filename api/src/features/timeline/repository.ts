@@ -7,6 +7,7 @@ import {
 	settlementImageVersions,
 	settlementVersions,
 } from "../../db/schema";
+import { parseCursor } from "./parse-cursor";
 
 type SortBy = "occurredOn" | "createdAt";
 type SortOrder = "desc" | "asc";
@@ -15,7 +16,58 @@ export type CursorValue =
 	| { occurredOn: string; createdAt: number }
 	| { createdAt: number };
 
-export async function listByUser(
+const PAGE_LIMIT = 50;
+
+export async function listByUserPaginated(
+	db: DrizzleD1Database,
+	userId: string,
+	options: {
+		cursorParam?: string;
+		category?: "advance" | "deposit" | "settlement";
+		sortBy: SortBy;
+		sortOrder: SortOrder;
+	},
+): Promise<
+	| { data: TimelineRow[]; nextCursor: string | null }
+	| { error: string; status: 400 }
+> {
+	const { sortBy, sortOrder, cursorParam } = options;
+
+	let cursor: CursorValue | undefined;
+	if (cursorParam) {
+		const parsed = parseCursor(cursorParam, sortBy);
+		if (!parsed) {
+			return { error: "Invalid cursor", status: 400 };
+		}
+		cursor = parsed;
+	}
+
+	const rows = await listByUser(db, userId, {
+		limit: PAGE_LIMIT + 1,
+		cursor,
+		category: options.category,
+		sortBy,
+		sortOrder,
+	});
+
+	const hasMore = rows.length > PAGE_LIMIT;
+	const data = hasMore ? rows.slice(0, PAGE_LIMIT) : rows;
+
+	let nextCursor: string | null = null;
+	if (hasMore) {
+		const lastItem = data[data.length - 1];
+		nextCursor =
+			sortBy === "createdAt"
+				? String(lastItem.createdAt)
+				: `${lastItem.occurredOn},${lastItem.createdAt}`;
+	}
+
+	return { data, nextCursor };
+}
+
+type TimelineRow = Awaited<ReturnType<typeof listByUser>>[number];
+
+async function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
 	options: {

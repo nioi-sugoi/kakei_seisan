@@ -7,8 +7,6 @@ import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import { calculateBalance } from "../balance/domain";
 import { getEntryTotals, getSettlementTotals } from "../balance/repository";
-import { parseCursor } from "../timeline/parse-cursor";
-import type { CursorValue } from "../timeline/repository";
 import * as timelineRepository from "../timeline/repository";
 import { findPartner, getPartnerUserId } from "./repository";
 
@@ -76,44 +74,19 @@ const partnerApp = new Hono<{
 				return c.json({ error: "パートナーが見つかりません" }, 404);
 			}
 
-			const {
-				cursor: cursorParam,
-				category,
-				sortBy,
-				sortOrder,
-			} = c.req.valid("query");
-			const limit = 50;
+			const { cursor, category, sortBy, sortOrder } = c.req.valid("query");
 
-			let cursor: CursorValue | undefined;
-			if (cursorParam) {
-				const parsed = parseCursor(cursorParam, sortBy);
-				if (!parsed) {
-					return c.json({ error: "Invalid cursor" }, 400);
-				}
-				cursor = parsed;
+			const result = await timelineRepository.listByUserPaginated(
+				db,
+				partnerUserId,
+				{ cursorParam: cursor, category, sortBy, sortOrder },
+			);
+
+			if ("error" in result) {
+				return c.json({ error: result.error }, result.status);
 			}
 
-			const rows = await timelineRepository.listByUser(db, partnerUserId, {
-				limit: limit + 1,
-				cursor,
-				category,
-				sortBy,
-				sortOrder,
-			});
-
-			const hasMore = rows.length > limit;
-			const data = hasMore ? rows.slice(0, limit) : rows;
-
-			let nextCursor: string | null = null;
-			if (hasMore) {
-				const lastItem = data[data.length - 1];
-				nextCursor =
-					sortBy === "createdAt"
-						? String(lastItem.createdAt)
-						: `${lastItem.occurredOn},${lastItem.createdAt}`;
-			}
-
-			return c.json({ data, nextCursor });
+			return c.json(result);
 		},
 	);
 

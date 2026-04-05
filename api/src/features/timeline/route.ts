@@ -5,8 +5,6 @@ import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
-import { parseCursor } from "./parse-cursor";
-import type { CursorValue } from "./repository";
 import * as timelineRepository from "./repository";
 
 const timelineApp = new Hono<{
@@ -26,45 +24,21 @@ const timelineApp = new Hono<{
 	),
 	async (c) => {
 		const user = c.get("user");
-		const {
-			cursor: cursorParam,
-			category,
-			sortBy,
-			sortOrder,
-		} = c.req.valid("query");
-		const limit = 50;
+		const { cursor, category, sortBy, sortOrder } = c.req.valid("query");
 		const db = drizzle(c.env.DB);
 
-		let cursor: CursorValue | undefined;
-		if (cursorParam) {
-			const parsed = parseCursor(cursorParam, sortBy);
-			if (!parsed) {
-				return c.json({ error: "Invalid cursor" }, 400);
-			}
-			cursor = parsed;
-		}
-
-		const rows = await timelineRepository.listByUser(db, user.id, {
-			limit: limit + 1,
-			cursor,
+		const result = await timelineRepository.listByUserPaginated(db, user.id, {
+			cursorParam: cursor,
 			category,
 			sortBy,
 			sortOrder,
 		});
 
-		const hasMore = rows.length > limit;
-		const data = hasMore ? rows.slice(0, limit) : rows;
-
-		let nextCursor: string | null = null;
-		if (hasMore) {
-			const lastItem = data[data.length - 1];
-			nextCursor =
-				sortBy === "createdAt"
-					? String(lastItem.createdAt)
-					: `${lastItem.occurredOn},${lastItem.createdAt}`;
+		if ("error" in result) {
+			return c.json({ error: result.error }, result.status);
 		}
 
-		return c.json({ data, nextCursor });
+		return c.json(result);
 	},
 );
 
