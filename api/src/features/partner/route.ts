@@ -41,18 +41,26 @@ const partnerApp = new Hono<{
 			getSettlementTotals(db, partnerUserId),
 		]);
 
-		const result = calculateBalance(
-			{
-				advanceTotal: Number(entryResult?.advanceTotal ?? 0),
-				depositTotal: Number(entryResult?.depositTotal ?? 0),
-			},
-			{
-				fromHouseholdTotal: Number(settlementResult?.fromHouseholdTotal ?? 0),
-				fromUserTotal: Number(settlementResult?.fromUserTotal ?? 0),
-			},
+		const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
+		const depositTotal = Number(entryResult?.depositTotal ?? 0);
+		const fromHouseholdTotal = Number(
+			settlementResult?.fromHouseholdTotal ?? 0,
+		);
+		const fromUserTotal = Number(settlementResult?.fromUserTotal ?? 0);
+		const balance = calculateBalance(
+			advanceTotal,
+			depositTotal,
+			fromHouseholdTotal,
+			fromUserTotal,
 		);
 
-		return c.json(result);
+		return c.json({
+			advanceTotal,
+			depositTotal,
+			fromHouseholdTotal,
+			fromUserTotal,
+			balance,
+		});
 	})
 
 	// ── GET /timeline — パートナーのタイムラインを取得 ──────────
