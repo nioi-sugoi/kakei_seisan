@@ -105,31 +105,13 @@ const partnerApp = new Hono<{
 				cursor = parsed;
 			}
 
-			const result = await timelineRepository.listByUser(db, partnerUserId, {
+			const rows = await timelineRepository.listByUser(db, partnerUserId, {
 				limit: limit + 1,
 				cursor,
 				category,
 				sortBy,
 				sortOrder,
 			});
-
-			const rows = result.map((row) => ({
-				id: row.id,
-				userId: row.userId,
-				type: row.type,
-				category: row.category,
-				amount: row.amount,
-				occurredOn: row.occurredOn,
-				label: row.label,
-				memo: row.memo,
-				originalId: row.originalId,
-				cancelled: Boolean(row.cancelled),
-				latest: Boolean(row.latest),
-				status: row.status,
-				approvalComment: row.approvalComment,
-				createdAt: row.createdAt,
-				imageCount: row.imageCount,
-			}));
 
 			const hasMore = rows.length > limit;
 			const data = hasMore ? rows.slice(0, limit) : rows;

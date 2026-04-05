@@ -15,7 +15,7 @@ export type CursorValue =
 	| { occurredOn: string; createdAt: number }
 	| { createdAt: number };
 
-export function listByUser(
+export async function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
 	options: {
@@ -29,31 +29,44 @@ export function listByUser(
 	const { sortBy, sortOrder } = options;
 	const orderBy = buildOrderBy(sortBy, sortOrder);
 
-	if (options.category === "settlement") {
-		return buildSettlementsQuery(db, userId, options.cursor, sortBy, sortOrder)
-			.orderBy(...orderBy)
-			.limit(options.limit);
-	}
-
-	if (options.category === "advance" || options.category === "deposit") {
-		return buildEntriesQuery(
-			db,
-			userId,
-			options.cursor,
-			options.category,
-			sortBy,
-			sortOrder,
-		)
-			.orderBy(...orderBy)
-			.limit(options.limit);
-	}
-
-	return unionAll(
-		buildEntriesQuery(db, userId, options.cursor, undefined, sortBy, sortOrder),
-		buildSettlementsQuery(db, userId, options.cursor, sortBy, sortOrder),
+	const rows = await buildTimelineQuery(
+		db,
+		userId,
+		options.cursor,
+		options.category,
+		sortBy,
+		sortOrder,
 	)
 		.orderBy(...orderBy)
 		.limit(options.limit);
+
+	return rows.map((row) => ({
+		...row,
+		cancelled: Boolean(row.cancelled),
+		latest: Boolean(row.latest),
+	}));
+}
+
+function buildTimelineQuery(
+	db: DrizzleD1Database,
+	userId: string,
+	cursor: CursorValue | undefined,
+	category: "advance" | "deposit" | "settlement" | undefined,
+	sortBy: SortBy,
+	sortOrder: SortOrder,
+) {
+	if (category === "settlement") {
+		return buildSettlementsQuery(db, userId, cursor, sortBy, sortOrder);
+	}
+
+	if (category === "advance" || category === "deposit") {
+		return buildEntriesQuery(db, userId, cursor, category, sortBy, sortOrder);
+	}
+
+	return unionAll(
+		buildEntriesQuery(db, userId, cursor, undefined, sortBy, sortOrder),
+		buildSettlementsQuery(db, userId, cursor, sortBy, sortOrder),
+	);
 }
 
 function buildOrderBy(sortBy: SortBy, sortOrder: SortOrder) {
