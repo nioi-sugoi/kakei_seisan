@@ -32,9 +32,9 @@ CREATE TABLE "entry_versions" (
 	"approved_at" integer,
 	"approval_comment" text,
 	"created_at" integer NOT NULL,
-	CHECK ("category" IN ('advance', 'deposit')),
-	CHECK ("status" IN ('approved', 'pending', 'rejected')),
-	CHECK ("amount" >= 0)
+	CONSTRAINT "entry_versions_category_check" CHECK ("category" IN ('advance', 'deposit')),
+	CONSTRAINT "entry_versions_status_check" CHECK ("status" IN ('approved', 'pending', 'rejected')),
+	CONSTRAINT "entry_versions_amount_check" CHECK ("amount" >= 0)
 );
 --> statement-breakpoint
 
@@ -53,9 +53,9 @@ CREATE TABLE "settlement_versions" (
 	"approved_at" integer,
 	"approval_comment" text,
 	"created_at" integer NOT NULL,
-	CHECK ("category" IN ('fromUser', 'fromHousehold')),
-	CHECK ("status" IN ('approved', 'pending', 'rejected')),
-	CHECK ("amount" >= 0)
+	CONSTRAINT "settlement_versions_category_check" CHECK ("category" IN ('fromUser', 'fromHousehold')),
+	CONSTRAINT "settlement_versions_status_check" CHECK ("status" IN ('approved', 'pending', 'rejected')),
+	CONSTRAINT "settlement_versions_amount_check" CHECK ("amount" >= 0)
 );
 --> statement-breakpoint
 

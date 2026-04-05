@@ -298,17 +298,17 @@
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {
-				"entries_category_check": {
-					"name": "entries_category_check",
-					"value": "\"entries\".\"category\" IN ('advance', 'deposit')"
+				"entry_versions_category_check": {
+					"name": "entry_versions_category_check",
+					"value": "\"entry_versions\".\"category\" IN ('advance', 'deposit')"
 				},
-				"entries_status_check": {
-					"name": "entries_status_check",
-					"value": "\"entries\".\"status\" IN ('approved', 'pending', 'rejected')"
+				"entry_versions_status_check": {
+					"name": "entry_versions_status_check",
+					"value": "\"entry_versions\".\"status\" IN ('approved', 'pending', 'rejected')"
 				},
-				"entries_amount_check": {
-					"name": "entries_amount_check",
-					"value": "\"entries\".\"amount\" >= 0"
+				"entry_versions_amount_check": {
+					"name": "entry_versions_amount_check",
+					"value": "\"entry_versions\".\"amount\" >= 0"
 				}
 			}
 		},
@@ -843,17 +843,17 @@
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"checkConstraints": {
-				"settlements_category_check": {
-					"name": "settlements_category_check",
-					"value": "\"settlements\".\"category\" IN ('fromUser', 'fromHousehold')"
+				"settlement_versions_category_check": {
+					"name": "settlement_versions_category_check",
+					"value": "\"settlement_versions\".\"category\" IN ('fromUser', 'fromHousehold')"
 				},
-				"settlements_status_check": {
-					"name": "settlements_status_check",
-					"value": "\"settlements\".\"status\" IN ('approved', 'pending', 'rejected')"
+				"settlement_versions_status_check": {
+					"name": "settlement_versions_status_check",
+					"value": "\"settlement_versions\".\"status\" IN ('approved', 'pending', 'rejected')"
 				},
-				"settlements_amount_check": {
-					"name": "settlements_amount_check",
-					"value": "\"settlements\".\"amount\" >= 0"
+				"settlement_versions_amount_check": {
+					"name": "settlement_versions_amount_check",
+					"value": "\"settlement_versions\".\"amount\" >= 0"
 				}
 			}
 		},
