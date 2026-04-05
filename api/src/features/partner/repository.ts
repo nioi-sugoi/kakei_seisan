@@ -50,3 +50,17 @@ export function findPartnerByUser(db: DrizzleD1Database, userId: string) {
 		)
 		.get();
 }
+
+/**
+ * パートナーのユーザーIDを返す。パートナーシップがない場合は null。
+ */
+export async function getPartnerUserId(
+	db: DrizzleD1Database,
+	userId: string,
+): Promise<string | null> {
+	const partnership = await findPartnerByUser(db, userId);
+	if (!partnership) return null;
+	return partnership.inviterId === userId
+		? partnership.inviteeId
+		: partnership.inviterId;
+}

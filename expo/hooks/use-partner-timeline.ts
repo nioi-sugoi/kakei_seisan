@@ -1,5 +1,4 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import type { InferResponseType } from "hono/client";
 import { useState } from "react";
 import { client } from "@/lib/api-client";
@@ -10,16 +9,16 @@ import {
 	type TimelineItemOf,
 } from "@/lib/timeline-utils";
 
-type TimelineResponse = InferResponseType<typeof client.api.timeline.$get, 200>;
-type TimelineEvent = TimelineResponse["data"][number];
+type PartnerTimelineResponse = InferResponseType<
+	typeof client.api.partner.timeline.$get,
+	200
+>;
+type PartnerTimelineEvent = PartnerTimelineResponse["data"][number];
 
 export type { CategoryFilter, SortOption };
-export type SortBy = SortOption["sortBy"];
-export type SortOrder = SortOption["sortOrder"];
-export type TimelineItem = TimelineItemOf<TimelineEvent>;
+export type PartnerTimelineItem = TimelineItemOf<PartnerTimelineEvent>;
 
-export function useTimeline() {
-	const router = useRouter();
+export function usePartnerTimeline() {
 	const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 	const [sort, setSort] = useState<SortOption>({
 		sortBy: "occurredOn",
@@ -27,9 +26,9 @@ export function useTimeline() {
 	});
 
 	const query = useInfiniteQuery({
-		queryKey: ["timeline", { category: categoryFilter, ...sort }],
+		queryKey: ["partner", "timeline", { category: categoryFilter, ...sort }],
 		queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
-			const res = await client.api.timeline.$get({
+			const res = await client.api.partner.timeline.$get({
 				query: {
 					cursor: pageParam,
 					category: categoryFilter !== "all" ? categoryFilter : undefined,
@@ -37,7 +36,8 @@ export function useTimeline() {
 					sortOrder: sort.sortOrder,
 				},
 			});
-			if (!res.ok) throw new Error("タイムラインの取得に失敗しました");
+			if (!res.ok)
+				throw new Error("パートナーのタイムライン取得に失敗しました");
 			return res.json();
 		},
 		initialPageParam: undefined,
@@ -47,22 +47,10 @@ export function useTimeline() {
 	const allEvents = query.data?.pages.flatMap((page) => page.data) ?? [];
 	const items = buildTimelineItems(allEvents, sort.sortBy);
 
-	const handleEventPress = (event: TimelineEvent) => {
-		if (event.type === "entry") {
-			router.push(`/entry-detail/${event.originalId}`);
-		} else {
-			router.push(`/settlement-detail/${event.originalId}`);
-		}
-	};
-
 	const handleEndReached = () => {
 		if (query.hasNextPage && !query.isFetchingNextPage) {
 			query.fetchNextPage();
 		}
-	};
-
-	const handleAddPress = () => {
-		router.push("/entry-form");
 	};
 
 	return {
@@ -74,8 +62,6 @@ export function useTimeline() {
 		setCategoryFilter,
 		sort,
 		setSort,
-		handleEventPress,
 		handleEndReached,
-		handleAddPress,
 	};
 }

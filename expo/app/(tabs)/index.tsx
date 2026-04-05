@@ -12,30 +12,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BalanceSummary } from "@/components/balance/BalanceSummary";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
-import {
-	type CategoryFilter,
-	type SortOption,
-	type TimelineItem,
-	useTimeline,
-} from "@/hooks/use-timeline";
-
-const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
-	{ value: "all", label: "すべて" },
-	{ value: "advance", label: "立替" },
-	{ value: "deposit", label: "預り" },
-	{ value: "settlement", label: "精算" },
-];
-
-const SORT_OPTIONS: {
-	sortBy: SortOption["sortBy"];
-	sortOrder: SortOption["sortOrder"];
-	label: string;
-}[] = [
-	{ sortBy: "occurredOn", sortOrder: "desc", label: "日付順（新しい順）" },
-	{ sortBy: "occurredOn", sortOrder: "asc", label: "日付順（古い順）" },
-	{ sortBy: "createdAt", sortOrder: "desc", label: "更新順（新しい順）" },
-	{ sortBy: "createdAt", sortOrder: "asc", label: "更新順（古い順）" },
-];
+import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
+import { CATEGORY_FILTERS, SORT_OPTIONS } from "@/lib/timeline-utils";
 
 export default function TimelineScreen() {
 	const insets = useSafeAreaInsets();
