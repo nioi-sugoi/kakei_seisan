@@ -19,6 +19,40 @@ beforeEach(() => {
 	jest.clearAllMocks();
 });
 
+describe("TimelineEventCard 精算ラベル表示", () => {
+	it("category=fromHousehold の精算カードに「家計から出金」が表示される", () => {
+		render(
+			<TimelineEventCard
+				event={makeTimelineEvent({
+					type: "settlement",
+					category: "fromHousehold",
+					label: null,
+				})}
+				onPress={mockOnPress}
+			/>,
+		);
+
+		expect(screen.getByText("家計から出金")).toBeOnTheScreen();
+		expect(screen.getByText("精算")).toBeOnTheScreen();
+	});
+
+	it("category=fromUser の精算カードに「家計に入金」が表示される", () => {
+		render(
+			<TimelineEventCard
+				event={makeTimelineEvent({
+					type: "settlement",
+					category: "fromUser",
+					label: null,
+				})}
+				onPress={mockOnPress}
+			/>,
+		);
+
+		expect(screen.getByText("家計に入金")).toBeOnTheScreen();
+		expect(screen.getByText("精算")).toBeOnTheScreen();
+	});
+});
+
 describe("TimelineEventCard 承認ステータス表示", () => {
 	it("showApprovalStatus=false の場合、承認ステータスインジケーターが表示されない", () => {
 		render(
