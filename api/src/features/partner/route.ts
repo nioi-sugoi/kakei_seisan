@@ -72,8 +72,11 @@ const partnerApp = new Hono<{
 			v.object({
 				cursor: v.optional(v.string()),
 				category: v.optional(v.picklist(["advance", "deposit", "settlement"])),
-				sortBy: v.optional(v.picklist(["occurredOn", "createdAt"])),
-				sortOrder: v.optional(v.picklist(["desc", "asc"])),
+				sortBy: v.optional(
+					v.picklist(["occurredOn", "createdAt"]),
+					"occurredOn",
+				),
+				sortOrder: v.optional(v.picklist(["desc", "asc"]), "desc"),
 			}),
 		),
 		async (c) => {
@@ -88,13 +91,10 @@ const partnerApp = new Hono<{
 			const {
 				cursor: cursorParam,
 				category,
-				sortBy: sortByParam,
-				sortOrder: sortOrderParam,
+				sortBy,
+				sortOrder,
 			} = c.req.valid("query");
 			const limit = 50;
-
-			const sortBy = sortByParam ?? "occurredOn";
-			const sortOrder = sortOrderParam ?? "desc";
 
 			let cursor: CursorValue | undefined;
 			if (cursorParam) {
