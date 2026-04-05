@@ -44,7 +44,7 @@ describe("GET /api/partner/balance", () => {
 		});
 	});
 
-	it("パートナーの残高 = 立替合計 − 預り合計 − 家計からの精算合計 + ユーザーからの精算合計", async () => {
+	it("パートナーの残高 = 立替合計 − 預り合計 − 家計への入金精算合計 + 家計からの出金精算合計", async () => {
 		await insertPartnership(TEST_USER.id, OTHER_USER.id);
 		await insertEntry(OTHER_USER.id, { category: "advance", amount: 10000 });
 		await insertEntry(OTHER_USER.id, { category: "deposit", amount: 3000 });
