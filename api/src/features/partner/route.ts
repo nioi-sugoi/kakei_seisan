@@ -5,7 +5,8 @@ import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
-import { computeBalance } from "../balance/compute-balance";
+import { calculateBalance } from "../balance/domain";
+import { getEntryTotals, getSettlementTotals } from "../balance/repository";
 import { parseCursor } from "../timeline/parse-cursor";
 import type { CursorValue } from "../timeline/repository";
 import * as timelineRepository from "../timeline/repository";
@@ -35,7 +36,21 @@ const partnerApp = new Hono<{
 			return c.json({ error: "パートナーが見つかりません" }, 404);
 		}
 
-		const result = await computeBalance(db, partnerUserId);
+		const [entryResult, settlementResult] = await Promise.all([
+			getEntryTotals(db, partnerUserId),
+			getSettlementTotals(db, partnerUserId),
+		]);
+
+		const result = calculateBalance(
+			{
+				advanceTotal: Number(entryResult?.advanceTotal ?? 0),
+				depositTotal: Number(entryResult?.depositTotal ?? 0),
+			},
+			{
+				fromHouseholdTotal: Number(settlementResult?.fromHouseholdTotal ?? 0),
+				fromUserTotal: Number(settlementResult?.fromUserTotal ?? 0),
+			},
+		);
 
 		return c.json(result);
 	})
