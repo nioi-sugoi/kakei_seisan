@@ -15,7 +15,55 @@ export type CursorValue =
 	| { occurredOn: string; createdAt: number }
 	| { createdAt: number };
 
-export function listByUser(
+const PAGE_LIMIT = 50;
+
+export class InvalidCursorError extends Error {
+	constructor() {
+		super("Invalid cursor");
+		this.name = "InvalidCursorError";
+	}
+}
+
+export async function listByUserPaginated(
+	db: DrizzleD1Database,
+	userId: string,
+	options: {
+		cursor?: string;
+		category?: "advance" | "deposit" | "settlement";
+		sortBy: SortBy;
+		sortOrder: SortOrder;
+	},
+) {
+	const { sortBy, sortOrder } = options;
+
+	const cursor = options.cursor
+		? parseCursorOrThrow(options.cursor, sortBy)
+		: undefined;
+
+	const rows = await listByUser(db, userId, {
+		limit: PAGE_LIMIT + 1,
+		cursor,
+		category: options.category,
+		sortBy,
+		sortOrder,
+	});
+
+	const hasMore = rows.length > PAGE_LIMIT;
+	const data = hasMore ? rows.slice(0, PAGE_LIMIT) : rows;
+
+	let nextCursor = null;
+	if (hasMore) {
+		const lastItem = data[data.length - 1];
+		nextCursor =
+			sortBy === "createdAt"
+				? String(lastItem.createdAt)
+				: `${lastItem.occurredOn},${lastItem.createdAt}`;
+	}
+
+	return { data, nextCursor };
+}
+
+async function listByUser(
 	db: DrizzleD1Database,
 	userId: string,
 	options: {
@@ -29,31 +77,44 @@ export function listByUser(
 	const { sortBy, sortOrder } = options;
 	const orderBy = buildOrderBy(sortBy, sortOrder);
 
-	if (options.category === "settlement") {
-		return buildSettlementsQuery(db, userId, options.cursor, sortBy, sortOrder)
-			.orderBy(...orderBy)
-			.limit(options.limit);
-	}
-
-	if (options.category === "advance" || options.category === "deposit") {
-		return buildEntriesQuery(
-			db,
-			userId,
-			options.cursor,
-			options.category,
-			sortBy,
-			sortOrder,
-		)
-			.orderBy(...orderBy)
-			.limit(options.limit);
-	}
-
-	return unionAll(
-		buildEntriesQuery(db, userId, options.cursor, undefined, sortBy, sortOrder),
-		buildSettlementsQuery(db, userId, options.cursor, sortBy, sortOrder),
+	const rows = await buildTimelineQuery(
+		db,
+		userId,
+		options.cursor,
+		options.category,
+		sortBy,
+		sortOrder,
 	)
 		.orderBy(...orderBy)
 		.limit(options.limit);
+
+	return rows.map((row) => ({
+		...row,
+		cancelled: Boolean(row.cancelled),
+		latest: Boolean(row.latest),
+	}));
+}
+
+function buildTimelineQuery(
+	db: DrizzleD1Database,
+	userId: string,
+	cursor: CursorValue | undefined,
+	category: "advance" | "deposit" | "settlement" | undefined,
+	sortBy: SortBy,
+	sortOrder: SortOrder,
+) {
+	if (category === "settlement") {
+		return buildSettlementsQuery(db, userId, cursor, sortBy, sortOrder);
+	}
+
+	if (category === "advance" || category === "deposit") {
+		return buildEntriesQuery(db, userId, cursor, category, sortBy, sortOrder);
+	}
+
+	return unionAll(
+		buildEntriesQuery(db, userId, cursor, undefined, sortBy, sortOrder),
+		buildSettlementsQuery(db, userId, cursor, sortBy, sortOrder),
+	);
 }
 
 function buildOrderBy(sortBy: SortBy, sortOrder: SortOrder) {
@@ -183,4 +244,27 @@ function buildSettlementsQuery(
 				cursorFilter,
 			),
 		);
+}
+
+function parseCursorOrThrow(cursor: string, sortBy: SortBy) {
+	const parsed = parseCursor(cursor, sortBy);
+	if (!parsed) throw new InvalidCursorError();
+	return parsed;
+}
+
+function parseCursor(cursor: string, sortBy: SortBy): CursorValue | null {
+	if (sortBy === "createdAt") {
+		const createdAt = Number(cursor);
+		if (!Number.isInteger(createdAt)) return null;
+		return { createdAt };
+	}
+
+	const commaIdx = cursor.indexOf(",");
+	if (commaIdx === -1) return null;
+
+	const occurredOn = cursor.slice(0, commaIdx);
+	const createdAt = Number(cursor.slice(commaIdx + 1));
+	if (!occurredOn || !Number.isInteger(createdAt)) return null;
+
+	return { occurredOn, createdAt };
 }
