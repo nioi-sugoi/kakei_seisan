@@ -150,7 +150,7 @@ describe("GET /api/partner/balance", () => {
 		expect(body.advanceTotal).toBe(5000);
 	});
 
-	it("パートナーシップがない場合は 404 を返す", async () => {
+	it("パートナーがいない場合は 404 を返す", async () => {
 		const res = await client.api.partner.balance.$get(
 			{},
 			{ headers: { Cookie: authCookie } },
