@@ -2,8 +2,8 @@ import { and, eq, sql, sum } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { entryVersions, settlementVersions } from "../../db/schema";
 
-export function getEntryTotals(db: DrizzleD1Database, userId: string) {
-	return db
+export async function getEntryTotals(db: DrizzleD1Database, userId: string) {
+	const result = await db
 		.select({
 			advanceTotal: sum(
 				sql`CASE WHEN ${entryVersions.category} = 'advance' THEN ${entryVersions.amount} ELSE 0 END`,
@@ -21,10 +21,18 @@ export function getEntryTotals(db: DrizzleD1Database, userId: string) {
 			),
 		)
 		.get();
+
+	return {
+		advanceTotal: Number(result?.advanceTotal ?? 0),
+		depositTotal: Number(result?.depositTotal ?? 0),
+	};
 }
 
-export function getSettlementTotals(db: DrizzleD1Database, userId: string) {
-	return db
+export async function getSettlementTotals(
+	db: DrizzleD1Database,
+	userId: string,
+) {
+	const result = await db
 		.select({
 			fromHouseholdTotal: sum(
 				sql`CASE WHEN ${settlementVersions.category} = 'fromHousehold' THEN ${settlementVersions.amount} ELSE 0 END`,
@@ -42,4 +50,9 @@ export function getSettlementTotals(db: DrizzleD1Database, userId: string) {
 			),
 		)
 		.get();
+
+	return {
+		fromHouseholdTotal: Number(result?.fromHouseholdTotal ?? 0),
+		fromUserTotal: Number(result?.fromUserTotal ?? 0),
+	};
 }

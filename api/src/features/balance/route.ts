@@ -13,29 +13,19 @@ const balanceApp = new Hono<{
 	const user = c.get("user");
 	const db = drizzle(c.env.DB);
 
-	const [entryResult, settlementResult] = await Promise.all([
+	const [entryTotals, settlementTotals] = await Promise.all([
 		getEntryTotals(db, user.id),
 		getSettlementTotals(db, user.id),
 	]);
 
-	const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
-	const depositTotal = Number(entryResult?.depositTotal ?? 0);
-	const fromHouseholdTotal = Number(settlementResult?.fromHouseholdTotal ?? 0);
-	const fromUserTotal = Number(settlementResult?.fromUserTotal ?? 0);
 	const balance = calculateBalance(
-		advanceTotal,
-		depositTotal,
-		fromHouseholdTotal,
-		fromUserTotal,
+		entryTotals.advanceTotal,
+		entryTotals.depositTotal,
+		settlementTotals.fromHouseholdTotal,
+		settlementTotals.fromUserTotal,
 	);
 
-	return c.json({
-		advanceTotal,
-		depositTotal,
-		fromHouseholdTotal,
-		fromUserTotal,
-		balance,
-	});
+	return c.json({ ...entryTotals, ...settlementTotals, balance });
 });
 
 export { balanceApp };

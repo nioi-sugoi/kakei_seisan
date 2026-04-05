@@ -36,31 +36,19 @@ const partnerApp = new Hono<{
 			return c.json({ error: "パートナーが見つかりません" }, 404);
 		}
 
-		const [entryResult, settlementResult] = await Promise.all([
+		const [entryTotals, settlementTotals] = await Promise.all([
 			getEntryTotals(db, partnerUserId),
 			getSettlementTotals(db, partnerUserId),
 		]);
 
-		const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
-		const depositTotal = Number(entryResult?.depositTotal ?? 0);
-		const fromHouseholdTotal = Number(
-			settlementResult?.fromHouseholdTotal ?? 0,
-		);
-		const fromUserTotal = Number(settlementResult?.fromUserTotal ?? 0);
 		const balance = calculateBalance(
-			advanceTotal,
-			depositTotal,
-			fromHouseholdTotal,
-			fromUserTotal,
+			entryTotals.advanceTotal,
+			entryTotals.depositTotal,
+			settlementTotals.fromHouseholdTotal,
+			settlementTotals.fromUserTotal,
 		);
 
-		return c.json({
-			advanceTotal,
-			depositTotal,
-			fromHouseholdTotal,
-			fromUserTotal,
-			balance,
-		});
+		return c.json({ ...entryTotals, ...settlementTotals, balance });
 	})
 
 	// ── GET /timeline — パートナーのタイムラインを取得 ──────────
