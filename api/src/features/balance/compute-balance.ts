@@ -8,5 +8,14 @@ export async function computeBalance(db: DrizzleD1Database, userId: string) {
 		getSettlementTotals(db, userId),
 	]);
 
-	return calculateBalance(entryResult, settlementResult);
+	return calculateBalance(
+		{
+			advanceTotal: Number(entryResult?.advanceTotal ?? 0),
+			depositTotal: Number(entryResult?.depositTotal ?? 0),
+		},
+		{
+			fromHouseholdTotal: Number(settlementResult?.fromHouseholdTotal ?? 0),
+			fromUserTotal: Number(settlementResult?.fromUserTotal ?? 0),
+		},
+	);
 }

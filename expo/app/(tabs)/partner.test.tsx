@@ -160,7 +160,7 @@ describe("PartnerScreen - パートナー連携済み", () => {
 		await waitFor(() => {
 			expect(screen.getByText("¥8,000")).toBeOnTheScreen();
 		});
-		const card = screen.getByLabelText("精算 ¥8,000");
+		const card = screen.getByLabelText("家計から出金 ¥8,000");
 		expect(card).toBeOnTheScreen();
 	});
 

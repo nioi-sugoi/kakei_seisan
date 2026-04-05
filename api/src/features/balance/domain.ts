@@ -1,29 +1,26 @@
 interface EntryTotals {
-	advanceTotal: string | null;
-	depositTotal: string | null;
+	advanceTotal: number;
+	depositTotal: number;
 }
 
 interface SettlementTotals {
-	fromHouseholdTotal: string | null;
-	fromUserTotal: string | null;
+	fromHouseholdTotal: number;
+	fromUserTotal: number;
 }
 
 export function calculateBalance(
-	entryResult: EntryTotals | undefined,
-	settlementResult: SettlementTotals | undefined,
+	entryResult: EntryTotals,
+	settlementResult: SettlementTotals,
 ) {
-	const advanceTotal = Number(entryResult?.advanceTotal ?? 0);
-	const depositTotal = Number(entryResult?.depositTotal ?? 0);
-	const fromHouseholdTotal = Number(settlementResult?.fromHouseholdTotal ?? 0);
-	const fromUserTotal = Number(settlementResult?.fromUserTotal ?? 0);
 	const balance =
-		advanceTotal - depositTotal - fromHouseholdTotal + fromUserTotal;
+		entryResult.advanceTotal -
+		entryResult.depositTotal -
+		settlementResult.fromHouseholdTotal +
+		settlementResult.fromUserTotal;
 
 	return {
-		advanceTotal,
-		depositTotal,
-		fromHouseholdTotal,
-		fromUserTotal,
+		...entryResult,
+		...settlementResult,
 		balance,
 	};
 }
