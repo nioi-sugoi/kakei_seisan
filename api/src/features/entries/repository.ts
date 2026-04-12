@@ -37,6 +37,32 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 		.get();
 }
 
+/** 詳細画面用: owner の entry と全バージョン・画像を一括取得。所有者でなければ null */
+export async function getEntryDetail(
+	db: DrizzleD1Database,
+	id: string,
+	userId: string,
+) {
+	const entry = await findByOwner(db, id, userId);
+	if (!entry) return null;
+
+	const latestVersion = await findMyLatestVersion(db, entry.originalId, userId);
+	const [versions, images] = await Promise.all([
+		findVersions(db, entry.originalId),
+		findImagesByEntry(db, latestVersion ? latestVersion.id : entry.id),
+	]);
+
+	return {
+		...entry,
+		versions,
+		images: images.map((img) => ({
+			id: img.id,
+			displayOrder: img.displayOrder,
+			createdAt: img.createdAt,
+		})),
+	};
+}
+
 /** 同じ original_id グループの全バージョンを取得 */
 export function findVersions(db: DrizzleD1Database, originalId: string) {
 	return db
