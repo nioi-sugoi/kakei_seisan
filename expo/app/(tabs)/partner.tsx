@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
 	ActivityIndicator,
@@ -33,6 +34,7 @@ import { authClient } from "@/lib/auth-client";
 import { CATEGORY_FILTERS, SORT_OPTIONS } from "@/lib/timeline-utils";
 
 function PartnerHomeScreen() {
+	const router = useRouter();
 	const insets = useSafeAreaInsets();
 	const {
 		items,
@@ -141,6 +143,13 @@ function PartnerHomeScreen() {
 											? item.event.createdAt
 											: undefined
 									}
+									onPress={(event) => {
+										if (event.type === "entry") {
+											router.push(`/partner-entry-detail/${event.id}`);
+										} else {
+											router.push(`/partner-settlement-detail/${event.id}`);
+										}
+									}}
 								/>
 							</View>
 						);
