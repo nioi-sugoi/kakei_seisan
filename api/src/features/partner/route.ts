@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import * as v from "valibot";
 import type { Env } from "../../bindings";
 import { requireAuth } from "../../middleware/require-auth";
+import { serveR2Object } from "../../shared/r2";
 import type { AppVariables } from "../../types";
 import { calculateBalance } from "../balance/domain";
 import { getEntryTotals, getSettlementTotals } from "../balance/repository";
@@ -109,36 +110,15 @@ const partnerApp = new Hono<{
 			return c.json({ error: "パートナーが見つかりません" as const }, 404);
 		}
 
-		const entry = await entriesRepository.findByOwner(db, id, partnerUserId);
-		if (!entry) {
-			return c.json({ error: "記録が見つかりません" as const }, 404);
-		}
-
-		const latestVersion = await entriesRepository.findMyLatestVersion(
+		const detail = await entriesRepository.getEntryDetail(
 			db,
-			entry.originalId,
+			id,
 			partnerUserId,
 		);
-		const [versions, images] = await Promise.all([
-			entriesRepository.findVersions(db, entry.originalId),
-			entriesRepository.findImagesByEntry(
-				db,
-				latestVersion ? latestVersion.id : entry.id,
-			),
-		]);
-
-		return c.json(
-			{
-				...entry,
-				versions,
-				images: images.map((img) => ({
-					id: img.id,
-					displayOrder: img.displayOrder,
-					createdAt: img.createdAt,
-				})),
-			},
-			200,
-		);
+		if (!detail) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		return c.json(detail, 200);
 	})
 
 	// ── GET /entries/:entryId/images/:imageId — パートナー記録の画像を取得 ──
@@ -168,17 +148,11 @@ const partnerApp = new Hono<{
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 
-		const object = await c.env.R2.get(image.storagePath);
-		if (!object) {
+		const response = await serveR2Object(c.env.R2, image.storagePath);
+		if (!response) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
-
-		const headers = new Headers();
-		object.writeHttpMetadata(headers);
-		headers.set("etag", object.httpEtag);
-		headers.set("cache-control", "private, max-age=3600");
-
-		return new Response(object.body, { headers });
+		return response;
 	})
 
 	// ── GET /settlements/:id — パートナーの精算詳細を取得 ────────
@@ -192,40 +166,15 @@ const partnerApp = new Hono<{
 			return c.json({ error: "パートナーが見つかりません" as const }, 404);
 		}
 
-		const settlement = await settlementsRepository.findByOwner(
+		const detail = await settlementsRepository.getSettlementDetail(
 			db,
 			id,
 			partnerUserId,
 		);
-		if (!settlement) {
+		if (!detail) {
 			return c.json({ error: "精算が見つかりません" as const }, 404);
 		}
-
-		const latestVersion = await settlementsRepository.findMyLatestVersion(
-			db,
-			settlement.originalId,
-			partnerUserId,
-		);
-		const [versions, images] = await Promise.all([
-			settlementsRepository.findVersions(db, settlement.originalId),
-			settlementsRepository.findImagesBySettlement(
-				db,
-				latestVersion ? latestVersion.id : settlement.id,
-			),
-		]);
-
-		return c.json(
-			{
-				...settlement,
-				versions,
-				images: images.map((img) => ({
-					id: img.id,
-					displayOrder: img.displayOrder,
-					createdAt: img.createdAt,
-				})),
-			},
-			200,
-		);
+		return c.json(detail, 200);
 	})
 
 	// ── GET /settlements/:settlementId/images/:imageId — パートナー精算の画像を取得 ──
@@ -255,17 +204,11 @@ const partnerApp = new Hono<{
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 
-		const object = await c.env.R2.get(image.storagePath);
-		if (!object) {
+		const response = await serveR2Object(c.env.R2, image.storagePath);
+		if (!response) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
-
-		const headers = new Headers();
-		object.writeHttpMetadata(headers);
-		headers.set("etag", object.httpEtag);
-		headers.set("cache-control", "private, max-age=3600");
-
-		return new Response(object.body, { headers });
+		return response;
 	});
 
 export { partnerApp };

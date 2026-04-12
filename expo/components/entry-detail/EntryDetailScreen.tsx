@@ -17,8 +17,8 @@ import { useEntryDetail } from "@/hooks/use-entry-detail";
 import { getImageSource } from "@/hooks/use-image-upload";
 import { usePartnerEntryDetail } from "@/hooks/use-partner-entry-detail";
 import { useRestoreEntry } from "@/hooks/use-restore-entry";
+import type { EntryDetailResponse } from "@/lib/api-types";
 import { formatAmount, formatDateFull } from "@/lib/format";
-import type { EntryDetailResponse } from "@/testing/api-mocks";
 
 type EntryDetailScreenProps = {
 	readonly?: boolean;
@@ -31,13 +31,8 @@ export function EntryDetailScreen({
 	const router = useRouter();
 	const [viewerIndex, setViewerIndex] = useState(-1);
 
-	const ownerQuery = useEntryDetail(readonly ? "" : id);
-	const partnerQuery = usePartnerEntryDetail(readonly ? id : "");
-	const {
-		data: entry,
-		isPending,
-		error,
-	} = readonly ? partnerQuery : ownerQuery;
+	const useDetailQuery = readonly ? usePartnerEntryDetail : useEntryDetail;
+	const { data: entry, isPending, error } = useDetailQuery(id);
 
 	if (isPending) {
 		return (

@@ -10,6 +10,7 @@ import {
 	imageUploadSchema,
 	validateImageFile,
 } from "../../shared/image-constants";
+import { serveR2Object } from "../../shared/r2";
 import type { AppVariables } from "../../types";
 import * as entriesRepository from "./repository";
 
@@ -37,36 +38,11 @@ const entriesApp = new Hono<{
 		const id = c.req.param("id");
 		const db = drizzle(c.env.DB);
 
-		const entry = await entriesRepository.findByOwner(db, id, user.id);
-		if (!entry) {
+		const detail = await entriesRepository.getEntryDetail(db, id, user.id);
+		if (!detail) {
 			return c.json({ error: "記録が見つかりません" as const }, 404);
 		}
-
-		const latestVersion = await entriesRepository.findMyLatestVersion(
-			db,
-			entry.originalId,
-			user.id,
-		);
-		const [versions, images] = await Promise.all([
-			entriesRepository.findVersions(db, entry.originalId),
-			entriesRepository.findImagesByEntry(
-				db,
-				latestVersion ? latestVersion.id : entry.id,
-			),
-		]);
-
-		return c.json(
-			{
-				...entry,
-				versions,
-				images: images.map((img) => ({
-					id: img.id,
-					displayOrder: img.displayOrder,
-					createdAt: img.createdAt,
-				})),
-			},
-			200,
-		);
+		return c.json(detail, 200);
 	})
 	.post(
 		"/",
@@ -316,17 +292,11 @@ const entriesApp = new Hono<{
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 
-		const object = await c.env.R2.get(image.storagePath);
-		if (!object) {
+		const response = await serveR2Object(c.env.R2, image.storagePath);
+		if (!response) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
-
-		const headers = new Headers();
-		object.writeHttpMetadata(headers);
-		headers.set("etag", object.httpEtag);
-		headers.set("cache-control", "private, max-age=3600");
-
-		return new Response(object.body, { headers });
+		return response;
 	});
 
 export { entriesApp };

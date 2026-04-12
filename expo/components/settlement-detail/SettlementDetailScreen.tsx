@@ -17,8 +17,8 @@ import { getImageSource } from "@/hooks/use-image-upload";
 import { usePartnerSettlementDetail } from "@/hooks/use-partner-settlement-detail";
 import { useRestoreSettlement } from "@/hooks/use-restore-settlement";
 import { useSettlementDetail } from "@/hooks/use-settlement-detail";
+import type { SettlementDetailResponse } from "@/lib/api-types";
 import { formatAmount } from "@/lib/format";
-import type { SettlementDetailResponse } from "@/testing/api-mocks";
 
 type SettlementDetailScreenProps = {
 	readonly?: boolean;
@@ -31,13 +31,10 @@ export function SettlementDetailScreen({
 	const router = useRouter();
 	const [viewerIndex, setViewerIndex] = useState(-1);
 
-	const ownerQuery = useSettlementDetail(readonly ? "" : id);
-	const partnerQuery = usePartnerSettlementDetail(readonly ? id : "");
-	const {
-		data: settlement,
-		isPending,
-		error,
-	} = readonly ? partnerQuery : ownerQuery;
+	const useDetailQuery = readonly
+		? usePartnerSettlementDetail
+		: useSettlementDetail;
+	const { data: settlement, isPending, error } = useDetailQuery(id);
 
 	if (isPending) {
 		return (
