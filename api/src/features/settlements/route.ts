@@ -10,6 +10,7 @@ import {
 	imageUploadSchema,
 	validateImageFile,
 } from "../../shared/image-constants";
+import { serveR2Object } from "../../shared/r2";
 import type { AppVariables } from "../../types";
 import * as settlementsRepository from "./repository";
 
@@ -33,36 +34,15 @@ const settlementsApp = new Hono<{
 		const id = c.req.param("id");
 		const db = drizzle(c.env.DB);
 
-		const settlement = await settlementsRepository.findByOwner(db, id, user.id);
-		if (!settlement) {
-			return c.json({ error: "精算が見つかりません" as const }, 404);
-		}
-
-		const latestVersion = await settlementsRepository.findMyLatestVersion(
+		const detail = await settlementsRepository.getSettlementDetail(
 			db,
-			settlement.originalId,
+			id,
 			user.id,
 		);
-		const [versions, images] = await Promise.all([
-			settlementsRepository.findVersions(db, settlement.originalId),
-			settlementsRepository.findImagesBySettlement(
-				db,
-				latestVersion ? latestVersion.id : settlement.id,
-			),
-		]);
-
-		return c.json(
-			{
-				...settlement,
-				versions,
-				images: images.map((img) => ({
-					id: img.id,
-					displayOrder: img.displayOrder,
-					createdAt: img.createdAt,
-				})),
-			},
-			200,
-		);
+		if (!detail) {
+			return c.json({ error: "精算が見つかりません" as const }, 404);
+		}
+		return c.json(detail, 200);
 	})
 	.post(
 		"/",
@@ -315,17 +295,11 @@ const settlementsApp = new Hono<{
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
 
-		const object = await c.env.R2.get(image.storagePath);
-		if (!object) {
+		const response = await serveR2Object(c.env.R2, image.storagePath);
+		if (!response) {
 			return c.json({ error: "画像が見つかりません" as const }, 404);
 		}
-
-		const headers = new Headers();
-		object.writeHttpMetadata(headers);
-		headers.set("etag", object.httpEtag);
-		headers.set("cache-control", "private, max-age=3600");
-
-		return new Response(object.body, { headers });
+		return response;
 	});
 
 export { settlementsApp };
