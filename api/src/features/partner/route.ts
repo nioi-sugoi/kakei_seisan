@@ -7,6 +7,8 @@ import { requireAuth } from "../../middleware/require-auth";
 import type { AppVariables } from "../../types";
 import { calculateBalance } from "../balance/domain";
 import { getEntryTotals, getSettlementTotals } from "../balance/repository";
+import * as entriesRepository from "../entries/repository";
+import * as settlementsRepository from "../settlements/repository";
 import {
 	InvalidCursorError,
 	listByUserPaginated,
@@ -94,6 +96,176 @@ const partnerApp = new Hono<{
 				throw e;
 			}
 		},
-	);
+	)
+
+	// ── GET /entries/:id — パートナーの記録詳細を取得 ──────────
+	.get("/entries/:id", requireAuth, async (c) => {
+		const user = c.get("user");
+		const id = c.req.param("id");
+		const db = drizzle(c.env.DB);
+
+		const partnerUserId = await getPartnerUserId(db, user.id);
+		if (!partnerUserId) {
+			return c.json({ error: "パートナーが見つかりません" as const }, 404);
+		}
+
+		const entry = await entriesRepository.findByOwner(db, id, partnerUserId);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+
+		const latestVersion = await entriesRepository.findMyLatestVersion(
+			db,
+			entry.originalId,
+			partnerUserId,
+		);
+		const [versions, images] = await Promise.all([
+			entriesRepository.findVersions(db, entry.originalId),
+			entriesRepository.findImagesByEntry(
+				db,
+				latestVersion ? latestVersion.id : entry.id,
+			),
+		]);
+
+		return c.json(
+			{
+				...entry,
+				versions,
+				images: images.map((img) => ({
+					id: img.id,
+					displayOrder: img.displayOrder,
+					createdAt: img.createdAt,
+				})),
+			},
+			200,
+		);
+	})
+
+	// ── GET /entries/:entryId/images/:imageId — パートナー記録の画像を取得 ──
+	.get("/entries/:entryId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const db = drizzle(c.env.DB);
+
+		const partnerUserId = await getPartnerUserId(db, user.id);
+		if (!partnerUserId) {
+			return c.json({ error: "パートナーが見つかりません" as const }, 404);
+		}
+
+		const entry = await entriesRepository.findByOwner(
+			db,
+			c.req.param("entryId"),
+			partnerUserId,
+		);
+		if (!entry) {
+			return c.json({ error: "記録が見つかりません" as const }, 404);
+		}
+		const image = await entriesRepository.findImageWithOwnershipCheck(
+			db,
+			c.req.param("imageId"),
+			entry.originalId,
+		);
+		if (!image) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const object = await c.env.R2.get(image.storagePath);
+		if (!object) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const headers = new Headers();
+		object.writeHttpMetadata(headers);
+		headers.set("etag", object.httpEtag);
+		headers.set("cache-control", "private, max-age=3600");
+
+		return new Response(object.body, { headers });
+	})
+
+	// ── GET /settlements/:id — パートナーの精算詳細を取得 ────────
+	.get("/settlements/:id", requireAuth, async (c) => {
+		const user = c.get("user");
+		const id = c.req.param("id");
+		const db = drizzle(c.env.DB);
+
+		const partnerUserId = await getPartnerUserId(db, user.id);
+		if (!partnerUserId) {
+			return c.json({ error: "パートナーが見つかりません" as const }, 404);
+		}
+
+		const settlement = await settlementsRepository.findByOwner(
+			db,
+			id,
+			partnerUserId,
+		);
+		if (!settlement) {
+			return c.json({ error: "精算が見つかりません" as const }, 404);
+		}
+
+		const latestVersion = await settlementsRepository.findMyLatestVersion(
+			db,
+			settlement.originalId,
+			partnerUserId,
+		);
+		const [versions, images] = await Promise.all([
+			settlementsRepository.findVersions(db, settlement.originalId),
+			settlementsRepository.findImagesBySettlement(
+				db,
+				latestVersion ? latestVersion.id : settlement.id,
+			),
+		]);
+
+		return c.json(
+			{
+				...settlement,
+				versions,
+				images: images.map((img) => ({
+					id: img.id,
+					displayOrder: img.displayOrder,
+					createdAt: img.createdAt,
+				})),
+			},
+			200,
+		);
+	})
+
+	// ── GET /settlements/:settlementId/images/:imageId — パートナー精算の画像を取得 ──
+	.get("/settlements/:settlementId/images/:imageId", requireAuth, async (c) => {
+		const user = c.get("user");
+		const db = drizzle(c.env.DB);
+
+		const partnerUserId = await getPartnerUserId(db, user.id);
+		if (!partnerUserId) {
+			return c.json({ error: "パートナーが見つかりません" as const }, 404);
+		}
+
+		const settlement = await settlementsRepository.findByOwner(
+			db,
+			c.req.param("settlementId"),
+			partnerUserId,
+		);
+		if (!settlement) {
+			return c.json({ error: "精算が見つかりません" as const }, 404);
+		}
+		const image = await settlementsRepository.findImageWithOwnershipCheck(
+			db,
+			c.req.param("imageId"),
+			settlement.originalId,
+		);
+		if (!image) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const object = await c.env.R2.get(image.storagePath);
+		if (!object) {
+			return c.json({ error: "画像が見つかりません" as const }, 404);
+		}
+
+		const headers = new Headers();
+		object.writeHttpMetadata(headers);
+		headers.set("etag", object.httpEtag);
+		headers.set("cache-control", "private, max-age=3600");
+
+		return new Response(object.body, { headers });
+	});
 
 export { partnerApp };

@@ -1,4 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react-native";
+import {
+	render,
+	screen,
+	userEvent,
+	waitFor,
+} from "@testing-library/react-native";
 import {
 	makePartnerBalanceResponse,
 	makePartnership,
@@ -10,8 +15,10 @@ import { TestQueryWrapper } from "@/testing/query-wrapper";
 
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
 
+const mockPush = jest.fn();
+
 jest.mock("expo-router", () => ({
-	useRouter: () => ({ push: jest.fn() }),
+	useRouter: () => ({ push: mockPush }),
 }));
 
 const mockPartnerGet = jest.fn();
@@ -216,6 +223,58 @@ describe("PartnerScreen - パートナー連携済み", () => {
 			expect(screen.getByText("パートナーの買い物")).toBeOnTheScreen();
 		});
 		expect(screen.queryByLabelText("記録を追加")).toBeNull();
+	});
+
+	it("記録カードをタップするとパートナー記録詳細へ遷移する", async () => {
+		mockPartnerTimeline({
+			data: [
+				makePartnerTimelineEvent({
+					id: "partner-entry-xyz",
+					originalId: "partner-entry-xyz",
+				}),
+			],
+			nextCursor: null,
+		});
+		const user = userEvent.setup();
+		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("パートナーの買い物")).toBeOnTheScreen();
+		});
+
+		await user.press(screen.getByText("パートナーの買い物"));
+
+		expect(mockPush).toHaveBeenCalledWith(
+			"/partner-entry-detail/partner-entry-xyz",
+		);
+	});
+
+	it("精算カードをタップするとパートナー精算詳細へ遷移する", async () => {
+		mockPartnerTimeline({
+			data: [
+				makePartnerTimelineEvent({
+					id: "partner-stl-xyz",
+					originalId: "partner-stl-xyz",
+					type: "settlement",
+					category: "fromHousehold",
+					amount: 8000,
+					label: null,
+				}),
+			],
+			nextCursor: null,
+		});
+		const user = userEvent.setup();
+		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("¥8,000")).toBeOnTheScreen();
+		});
+
+		await user.press(screen.getByLabelText("家計から出金 ¥8,000"));
+
+		expect(mockPush).toHaveBeenCalledWith(
+			"/partner-settlement-detail/partner-stl-xyz",
+		);
 	});
 });
 
