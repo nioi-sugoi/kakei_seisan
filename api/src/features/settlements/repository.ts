@@ -38,6 +38,39 @@ export function findByOwner(db: DrizzleD1Database, id: string, userId: string) {
 		.get();
 }
 
+/** 詳細画面用: owner の settlement と全バージョン・画像を一括取得。所有者でなければ null */
+export async function getSettlementDetail(
+	db: DrizzleD1Database,
+	id: string,
+	userId: string,
+) {
+	const settlement = await findByOwner(db, id, userId);
+	if (!settlement) return null;
+
+	const latestVersion = await findMyLatestVersion(
+		db,
+		settlement.originalId,
+		userId,
+	);
+	const [versions, images] = await Promise.all([
+		findVersions(db, settlement.originalId),
+		findImagesBySettlement(
+			db,
+			latestVersion ? latestVersion.id : settlement.id,
+		),
+	]);
+
+	return {
+		...settlement,
+		versions,
+		images: images.map((img) => ({
+			id: img.id,
+			displayOrder: img.displayOrder,
+			createdAt: img.createdAt,
+		})),
+	};
+}
+
 export function findVersions(db: DrizzleD1Database, originalId: string) {
 	return db
 		.select()
