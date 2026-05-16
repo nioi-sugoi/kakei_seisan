@@ -21,16 +21,17 @@ import type { SettlementDetailResponse } from "@/lib/api-types";
 import { formatAmount } from "@/lib/format";
 
 type SettlementDetailScreenProps = {
-	type: "own" | "partner";
+	partner?: boolean;
 };
 
-export function SettlementDetailScreen({ type }: SettlementDetailScreenProps) {
-	const isPartner = type === "partner";
+export function SettlementDetailScreen({
+	partner = false,
+}: SettlementDetailScreenProps) {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
 	const [viewerIndex, setViewerIndex] = useState(-1);
 
-	const useDetailQuery = isPartner
+	const useDetailQuery = partner
 		? usePartnerSettlementDetail
 		: useSettlementDetail;
 	const { data: settlement, isPending, error } = useDetailQuery(id);
@@ -43,7 +44,7 @@ export function SettlementDetailScreen({ type }: SettlementDetailScreenProps) {
 		);
 	}
 
-	const title = isPartner ? "パートナーの精算" : "精算詳細";
+	const title = partner ? "パートナーの精算" : "精算詳細";
 
 	if (error || !settlement) {
 		return (
@@ -87,7 +88,7 @@ export function SettlementDetailScreen({ type }: SettlementDetailScreenProps) {
 										"settlements",
 										settlement.originalId,
 										img.id,
-										{ partner: isPartner },
+										{ partner: partner },
 									)}
 									onPress={() => setViewerIndex(index)}
 									accessibilityLabel={`画像 ${index + 1}`}
@@ -101,7 +102,7 @@ export function SettlementDetailScreen({ type }: SettlementDetailScreenProps) {
 					visible={viewerIndex >= 0}
 					images={settlement.images.map((img) =>
 						getImageSource("settlements", settlement.originalId, img.id, {
-							partner: isPartner,
+							partner: partner,
 						}),
 					)}
 					initialIndex={viewerIndex >= 0 ? viewerIndex : 0}
@@ -141,7 +142,7 @@ export function SettlementDetailScreen({ type }: SettlementDetailScreenProps) {
 					</View>
 				) : null}
 
-				{!isPartner ? (
+				{!partner ? (
 					<SettlementActions
 						id={id}
 						settlement={settlement}
