@@ -1,5 +1,6 @@
-import { deriveUserMode, type UserMode } from "@/lib/mode";
 import { usePartnership } from "./use-partner-status";
+
+export type UserMode = "solo" | "shared" | "managed";
 
 export type ModeState = {
 	myMode: UserMode;
@@ -22,9 +23,9 @@ export function useMode(): ModeState {
 	}
 
 	return {
-		myMode: deriveUserMode(true, partnership.myIsManaged),
-		partnerMode: deriveUserMode(true, partnership.partnerIsManaged),
+		myMode: partnership.myIsManaged ? "managed" : "shared",
+		partnerMode: partnership.partnerIsManaged ? "managed" : "shared",
 		hasPartner: true,
-		isLoading: false,
+		isLoading: query.isLoading,
 	};
 }
