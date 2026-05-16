@@ -15,17 +15,6 @@ jest.mock("expo-router", () => ({
 	useRouter: () => ({ back: mockBack, push: mockPush }),
 }));
 
-const mockGetImageSource = jest.fn(
-	(
-		_resourceType: string,
-		parentId: string,
-		imageId: string,
-		options?: { readonly?: boolean },
-	) => ({
-		uri: `mock://${options?.readonly ? "partner/" : ""}${parentId}/${imageId}`,
-	}),
-);
-
 jest.mock("@/hooks/use-image-upload", () => ({
 	getAuthHeaders: () => ({}),
 	useUploadImages: () => ({
@@ -34,10 +23,34 @@ jest.mock("@/hooks/use-image-upload", () => ({
 		isPending: false,
 	}),
 	useDeleteImage: () => ({ mutate: jest.fn(), isPending: false }),
-	getImageSource: (...args: unknown[]) =>
-		// biome-ignore lint/suspicious/noExplicitAny: jest mock passthrough
-		(mockGetImageSource as any)(...args),
+	getImageSource: (
+		resourceType: string,
+		parentId: string,
+		imageId: string,
+		options?: { readonly?: boolean },
+	) => ({
+		uri: `http://test/api/${options?.readonly ? "partner/" : ""}${resourceType}/${parentId}/images/${imageId}`,
+	}),
 }));
+
+jest.mock("expo-image", () => {
+	const { View } = require("react-native");
+	return {
+		Image: ({
+			source,
+			...props
+		}: {
+			source?: { uri: string };
+			[k: string]: unknown;
+		}) => (
+			<View
+				testID="rendered-image"
+				accessibilityHint={source?.uri}
+				{...props}
+			/>
+		),
+	};
+});
 
 const mockOwnerGet = jest.fn();
 const mockPartnerGet = jest.fn();
@@ -89,7 +102,6 @@ function mockSettlementResponse(overrides?: Partial<SettlementDetailResponse>) {
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	mockGetImageSource.mockClear();
 	mockPartnerGet.mockResolvedValue(mockSettlementResponse());
 });
 
@@ -122,7 +134,7 @@ describe("PartnerSettlementDetailRoute", () => {
 		expect(screen.queryByText("復元する")).not.toBeOnTheScreen();
 	});
 
-	it("画像取得時に readonly オプション付きで getImageSource が呼ばれる", async () => {
+	it("画像がパートナー用エンドポイントのURLで表示される", async () => {
 		mockPartnerGet.mockResolvedValue(
 			mockSettlementResponse({
 				images: [{ id: "img-1", displayOrder: 0, createdAt: 1742000000000 }],
@@ -133,11 +145,9 @@ describe("PartnerSettlementDetailRoute", () => {
 		await waitFor(() => {
 			expect(screen.getByLabelText("画像 1")).toBeOnTheScreen();
 		});
-		expect(mockGetImageSource).toHaveBeenCalledWith(
-			"settlements",
-			"partner-stl-1",
-			"img-1",
-			{ readonly: true },
+		const image = screen.getByTestId("rendered-image");
+		expect(image.props.accessibilityHint).toBe(
+			"http://test/api/partner/settlements/partner-stl-1/images/img-1",
 		);
 	});
 
