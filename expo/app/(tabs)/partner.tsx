@@ -20,6 +20,7 @@ import { SentInvitationCard } from "@/components/settings/SentInvitationCard";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
 import { useAcceptInvitation } from "@/hooks/use-accept-invitation";
 import { useCancelInvitation } from "@/hooks/use-cancel-invitation";
+import { useMode } from "@/hooks/use-mode";
 import {
 	usePartnership,
 	useReceivedInvitations,
@@ -47,6 +48,8 @@ function PartnerHomeScreen() {
 		setSort,
 		handleEndReached,
 	} = usePartnerTimeline();
+	const { partnerMode } = useMode();
+	const showApprovalStatus = partnerMode === "managed";
 
 	const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
@@ -138,6 +141,7 @@ function PartnerHomeScreen() {
 							<View className="px-4 pb-2">
 								<TimelineEventCard
 									event={item.event}
+									showApprovalStatus={showApprovalStatus}
 									updatedAt={
 										sort.sortBy === "createdAt"
 											? item.event.createdAt

@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BalanceSummary } from "@/components/balance/BalanceSummary";
 import { TimelineEventCard } from "@/components/timeline/TimelineEventCard";
+import { useMode } from "@/hooks/use-mode";
 import { type TimelineItem, useTimeline } from "@/hooks/use-timeline";
 import { CATEGORY_FILTERS, SORT_OPTIONS } from "@/lib/timeline-utils";
 
@@ -30,6 +31,8 @@ export default function TimelineScreen() {
 		handleEndReached,
 		handleAddPress,
 	} = useTimeline();
+	const { myMode } = useMode();
+	const showApprovalStatus = myMode === "managed";
 
 	const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
@@ -120,6 +123,7 @@ export default function TimelineScreen() {
 								<TimelineEventCard
 									event={item.event}
 									onPress={handleEventPress}
+									showApprovalStatus={showApprovalStatus}
 									updatedAt={
 										sort.sortBy === "createdAt"
 											? item.event.createdAt

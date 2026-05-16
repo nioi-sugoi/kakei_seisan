@@ -5,7 +5,6 @@ import type {
 	PartnerBalanceResponse,
 	Partnership,
 	PartnerTimelineEvent,
-	PartnerTimelineResponse,
 	SettlementDetailResponse,
 	SettlementVersion,
 	TimelineEvent,
@@ -162,6 +161,8 @@ export function makePartnership(overrides?: Partial<Partnership>): Partnership {
 		role: "inviter",
 		partnerName: "パートナー太郎",
 		partnerEmail: "partner@example.com",
+		myIsManaged: false,
+		partnerIsManaged: false,
 		createdAt: 1742000000000,
 		...overrides,
 	};

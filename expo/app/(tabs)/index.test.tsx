@@ -7,8 +7,10 @@ import {
 } from "@testing-library/react-native";
 import {
 	makeBalanceResponse,
+	makePartnership,
 	makeTimelineEvent,
 	mockJsonResponse,
+	type Partnership,
 	type TimelineResponse,
 } from "@/testing/api-mocks";
 import { TestQueryWrapper } from "@/testing/query-wrapper";
@@ -23,6 +25,7 @@ jest.mock("expo-router", () => ({
 
 const mockTimelineGet = jest.fn();
 const mockBalanceGet = jest.fn();
+const mockPartnerGet = jest.fn();
 
 jest.mock("@/lib/api-client", () => ({
 	client: {
@@ -32,6 +35,9 @@ jest.mock("@/lib/api-client", () => ({
 			},
 			balance: {
 				$get: (...args: unknown[]) => mockBalanceGet(...args),
+			},
+			partner: {
+				$get: (...args: unknown[]) => mockPartnerGet(...args),
 			},
 		},
 	},
@@ -51,9 +57,16 @@ function mockBalance(balance: number) {
 	);
 }
 
+function mockPartnership(data: Partnership | null) {
+	mockPartnerGet.mockImplementation(() =>
+		Promise.resolve(mockJsonResponse({ data })),
+	);
+}
+
 beforeEach(() => {
 	jest.clearAllMocks();
 	mockBalance(0);
+	mockPartnership(null);
 });
 
 describe("TimelineScreen", () => {
@@ -1101,5 +1114,80 @@ describe("TimelineScreen", () => {
 				}),
 			).toBeOnTheScreen();
 		});
+	});
+});
+
+describe("TimelineScreen - モードに応じた表示", () => {
+	it("ソロモードでは承認ステータスが表示されない", async () => {
+		mockPartnership(null);
+		mockTimelineResponse({
+			data: [makeTimelineEvent({ status: "pending" })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+		});
+		expect(screen.queryByText(/承認待ち/)).not.toBeOnTheScreen();
+	});
+
+	it("共有モードでは承認ステータスが表示されない", async () => {
+		mockPartnership(makePartnership({ myIsManaged: false }));
+		mockTimelineResponse({
+			data: [makeTimelineEvent({ status: "pending" })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("スーパー買い物")).toBeOnTheScreen();
+		});
+		expect(screen.queryByText(/承認待ち/)).not.toBeOnTheScreen();
+	});
+
+	it("管理モードでは承認待ちのステータスが表示される", async () => {
+		mockPartnership(makePartnership({ myIsManaged: true }));
+		mockTimelineResponse({
+			data: [makeTimelineEvent({ status: "pending" })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText(/承認待ち/)).toBeOnTheScreen();
+		});
+	});
+
+	it("管理モードでは承認済みのステータスが表示される", async () => {
+		mockPartnership(makePartnership({ myIsManaged: true }));
+		mockTimelineResponse({
+			data: [makeTimelineEvent({ status: "approved" })],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText(/承認済み/)).toBeOnTheScreen();
+		});
+	});
+
+	it("管理モードでは差し戻しのステータスが表示される", async () => {
+		mockPartnership(makePartnership({ myIsManaged: true }));
+		mockTimelineResponse({
+			data: [
+				makeTimelineEvent({
+					status: "rejected",
+					approvalComment: "金額が違うようです",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<TimelineScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText(/差し戻し/)).toBeOnTheScreen();
+		});
+		expect(screen.getByText("金額が違うようです")).toBeOnTheScreen();
 	});
 });
