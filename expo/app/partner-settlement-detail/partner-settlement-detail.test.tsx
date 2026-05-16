@@ -33,17 +33,9 @@ jest.mock("@/hooks/use-image-upload", () => ({
 	}),
 }));
 
+const MockImageThumbnail = jest.fn((_props: Record<string, unknown>) => null);
 jest.mock("@/components/ImageThumbnail", () => ({
-	ImageThumbnail: ({
-		source,
-		accessibilityLabel,
-	}: {
-		source: { uri: string };
-		accessibilityLabel: string;
-	}) => {
-		const { Text } = require("react-native");
-		return <Text accessibilityLabel={accessibilityLabel}>{source.uri}</Text>;
-	},
+	ImageThumbnail: (props: Record<string, unknown>) => MockImageThumbnail(props),
 }));
 
 jest.mock("@/components/ImageViewerModal", () => ({
@@ -132,7 +124,7 @@ describe("PartnerSettlementDetailRoute", () => {
 		expect(screen.queryByText("復元する")).not.toBeOnTheScreen();
 	});
 
-	it("画像がパートナー用エンドポイントのURLで表示される", async () => {
+	it("ImageThumbnail にパートナー用画像URLが渡される", async () => {
 		mockPartnerGet.mockResolvedValue(
 			mockSettlementResponse({
 				images: [{ id: "img-1", displayOrder: 0, createdAt: 1742000000000 }],
@@ -141,10 +133,15 @@ describe("PartnerSettlementDetailRoute", () => {
 		render(<PartnerSettlementDetailRoute />, { wrapper: TestQueryWrapper });
 
 		await waitFor(() => {
-			expect(screen.getByLabelText("画像 1")).toBeOnTheScreen();
+			expect(MockImageThumbnail).toHaveBeenCalled();
 		});
-		expect(screen.getByLabelText("画像 1")).toHaveTextContent(
-			"http://test/api/partner/settlements/partner-stl-1/images/img-1",
+		expect(MockImageThumbnail).toHaveBeenCalledWith(
+			expect.objectContaining({
+				source: {
+					uri: "http://test/api/partner/settlements/partner-stl-1/images/img-1",
+				},
+				accessibilityLabel: "画像 1",
+			}),
 		);
 	});
 
