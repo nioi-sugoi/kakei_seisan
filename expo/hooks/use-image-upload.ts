@@ -110,10 +110,10 @@ export function getImageSource(
 	resourceType: ImageResourceType,
 	parentId: string,
 	imageId: string,
-	options?: { readonly?: boolean },
+	options?: { partner?: boolean },
 ) {
 	const headers = getAuthHeaders();
-	const prefix = options?.readonly ? "partner/" : "";
+	const prefix = options?.partner ? "partner/" : "";
 	return {
 		uri: `${config.apiBaseUrl}/api/${prefix}${resourceType}/${parentId}/images/${imageId}`,
 		headers: Object.keys(headers).length > 0 ? headers : undefined,

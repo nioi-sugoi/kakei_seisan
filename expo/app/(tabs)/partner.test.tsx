@@ -226,15 +226,8 @@ describe("PartnerScreen - パートナー連携済み", () => {
 	});
 
 	it("記録カードをタップするとパートナー記録詳細へ遷移する", async () => {
-		mockPartnerTimeline({
-			data: [
-				makePartnerTimelineEvent({
-					id: "partner-entry-xyz",
-					originalId: "partner-entry-xyz",
-				}),
-			],
-			nextCursor: null,
-		});
+		const event = makePartnerTimelineEvent();
+		mockPartnerTimeline({ data: [event], nextCursor: null });
 		const user = userEvent.setup();
 		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
 
@@ -244,25 +237,17 @@ describe("PartnerScreen - パートナー連携済み", () => {
 
 		await user.press(screen.getByText("パートナーの買い物"));
 
-		expect(mockPush).toHaveBeenCalledWith(
-			"/partner-entry-detail/partner-entry-xyz",
-		);
+		expect(mockPush).toHaveBeenCalledWith(`/partner-entry-detail/${event.id}`);
 	});
 
 	it("精算カードをタップするとパートナー精算詳細へ遷移する", async () => {
-		mockPartnerTimeline({
-			data: [
-				makePartnerTimelineEvent({
-					id: "partner-stl-xyz",
-					originalId: "partner-stl-xyz",
-					type: "settlement",
-					category: "fromHousehold",
-					amount: 8000,
-					label: null,
-				}),
-			],
-			nextCursor: null,
+		const event = makePartnerTimelineEvent({
+			type: "settlement",
+			category: "fromHousehold",
+			amount: 8000,
+			label: null,
 		});
+		mockPartnerTimeline({ data: [event], nextCursor: null });
 		const user = userEvent.setup();
 		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
 
@@ -273,7 +258,7 @@ describe("PartnerScreen - パートナー連携済み", () => {
 		await user.press(screen.getByLabelText("家計から出金 ¥8,000"));
 
 		expect(mockPush).toHaveBeenCalledWith(
-			"/partner-settlement-detail/partner-stl-xyz",
+			`/partner-settlement-detail/${event.id}`,
 		);
 	});
 });

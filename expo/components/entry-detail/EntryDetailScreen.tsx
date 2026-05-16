@@ -21,17 +21,16 @@ import type { EntryDetailResponse } from "@/lib/api-types";
 import { formatAmount, formatDateFull } from "@/lib/format";
 
 type EntryDetailScreenProps = {
-	readonly?: boolean;
+	type: "own" | "partner";
 };
 
-export function EntryDetailScreen({
-	readonly = false,
-}: EntryDetailScreenProps) {
+export function EntryDetailScreen({ type }: EntryDetailScreenProps) {
+	const isPartner = type === "partner";
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const router = useRouter();
 	const [viewerIndex, setViewerIndex] = useState(-1);
 
-	const useDetailQuery = readonly ? usePartnerEntryDetail : useEntryDetail;
+	const useDetailQuery = isPartner ? usePartnerEntryDetail : useEntryDetail;
 	const { data: entry, isPending, error } = useDetailQuery(id);
 
 	if (isPending) {
@@ -42,7 +41,7 @@ export function EntryDetailScreen({
 		);
 	}
 
-	const title = readonly ? "パートナーの記録" : "記録詳細";
+	const title = isPartner ? "パートナーの記録" : "記録詳細";
 
 	if (error || !entry) {
 		return (
@@ -87,7 +86,7 @@ export function EntryDetailScreen({
 								<ImageThumbnail
 									key={img.id}
 									source={getImageSource("entries", entry.originalId, img.id, {
-										readonly,
+										partner: isPartner,
 									})}
 									onPress={() => setViewerIndex(index)}
 									accessibilityLabel={`画像 ${index + 1}`}
@@ -100,7 +99,9 @@ export function EntryDetailScreen({
 				<ImageViewerModal
 					visible={viewerIndex >= 0}
 					images={entry.images.map((img) =>
-						getImageSource("entries", entry.originalId, img.id, { readonly }),
+						getImageSource("entries", entry.originalId, img.id, {
+							partner: isPartner,
+						}),
 					)}
 					initialIndex={viewerIndex >= 0 ? viewerIndex : 0}
 					onClose={() => setViewerIndex(-1)}
@@ -145,7 +146,7 @@ export function EntryDetailScreen({
 					</View>
 				) : null}
 
-				{!readonly ? (
+				{!isPartner ? (
 					<EntryActions
 						id={id}
 						entry={entry}
