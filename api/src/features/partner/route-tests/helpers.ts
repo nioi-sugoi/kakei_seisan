@@ -10,6 +10,7 @@ import {
 import { client } from "../../../testing/app-helper";
 import {
 	authCookie,
+	buildOtherUserAuthCookie,
 	OTHER_USER,
 	seedOtherUser,
 	seedThirdUser,
@@ -21,6 +22,7 @@ import { setupDB } from "../../../testing/db-helper";
 
 export {
 	authCookie,
+	buildOtherUserAuthCookie,
 	client,
 	OTHER_USER,
 	seedOtherUser,
