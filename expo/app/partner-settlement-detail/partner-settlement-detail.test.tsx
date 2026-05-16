@@ -33,6 +33,23 @@ jest.mock("@/hooks/use-image-upload", () => ({
 	}),
 }));
 
+jest.mock("@/components/ImageThumbnail", () => ({
+	ImageThumbnail: ({
+		source,
+		accessibilityLabel,
+	}: {
+		source: { uri: string };
+		accessibilityLabel: string;
+	}) => {
+		const { Text } = require("react-native");
+		return <Text accessibilityLabel={accessibilityLabel}>{source.uri}</Text>;
+	},
+}));
+
+jest.mock("@/components/ImageViewerModal", () => ({
+	ImageViewerModal: () => null,
+}));
+
 const mockOwnerGet = jest.fn();
 const mockPartnerGet = jest.fn();
 
@@ -113,6 +130,22 @@ describe("PartnerSettlementDetailRoute", () => {
 		expect(screen.queryByText("修正する")).not.toBeOnTheScreen();
 		expect(screen.queryByText("取り消す")).not.toBeOnTheScreen();
 		expect(screen.queryByText("復元する")).not.toBeOnTheScreen();
+	});
+
+	it("画像がパートナー用エンドポイントのURLで表示される", async () => {
+		mockPartnerGet.mockResolvedValue(
+			mockSettlementResponse({
+				images: [{ id: "img-1", displayOrder: 0, createdAt: 1742000000000 }],
+			}),
+		);
+		render(<PartnerSettlementDetailRoute />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("画像 1")).toBeOnTheScreen();
+		});
+		expect(screen.getByLabelText("画像 1")).toHaveTextContent(
+			"http://test/api/partner/settlements/partner-stl-1/images/img-1",
+		);
 	});
 
 	it("APIエラー時にエラーメッセージが表示される", async () => {

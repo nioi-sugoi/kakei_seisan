@@ -33,6 +33,23 @@ jest.mock("@/hooks/use-image-upload", () => ({
 	}),
 }));
 
+jest.mock("@/components/ImageThumbnail", () => ({
+	ImageThumbnail: ({
+		source,
+		accessibilityLabel,
+	}: {
+		source: { uri: string };
+		accessibilityLabel: string;
+	}) => {
+		const { Text } = require("react-native");
+		return <Text accessibilityLabel={accessibilityLabel}>{source.uri}</Text>;
+	},
+}));
+
+jest.mock("@/components/ImageViewerModal", () => ({
+	ImageViewerModal: () => null,
+}));
+
 const mockOwnerGet = jest.fn();
 const mockPartnerGet = jest.fn();
 
@@ -149,6 +166,22 @@ describe("PartnerEntryDetailRoute", () => {
 			expect(screen.getAllByText("¥2,800").length).toBeGreaterThan(0);
 		});
 		expect(screen.queryByText("復元する")).not.toBeOnTheScreen();
+	});
+
+	it("画像がパートナー用エンドポイントのURLで表示される", async () => {
+		mockPartnerGet.mockResolvedValue(
+			mockEntryResponse({
+				images: [{ id: "img-1", displayOrder: 0, createdAt: 1742000000000 }],
+			}),
+		);
+		render(<PartnerEntryDetailRoute />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("画像 1")).toBeOnTheScreen();
+		});
+		expect(screen.getByLabelText("画像 1")).toHaveTextContent(
+			"http://test/api/partner/entries/partner-entry-1/images/img-1",
+		);
 	});
 
 	it("APIエラー時にエラーメッセージが表示される", async () => {
