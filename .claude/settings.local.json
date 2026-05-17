@@ -80,7 +80,6 @@
     ]
   },
   "autoMemoryEnabled": false,
-  "outputStyle": "Explanatory",
   "sandbox": {
     "enabled": false,
     "autoAllowBashIfSandboxed": true,
