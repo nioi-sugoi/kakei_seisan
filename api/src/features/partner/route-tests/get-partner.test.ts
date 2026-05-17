@@ -40,6 +40,8 @@ describe("GET /api/partner", () => {
 			role: "inviter",
 			partnerName: OTHER_USER.name,
 			partnerEmail: OTHER_USER.email,
+			myIsManaged: false,
+			partnerIsManaged: false,
 		});
 		expect(body.data).toHaveProperty("id", expect.any(String));
 	});
@@ -58,6 +60,48 @@ describe("GET /api/partner", () => {
 			role: "invitee",
 			partnerName: OTHER_USER.name,
 			partnerEmail: OTHER_USER.email,
+			myIsManaged: false,
+			partnerIsManaged: false,
+		});
+	});
+
+	it("inviter視点で myIsManaged / partnerIsManaged が正しく返る", async () => {
+		await insertPartnership(TEST_USER.id, OTHER_USER.id, {
+			inviterIsManaged: true,
+			inviteeIsManaged: false,
+		});
+
+		const res = await client.api.partner.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toMatchObject({
+			role: "inviter",
+			myIsManaged: true,
+			partnerIsManaged: false,
+		});
+	});
+
+	it("invitee視点で myIsManaged / partnerIsManaged が正しく返る", async () => {
+		await insertPartnership(OTHER_USER.id, TEST_USER.id, {
+			inviterIsManaged: true,
+			inviteeIsManaged: false,
+		});
+
+		const res = await client.api.partner.$get(
+			{},
+			{ headers: { Cookie: authCookie } },
+		);
+
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.data).toMatchObject({
+			role: "invitee",
+			myIsManaged: false,
+			partnerIsManaged: true,
 		});
 	});
 

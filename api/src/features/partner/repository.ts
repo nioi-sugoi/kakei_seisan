@@ -5,6 +5,7 @@ import { partnerships, user } from "../../db/schema";
 /**
  * パートナー関係をパートナーのユーザー情報付きで返す。
  * userId が inviter なら invitee の情報を、invitee なら inviter の情報を返す。
+ * `myIsManaged` / `partnerIsManaged` は呼び出し元ユーザー視点に正規化した管理モードフラグ。
  */
 export async function findPartner(db: DrizzleD1Database, userId: string) {
 	// inviter として参加しているケース
@@ -14,6 +15,8 @@ export async function findPartner(db: DrizzleD1Database, userId: string) {
 			role: sql<"inviter">`'inviter'`.as("role"),
 			partnerName: user.name,
 			partnerEmail: user.email,
+			myIsManaged: partnerships.inviterIsManaged,
+			partnerIsManaged: partnerships.inviteeIsManaged,
 			createdAt: partnerships.createdAt,
 		})
 		.from(partnerships)
@@ -30,6 +33,8 @@ export async function findPartner(db: DrizzleD1Database, userId: string) {
 			role: sql<"invitee">`'invitee'`.as("role"),
 			partnerName: user.name,
 			partnerEmail: user.email,
+			myIsManaged: partnerships.inviteeIsManaged,
+			partnerIsManaged: partnerships.inviterIsManaged,
 			createdAt: partnerships.createdAt,
 		})
 		.from(partnerships)

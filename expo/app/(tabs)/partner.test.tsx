@@ -284,3 +284,55 @@ describe("PartnerScreen - ローディング", () => {
 		expect(screen.queryByText("パートナー招待")).toBeNull();
 	});
 });
+
+describe("PartnerScreen - パートナーのモードに応じた表示", () => {
+	beforeEach(() => {
+		mockPartnerBalance(0);
+	});
+
+	it("パートナーが共有モードでは承認ステータスが表示されない", async () => {
+		mockPartnership(makePartnership({ partnerIsManaged: false }));
+		mockPartnerTimeline({
+			data: [makePartnerTimelineEvent({ status: "pending" })],
+			nextCursor: null,
+		});
+		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText("パートナーの買い物")).toBeOnTheScreen();
+		});
+		expect(screen.queryByText(/承認待ち/)).not.toBeOnTheScreen();
+	});
+
+	it("パートナーが管理モードでは承認待ちのステータスが表示される", async () => {
+		mockPartnership(makePartnership({ partnerIsManaged: true }));
+		mockPartnerTimeline({
+			data: [makePartnerTimelineEvent({ status: "pending" })],
+			nextCursor: null,
+		});
+		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText(/承認待ち/)).toBeOnTheScreen();
+		});
+	});
+
+	it("パートナーが管理モードでは差し戻しのステータスが表示される", async () => {
+		mockPartnership(makePartnership({ partnerIsManaged: true }));
+		mockPartnerTimeline({
+			data: [
+				makePartnerTimelineEvent({
+					status: "rejected",
+					approvalComment: "領収書が必要です",
+				}),
+			],
+			nextCursor: null,
+		});
+		render(<PartnerScreen />, { wrapper: TestQueryWrapper });
+
+		await waitFor(() => {
+			expect(screen.getByText(/差し戻し/)).toBeOnTheScreen();
+		});
+		expect(screen.getByText("領収書が必要です")).toBeOnTheScreen();
+	});
+});

@@ -57,7 +57,11 @@ export async function insertInvitation(
 	return invitation;
 }
 
-export async function insertPartnership(inviterId: string, inviteeId: string) {
+export async function insertPartnership(
+	inviterId: string,
+	inviteeId: string,
+	overrides?: Partial<typeof partnerships.$inferInsert>,
+) {
 	const db = drizzle(env.DB);
 	const [partnership] = await db
 		.insert(partnerships)
@@ -66,6 +70,7 @@ export async function insertPartnership(inviterId: string, inviteeId: string) {
 			inviterId,
 			inviteeId,
 			createdAt: Date.now(),
+			...overrides,
 		})
 		.returning();
 	return partnership;
